@@ -28,7 +28,7 @@
 #include <nuttx/mm/map.h>
 #include <nuttx/mm/gran.h>
 #include <nuttx/pgalloc.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 /****************************************************************************
  * Public Functions
@@ -132,7 +132,7 @@ FAR void *vm_map_region(uintptr_t paddr, size_t size)
 error:
   if (i)
     {
-      /* Undo alway mapped pages */
+      /* Undo always mapped pages */
 
       up_shmdt((uintptr_t)vaddr, i);
     }

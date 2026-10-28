@@ -34,15 +34,15 @@ config HPM_ENET
 menu "Watchdog"
 
 config HPM_WDOG0
-	bool "WathDog"
+	bool "WDOG0"
 	default n
 
 config HPM_WDOG1
-	bool "WathDog"
+	bool "WDOG1"
 	default n
 
 config HPM_WDOG2
-	bool "WathDog"
+	bool "WDOG2"
 	default n
 
 endmenu # Watchdog

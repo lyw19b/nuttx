@@ -28,7 +28,7 @@
 
 #include <dlfcn.h>
 
-#include <nuttx/lib/modlib.h>
+#include <nuttx/lib/elf.h>
 
 /****************************************************************************
  * Private Functions
@@ -82,6 +82,7 @@
 int dlclose(FAR void *handle)
 {
 #if defined(CONFIG_BUILD_FLAT) || defined(CONFIG_BUILD_PROTECTED)
+
   /* In the FLAT build, a shared library is essentially the same as a kernel
    * module.
    *
@@ -93,7 +94,11 @@ int dlclose(FAR void *handle)
    * dlremove() is essentially a clone of rmmod().
    */
 
-  return modlib_remove(handle);
+  /* libelf_remove() gives back a reference and unloads only when the last
+   * one goes, so closing one of two handles leaves the other usable.
+   */
+
+  return libelf_remove(handle);
 
 #else /* if defined(CONFIG_BUILD_KERNEL) */
   /* The KERNEL build is considerably more complex:  In order to be shared,

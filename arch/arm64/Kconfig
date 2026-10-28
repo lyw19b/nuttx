@@ -26,6 +26,23 @@ choice
 	prompt "ARM64 chip selection"
 	default ARCH_CHIP_QEMU
 
+config ARCH_CHIP_AM62X
+	bool "TI AM62x"
+	select ARCH_CORTEX_A53
+	select ARCH_HAVE_ADDRENV
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_IRQTRIGGER
+	select ARCH_NEED_ADDRENV_MAPPING
+	select ARCH_USE_MMU
+	select ARMV8A_HAVE_GICv3
+	select ARM64_HAVE_PSCI
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_LOWPUTC
+	---help---
+		Texas Instruments AM62x family (AM6232, AM6252, AM6254).
+		Quad Cortex-A53 @ up to 1.4 GHz.  Supported boards:
+		PocketBeagle 2, BeaglePlay.
+
 config ARCH_CHIP_A64
 	bool "Allwinner A64"
 	select ARCH_CORTEX_A53
@@ -34,6 +51,7 @@ config ARCH_CHIP_A64
 	select ARCH_HAVE_IRQTRIGGER
 	select ARCH_NEED_ADDRENV_MAPPING
 	select ARM64_HAVE_PSCI
+	select ARCH_HAVE_IRQPRIO
 	---help---
 		Allwinner A64 SoC
 
@@ -44,8 +62,25 @@ config ARCH_CHIP_RK3399
 	select ARCH_HAVE_RESET
 	select ARCH_NEED_ADDRENV_MAPPING
 	select ARM64_HAVE_PSCI
+	select ARCH_HAVE_IRQPRIO
 	---help---
 		Rockchip RK3399 SoC
+
+config ARCH_CHIP_RK3588
+	bool "Rockchip RK3588 / RK3588S"
+	select ARCH_CORTEX_A55
+	select ARCH_HAVE_ADDRENV
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_IRQTRIGGER
+	select ARCH_HAVE_LOWPUTC
+	select ARCH_HAVE_RESET
+	select ARCH_NEED_ADDRENV_MAPPING
+	select ARCH_USE_MMU
+	select ARM64_HAVE_PSCI
+	select ARMV8A_HAVE_GICv3
+	---help---
+		Rockchip RK3588 and RK3588S SoCs with GICv3, PSCI and early
+		UART support.
 
 config ARCH_CHIP_QEMU
 	bool "QEMU virt platform (ARMv8a)"
@@ -57,6 +92,7 @@ config ARCH_CHIP_QEMU
 	select ARCH_HAVE_RESET
 	select ARCH_HAVE_TEXT_HEAP
 	select ARM64_HAVE_PSCI
+	select ARCH_HAVE_IRQPRIO
 	---help---
 		QEMU virt platform (ARMv8a)
 
@@ -72,6 +108,7 @@ config ARCH_CHIP_GOLDFISH
 	select ARCH_HAVE_RESET
 	select ARCH_NEED_ADDRENV_MAPPING
 	select ARM64_HAVE_PSCI
+	select ARCH_HAVE_IRQPRIO
 	---help---
 		Android GoldFish platform for NuttX (ARMv8a),
 		based on ARM virt board
@@ -80,6 +117,9 @@ config ARCH_CHIP_FVP_ARMV8R
 	bool "ARM FVP virt platform (ARMv8r)"
 	select ARCH_CORTEX_R82
 	select ARCH_HAVE_IRQTRIGGER
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_ADDRENV
+	select ARCH_NEED_ADDRENV_MAPPING
 	---help---
 		ARM FVP virt platform (ARMv8r)
 
@@ -88,15 +128,18 @@ config ARCH_CHIP_IMX8
 	select ARCH_HAVE_ADDRENV
 	select ARCH_HAVE_IRQTRIGGER
 	select ARCH_NEED_ADDRENV_MAPPING
+	select ARCH_HAVE_IRQPRIO
 	---help---
 		NXP i.MX8 (ARMv8a) applications processors
 
 config ARCH_CHIP_IMX9
 	bool "NXP i.MX9 Platform (ARMv8.2a)"
 	select ARCH_HAVE_ADDRENV
+	select ARCH_HAVE_ELF_EXECUTABLE
 	select ARCH_HAVE_I2CRESET
 	select ARCH_HAVE_IRQTRIGGER
 	select ARCH_NEED_ADDRENV_MAPPING
+	select ARCH_HAVE_IRQPRIO
 	---help---
 		NXP i.MX9 (ARMv8.2a) applications processors
 
@@ -108,6 +151,7 @@ config ARCH_CHIP_ZYNQ_MPSOC
 	select ARCH_HAVE_IRQTRIGGER
 	select ARCH_NEED_ADDRENV_MAPPING
 	select ARM64_HAVE_PSCI
+	select ARCH_HAVE_IRQPRIO
 	---help---
 		XilinX ZYNQ MPSOC
 
@@ -121,8 +165,20 @@ config ARCH_CHIP_BCM2711
 	select ARCH_HAVE_MULTICPU
 	select ARCH_USE_MMU # Required for up_testset
 	select ARMV8A_HAVE_GICv2
+	select ARCH_HAVE_SDIO
+	select ARCH_HAVE_IRQPRIO
 	---help---
 		Broadcom BCM2711 quad-core ARM Cortex A72
+
+config ARCH_CHIP_SUNXI
+	bool "Allwinner sunxi 64-bit SoC Family"
+	select ARCH_HAVE_ADDRENV
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_IRQTRIGGER
+	select ARCH_NEED_ADDRENV_MAPPING
+	select ARM64_HAVE_PSCI
+	---help---
+		Allwinner sunxi 64-bit SoC Family
 
 config ARCH_CHIP_ARM64_CUSTOM
 	bool "Custom ARM64 chip"
@@ -131,6 +187,28 @@ config ARCH_CHIP_ARM64_CUSTOM
 		Select this option if there is no directory for the chip under arch/arm64/src/.
 
 endchoice # ARM64 chip selection
+
+if ARCH_CHIP_SUNXI
+
+choice
+	prompt "Allwinner sunxi 64-bit SoC selection"
+	default ARCH_CHIP_SUNXI_A527
+
+config ARCH_CHIP_SUNXI_A527
+	bool "Allwinner A527"
+	select ARCH_CORTEX_A55
+	select ARCH_HAVE_MULTICPU
+	select ARMV8A_HAVE_GICv3
+	select ARCH_HAVE_ELF_EXECUTABLE
+	select ARCH_HAVE_POWEROFF
+	select ARCH_HAVE_TEXT_HEAP
+	select ARM64_HAVE_PSCI
+	---help---
+		Allwinner A527 SoC
+
+endchoice # Allwinner sunxi 64-bit SoC selection
+
+endif # ARCH_CHIP_SUNXI
 
 config ARCH_ARMV8A
 	bool
@@ -151,8 +229,22 @@ config ARCH_AS_HAS_ARMV8_5
 menu "ARMv8.5 architectural features"
 	depends on ARCH_AS_HAS_ARMV8_5
 
+config ARM64_CRYPTO_AES
+	bool "AES using the Armv8 Cryptography Extension"
+	select CRYPTO
+	select CRYPTO_AES
+	---help---
+		Provide aes_cypher() with AESE, AESD and the MixColumns pair. The
+		table-driven cipher indexes memory with key-dependent values, so
+		its timing follows the cache; these instructions do not.
+
+		The core must implement the extension. ID_AA64ISAR0_EL1 is read on
+		every call, which returns -ENOTSUP rather than trapping if it does
+		not.
+
 config ARM64_MTE
 	bool "Memory Tagging Extension support"
+	select ARCH_HAVE_MEMTAG
 	select ARM64_TBI
 	default y
 
@@ -171,24 +263,13 @@ config ARM64_TBI
 	bool "Top Byte Ignore support"
 	default n
 
-config ARM64_SMP_BUSY_WAIT
-	bool "Busy wait when SMP boot"
-	default n
-	depends on SMP
-	---help---
-		Enables busy wait when SMP boot
-
-config ARM64_SMP_BUSY_WAIT_FLAG_ADDR
-	hex "Busy wait flag address"
-	depends on ARM64_SMP_BUSY_WAIT
-
 config ARCH_HAVE_EL3
 	bool
 	default n
 	---help---
 		Some ARM aarch64 Cortex-family processors only supports
 		EL0~El2(eg. Cortex-R82). For these Processors, the code
-		runing at EL3 is not necessary and system register for EL3
+		running at EL3 is not necessary and system register for EL3
 		is not accessible
 
 config ARCH_HAVE_CLUSTER_PMU
@@ -235,7 +316,7 @@ config ARCH_EARLY_PRINT
 		The aarch64 have EL0~El3 execute level and NS/S (security state),
 		the NuttX should be execute at EL1 in NS(ARmv8-A) or S(ARmv8-R)
 		state. but booting NuttX have different ELs and state while with
-		different platform, if NuttX runing at wrong ELs or state it will
+		different platform, if NuttX running at wrong ELs or state it will
 		not normal anymore. So we need to print something in arm64_head.S
 		to debug this situation.
 		Enabling this option will need to implement arm64_earlyprintinit and
@@ -297,6 +378,7 @@ config ARCH_CORTEX_R82
 	bool
 	default n
 	select ARCH_ARMV8R
+	select ARCH_HAVE_TRUSTZONE
 	select ARCH_DCACHE
 	select ARCH_ICACHE
 	select ARCH_HAVE_MPU
@@ -304,12 +386,14 @@ config ARCH_CORTEX_R82
 	select ARCH_HAVE_CLUSTER_PMU
 	select ARCH_HAVE_TESTSET
 	select ARM64_HAVE_NEON
+	select ARCH_HAVE_PERF_EVENTS_USER_ACCESS if !ARCH_CLUSTER_PMU
 
 config ARCH_CPU_UNKNOWN
 	bool
 	default n
 	select ARCH_ARMV8A
 	select ARCH_HAVE_TRUSTZONE
+	select ARCH_HAVE_DEBUG
 	select ARCH_DCACHE
 	select ARCH_ICACHE
 	select ARCH_HAVE_MMU
@@ -324,8 +408,11 @@ config ARCH_FAMILY
 
 config ARCH_CHIP
 	string
+	default "am62x"     if ARCH_CHIP_AM62X
 	default "a64"       if ARCH_CHIP_A64
+	default "a527"      if ARCH_CHIP_SUNXI_A527
 	default "rk3399"    if ARCH_CHIP_RK3399
+	default "rk3588"    if ARCH_CHIP_RK3588
 	default "zynq-mpsoc" if ARCH_CHIP_ZYNQ_MPSOC
 	default "qemu"      if ARCH_CHIP_QEMU
 	default "goldfish"  if ARCH_CHIP_GOLDFISH
@@ -433,7 +520,7 @@ config ARM64_SEMIHOSTING_HOSTFS_CACHE_COHERENCE
 	bool "Cache coherence in semihosting hostfs"
 	depends on ARCH_DCACHE
 	---help---
-		Flush & Invalidte cache before & after bkpt instruction.
+		Flush & Invalidate cache before & after bkpt instruction.
 
 endif # ARM64_SEMIHOSTING_HOSTFS
 
@@ -463,12 +550,24 @@ config ARM64_PA_BITS
 
 		The choice could be: 32, 36, 42, 48
 
+if ARCH_CHIP_AM62X
+source "arch/arm64/src/am62x/Kconfig"
+endif
+
 if ARCH_CHIP_A64
 source "arch/arm64/src/a64/Kconfig"
 endif
 
+if ARCH_CHIP_SUNXI_A527
+source "arch/arm64/src/a527/Kconfig"
+endif
+
 if ARCH_CHIP_RK3399
 source "arch/arm64/src/rk3399/Kconfig"
+endif
+
+if ARCH_CHIP_RK3588
+source "arch/arm64/src/rk3588/Kconfig"
 endif
 
 if ARCH_CHIP_QEMU

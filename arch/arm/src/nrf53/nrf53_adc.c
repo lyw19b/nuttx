@@ -30,8 +30,8 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/analog/adc.h>
@@ -670,7 +670,7 @@ static int nrf53_adc_chancfg(struct nrf53_adc_s *priv, uint8_t chan,
 #ifdef CONFIG_NRF53_SAADC_LIMITS
   /* Configure limits */
 
-  regval = (cfg->limith < 16) | (cfg->limith << 0);
+  regval = ((uint32_t)cfg->limith << 16) | ((uint32_t)cfg->limitl << 0);
   nrf53_adc_putreg(priv, NRF53_SAADC_CHLIMIT_OFFSET(chan), regval);
 #endif
 
@@ -936,7 +936,7 @@ struct adc_dev_s *nrf53_adcinitialize(
 #ifdef CONFIG_NRF53_SAADC_TIMER
   if (channels > 1)
     {
-      aerr("ERORR: timer trigger works only for 1 channel!\n");
+      aerr("ERROR: timer trigger works only for 1 channel!\n");
       goto errout;
     }
 #endif

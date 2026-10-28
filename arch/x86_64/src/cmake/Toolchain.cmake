@@ -27,6 +27,12 @@ set(CMAKE_SYSTEM_VERSION 1)
 
 set(ARCH_SUBDIR intel64)
 
+# host toolchain linker and strip, used for standalone ELF applications;
+# --strip-unneeded keeps the symbols required for relocation processing
+# (CONFIG_BINFMT_ELF_RELOCATABLE binaries are loaded from ET_REL objects)
+set(CMAKE_LD ld)
+set(CMAKE_STRIP strip --strip-unneeded)
+
 # override the ARCHIVE command
 set(CMAKE_ARCHIVE_COMMAND "<CMAKE_AR> rcs <TARGET> <LINK_FLAGS> <OBJECTS>")
 set(CMAKE_RANLIB_COMMAND "<CMAKE_RANLIB> <TARGET>")
@@ -62,7 +68,7 @@ if(CONFIG_FRAME_POINTER)
 endif()
 
 if(CONFIG_STACK_CANARIES)
-  add_compile_options(-fstack-protector-all)
+  add_compile_options(${CONFIG_STACK_CANARIES_LEVEL})
 else()
   add_compile_options(-fno-stack-protector)
 endif()
@@ -75,6 +81,10 @@ if(${CONFIG_STACK_USAGE_WARNING})
   if(NOT ${CONFIG_STACK_USAGE_WARNING} STREQUAL 0)
     add_compile_options(-Wstack-usage=${CONFIG_STACK_USAGE_WARNING})
   endif()
+endif()
+
+if(CONFIG_ARCH_INSTRUMENT_ALL)
+  add_compile_options(-finstrument-functions)
 endif()
 
 if(CONFIG_COVERAGE_ALL)

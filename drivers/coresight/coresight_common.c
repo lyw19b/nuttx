@@ -25,7 +25,7 @@
  ****************************************************************************/
 
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <string.h>
 #include <nuttx/spinlock.h>
 #include <nuttx/bits.h>
@@ -158,7 +158,7 @@ void coresight_disclaim_device(uintptr_t addr)
     }
   else
     {
-      cserr("current device is not claimed or something wrong happend\n");
+      cserr("current device is not claimed or something wrong happened\n");
     }
 
   coresight_lock(addr);

@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <netinet/if_ether.h>
@@ -113,7 +113,7 @@ typedef struct
 {
   uint16_t cs : 1;   /* !< Carrier sense lost (flag set by HW) */
   uint16_t df : 1;   /* !< Defer indication (flag set by HW) */
-  uint16_t lc : 1;   /* !< Late collision occured (flag set by HW) */
+  uint16_t lc : 1;   /* !< Late collision occurred (flag set by HW) */
   uint16_t rl : 1;   /* !< TX failed due to retransmission limit (flag set by HW) */
   uint16_t rtry : 4; /* !< Number of retries before the frame was sent (set by HW) */
   uint16_t ur : 1;   /* !< Underrun status (flag set by HW) */
@@ -250,7 +250,7 @@ static IRAM_ATTR int openeth_isr_handler(int irq, void *context, void *arg)
 
   if (status & OPENETH_INT_BUSY)
     {
-      ninfo("RX frame dropped (0x%x)", status);
+      ninfo("RX frame dropped (0x%" PRIx32 ")", status);
     }
 
   /* Clear interrupt */
@@ -323,11 +323,37 @@ err:
 
 static int openeth_ifup(struct netdev_lowerhalf_s *dev)
 {
+  struct openeth_priv_s *priv = (struct openeth_priv_s *)dev;
+  int i;
   irqstate_t flags;
 
   /* Disable the Ethernet interrupt */
 
   flags = enter_critical_section();
+
+  /* Re-arm every descriptor and rewind the ring index to 0.  QEMU's
+   * OpenCores MAC model resets its DMA ring pointer to descriptor 0
+   * whenever RXEN toggles off and back on, but priv->cur_rx_desc is
+   * only ever initialized once, in esp_openeth_initialize().  After
+   * the first ifdown/ifup cycle the two disagree permanently and
+   * openeth_receive() silently drops every RX notification.
+   */
+
+  for (i = 0; i < RX_BUF_COUNT; i++)
+    {
+      openeth_init_rx_desc(openeth_rx_desc(i), priv->rx_buf[i]);
+    }
+
+  openeth_rx_desc(RX_BUF_COUNT - 1)->wr = 1;
+  priv->cur_rx_desc = 0;
+
+  for (i = 0; i < TX_BUF_COUNT; i++)
+    {
+      openeth_init_tx_desc(openeth_tx_desc(i), priv->tx_buf[i]);
+    }
+
+  openeth_tx_desc(TX_BUF_COUNT - 1)->wr = 1;
+  priv->cur_tx_desc = 0;
 
   /* Enable TX and RX */
 
@@ -366,7 +392,7 @@ static int openeth_ifdown(struct netdev_lowerhalf_s *dev)
 
   /* Disable TX and RX */
 
-  openeth_enable();
+  openeth_disable();
 
   leave_critical_section(flags);
 
@@ -424,6 +450,7 @@ static int openeth_set_addr(uint8_t *addr)
 
   uint32_t mac0_u32;
   uint32_t mac1_u32;
+
   memcpy(&mac0_u32, &mac0, 4);
   memcpy(&mac1_u32, &mac1, 4);
   REG_WRITE(OPENETH_MAC_ADDR0_REG, mac0_u32);
@@ -475,6 +502,8 @@ int esp_openeth_initialize(void)
 
   dev->quota[NETPKT_TX] = TX_BUF_COUNT;
   dev->quota[NETPKT_RX] = RX_BUF_COUNT;
+  dev->rxtype           = NETDEV_RX_THREAD;
+  dev->priority         = 100;
 
   /* Allocate DMA buffers */
 
@@ -512,14 +541,21 @@ int esp_openeth_initialize(void)
 
   /* Setup interrupts */
 
-  priv->cpuint = OPENETH_SETUP_IRQ(0, OPENETH_PERIPH_MAC,
-                                 1, OPENETH_CPUINT_LEVEL);
+  priv->cpuint = OPENETH_SETUP_IRQ(OPENETH_PERIPH_MAC,
+                                   1, OPENETH_CPUINT_LEVEL,
+                                   openeth_isr_handler, priv);
   if (priv->cpuint < 0)
     {
       nerr("ERROR: Failed allocate interrupt\n");
       ret = -ENOMEM;
       goto err;
     }
+
+  /* The interrupt is attached but still masked at the CPU; without this
+   * call it never fires, so received frames are only picked up on a TX.
+   */
+
+  up_enable_irq(OPENETH_IRQ_MAC);
 
   /* Initialize the MAC */
 
@@ -528,10 +564,6 @@ int esp_openeth_initialize(void)
   memcpy(priv->dev.netdev.d_mac.ether.ether_addr_octet,
     "\x00\x02\x03\x04\x05\x06\x07\x08", ETH_ALEN);
   openeth_set_addr(priv->dev.netdev.d_mac.ether.ether_addr_octet);
-
-  /* Attach the interrupt */
-
-  ret = irq_attach(OPENETH_IRQ_MAC, openeth_isr_handler, priv);
 
   /* Register the device with the OS so that socket IOCTLs can be
    * performed.

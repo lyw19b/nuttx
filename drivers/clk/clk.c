@@ -32,7 +32,7 @@
 #include <nuttx/list.h>
 #include <nuttx/mutex.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -44,7 +44,7 @@
 #define CLK_PROCFS_LINELEN                  80
 
 /****************************************************************************
- * Private Datas
+ * Private Data
  ****************************************************************************/
 
 static rmutex_t g_clk_list_lock = NXRMUTEX_INITIALIZER;
@@ -141,7 +141,7 @@ static int clk_procfs_open(FAR struct file *filep, FAR const char *relpath,
 {
   FAR struct procfs_file_s *priv;
 
-  if ((oflags & O_WRONLY) != 0 || (oflags & O_RDONLY) == 0)
+  if ((oflags & O_ACCMODE) != O_RDONLY)
     {
       return -EACCES;
     }

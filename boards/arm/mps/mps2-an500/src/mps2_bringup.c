@@ -31,9 +31,19 @@
 
 #include <nuttx/fs/fs.h>
 
+#ifdef CONFIG_RAMMTD
+#  include <nuttx/drivers/drivers.h>
+#  include <nuttx/kmalloc.h>
+#  include <nuttx/mtd/mtd.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+#ifdef CONFIG_RAMMTD
+#  define MPS2_RAMMTD_SIZE (256 * 1024)
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -73,6 +83,54 @@ static int mps2_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_RAMMTD
+  /* A RAM backed MTD device standing in for memory mapped NOR.  rammtd
+   * answers BIOC_XIPBASE with the base of its buffer, so xipfs layered on it
+   * can hand out real, directly executable pointers -- which is what lets a
+   * module be executed in place rather than copied.  This gives the xipfs
+   * test suite a target with no real flash.
+   */
+
+    {
+      FAR uint8_t *ramstart = kmm_malloc(MPS2_RAMMTD_SIZE);
+      FAR struct mtd_dev_s *mtd;
+
+      if (ramstart == NULL)
+        {
+          syslog(LOG_ERR, "ERROR: Failed to allocate RAM MTD\n");
+        }
+      else if ((mtd = rammtd_initialize(ramstart, MPS2_RAMMTD_SIZE)) == NULL)
+        {
+          syslog(LOG_ERR, "ERROR: rammtd_initialize failed\n");
+          kmm_free(ramstart);
+        }
+      else
+        {
+          mtd->ioctl(mtd, MTDIOC_BULKERASE, 0);
+
+          ret = register_mtddriver("/dev/rammtd", mtd, 0755, NULL);
+          if (ret < 0)
+            {
+              syslog(LOG_ERR, "ERROR: register_mtddriver failed: %d\n", ret);
+            }
+
+#ifdef CONFIG_FS_XIPFS
+          else
+            {
+              ret = nx_mount("/dev/rammtd", "/mnt/xipfs", "xipfs", 0,
+                             "autoformat");
+              if (ret < 0)
+                {
+                  syslog(LOG_ERR,
+                         "ERROR: Failed to mount xipfs at /mnt/xipfs: %d\n",
+                         ret);
+                }
+            }
+#endif
+        }
+    }
+#endif
+
   return ret;
 }
 
@@ -101,41 +159,3 @@ void board_late_initialize(void)
   mps2_bringup();
 }
 #endif /* CONFIG_BOARD_LATE_INITIALIZE */
-
-/****************************************************************************
- * Name: board_app_initialize
- *
- * Description:
- *   Perform application specific initialization.  This function is never
- *   called directly from application code, but only indirectly via the
- *   (non-standard) boardctl() interface using the command BOARDIOC_INIT.
- *
- * Input Parameters:
- *   arg - The boardctl() argument is passed to the board_app_initialize()
- *         implementation without modification.  The argument has no
- *         meaning to NuttX; the meaning of the argument is a contract
- *         between the board-specific initialization logic and the
- *         matching application logic.  The value could be such things as a
- *         mode enumeration value, a set of DIP switch switch settings, a
- *         pointer to configuration data read from a file or serial FLASH,
- *         or whatever you would like to do with it.  Every implementation
- *         should accept zero/NULL as a default configuration.
- *
- * Returned Value:
- *   Zero (OK) is returned on success; a negated errno value is returned on
- *   any failure to indicate the nature of the failure.
- *
- ****************************************************************************/
-
-int board_app_initialize(uintptr_t arg)
-{
-  UNUSED(arg);
-#ifndef CONFIG_BOARD_LATE_INITIALIZE
-
-  /* Perform board initialization */
-
-  return mps2_bringup();
-#else
-  return OK;
-#endif
-}

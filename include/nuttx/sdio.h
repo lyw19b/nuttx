@@ -299,6 +299,7 @@
 #define MMC_CMD5        (MMC_CMDIDX5   |MMCSD_R1B_RESPONSE|MMCSD_NODATAXFR)
 #define SDIO_CMD5       (SDIO_CMDIDX5  |MMCSD_R4_RESPONSE |MMCSD_NODATAXFR)
 #define MMCSD_CMD6      (MMCSD_CMDIDX6 |MMCSD_R1B_RESPONSE|MMCSD_NODATAXFR)
+#define SD_CMD6         (MMCSD_CMDIDX6 |MMCSD_R1_RESPONSE |MMCSD_RDDATAXFR)  /* SWITCH_FUNC: 64-byte status follows */
 #define MMCSD_CMD7S     (MMCSD_CMDIDX7 |MMCSD_R1B_RESPONSE|MMCSD_NODATAXFR)
 #define MMCSD_CMD7D     (MMCSD_CMDIDX7 |MMCSD_NO_RESPONSE |MMCSD_NODATAXFR)  /* No response when de-selecting card */
 #define MMC_CMD8        (MMC_CMDIDX8   |MMCSD_R1_RESPONSE |MMCSD_RDDATAXFR)
@@ -482,6 +483,7 @@
 #define SDIO_CAPS_8BIT            0x10 /* Bit 4=1: Supports 8 bit operation */
 #define SDIO_CAPS_4BIT_ONLY       0x20 /* Bit 5=1: Supports 4-bit only operation */
 #define SDIO_CAPS_MMC_HS_MODE     0x40 /* Bit 6=1: Supports eMMC high speed mode */
+#define SDIO_CAPS_SD_HS_MODE      0x80 /* Bit 7=1: Supports SD card high speed mode */
 
 /****************************************************************************
  * Name: SDIO_STATUS
@@ -693,13 +695,27 @@
  *   status.  The driver implementation should verify the correctness of
  *   the remaining, non-returned bits (CRCs, CMD index, etc.).
  *
+ *   SDIO_RECVR2 (136-bit response): The 136-bit response has format: start
+ *   bit (1), transmission bit (0), 6 reserved bits (all 1), 128 bits of
+ *   CID/CSD data, 7-bit CRC, and end bit (1). The upper-half expects the
+ *   buffer to contain exactly 128 bits of payload in the standard layout
+ *   (e.g., r2[0] contains bits 127-96, r2[1] bits 95-64, etc.).
+ *
+ *   The upper-half does not verify the CRC; that is the responsibility of
+ *   the lower-half. If the SDMMC controller hardware removes the trailing
+ *   CRC byte before storing the response, the resulting 128 bits will be
+ *   misaligned (often shifted right by 8 bits with leading zeros). In this
+ *   case, the lower-half implementation MUST shift the four 32-bit words
+ *   left by one byte to restore the expected 128-bit payload alignment.
+ *   See bcm2711_sdio.c or imx9_usdhc.c for examples of this byte-shifting.
+ *
  * Input Parameters:
  *   dev    - An instance of the SDIO device interface
  *   Rx - Buffer in which to receive the response
  *
  * Returned Value:
  *   Number of bytes sent on success; a negated errno on failure.  Here a
- *   failure means only a faiure to obtain the requested response (due to
+ *   failure means only a failure to obtain the requested response (due to
  *   transport problem -- timeout, CRC, etc.).  The implementation only
  *   assures that the response is returned intacta and does not check errors
  *   within the response itself.
@@ -928,9 +944,17 @@ enum sdio_clock_e
 {
   CLOCK_SDIO_DISABLED = 0, /* Clock is disabled */
   CLOCK_IDMODE,            /* Initial ID mode clocking (<400KHz) */
-  CLOCK_MMC_TRANSFER,      /* MMC normal operation clocking */
+  CLOCK_MMC_TRANSFER,      /* MMC normal operation clocking (narrow 1-bit mode) */
   CLOCK_SD_TRANSFER_1BIT,  /* SD normal operation clocking (narrow 1-bit mode) */
-  CLOCK_SD_TRANSFER_4BIT   /* SD normal operation clocking (wide 4-bit mode) */
+  CLOCK_SD_TRANSFER_4BIT,  /* SD normal operation clocking (wide 4-bit mode) */
+  CLOCK_MMC_TRANSFER_4BIT, /* MMC normal operation clocking (wide 4-bit mode) */
+
+  /* SD high speed clocking (wide 4-bit mode).  Sent only to a host that
+   * reported SDIO_CAPS_SD_HS_MODE, and only once the card has confirmed
+   * the switch.
+   */
+
+  CLOCK_SD_TRANSFER_4BIT_HS
 };
 
 /* Event set.  A uint8_t is big enough to hold a set of 8-events.  If more

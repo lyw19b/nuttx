@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <string.h>
 
 #include <nuttx/kmalloc.h>
@@ -587,7 +587,7 @@ static int nrf52_radioi8_txdelayed(struct ieee802154_radio_s *radio,
       return -EBUSY;
     }
 
-  /* Wait for ACKTX done - we start transmition in
+  /* Wait for ACKTX done - we start transmission in
    * nrf52_radioi8_state_acktx()
    */
 
@@ -759,7 +759,7 @@ nrf52_radioi8_beaconstart(struct ieee802154_radio_s *radio,
       memcpy(&dev->state.sf, (void *)sfspec,
              sizeof(struct ieee802154_superframespec_s));
 
-      /* Setup beacon transmition */
+      /* Setup beacon transmission */
 
       dev->radio->ops->beacon_setup(dev, beacon->bf_data, beacon->bf_len);
 

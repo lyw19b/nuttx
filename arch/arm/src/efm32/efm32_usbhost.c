@@ -35,7 +35,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/kmalloc.h>
@@ -2276,7 +2276,7 @@ static ssize_t efm32_out_transfer(struct efm32_usbhost_s *priv,
            * transfer using the same buffer pointer and length.
            */
 
-          nxsig_usleep(20 * 1000);
+          nxsched_usleep(20 * 1000);
         }
       else
         {
@@ -2793,7 +2793,7 @@ static inline void efm32_gint_hcoutisr(struct efm32_usbhost_s *priv,
 
   else if ((pending & USB_HC_INT_STALL) != 0)
     {
-      /* Clear the pending the STALL response receiv (STALL) interrupt */
+      /* Clear the pending the STALL response receive (STALL) interrupt */
 
       efm32_putreg(EFM32_USB_HC_INT(chidx), USB_HC_INT_STALL);
 
@@ -3960,7 +3960,7 @@ static int efm32_rh_enumerate(struct efm32_usbhost_s *priv,
 
   /* USB 2.0 spec says at least 50ms delay before port reset. wait 100ms. */
 
-  nxsig_usleep(100 * 1000);
+  nxsched_usleep(100 * 1000);
 
   /* Reset the host port */
 

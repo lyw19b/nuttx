@@ -1,34 +1,41 @@
-# Apache NuttX RTOS Contributing Guidelines
+# Apache NuttX RTOS Contributing Guide
 
 Thank you for your interest in contributing to Apache NuttX RTOS :-)
 
 If you haven't yet read
-[The Inviolable Principles of NuttX]( https://github.com/apache/nuttx/blob/master/INVIOLABLES.md)
+[The Inviolable Principles of NuttX](https://github.com/apache/nuttx/blob/master/INVIOLABLES.md)
 please do so first.
 
-Please note that NuttX supports over 15 different architectures, 360+ boards,
+Apache NuttX RTOS supports over 15 different architectures, 360+ boards,
 and 1600+ configurations, that are used in various projects and products around
 the world. Remember that any code change may affect different users and their
 businesses. Please try to keep your contributions high quality and compatible.
 
 To help us process your contributions smoothly, it is very important that you
-follow the guidelines. NuttX is maintained by a small team of volunteers from
+follow this guide. NuttX is maintained by a small team of volunteers from
 around the world. These rules are based on daily experiences and help us
 to preserve long term self-compatibility and maintenance of the project.
 
 This document is split into two main parts:
 
- 1. Contribution Rules.
- 2. Contribution Templates.
+ 1. Contributing Rules.
+ 2. Contributing Templates.
 
 If you need more information please read the
-[Full Contributing Documentation](https://nuttx.apache.org/docs/latest/contributing/index.html)
+[NuttX Documentation](https://nuttx.apache.org/docs/latest),
+[Contributing Documentation](https://nuttx.apache.org/docs/latest/contributing/index.html),
+[Security Documentation](https://nuttx.apache.org/docs/latest/security.html),
 or ask questions at our [Social Media channels](https://nuttx.apache.org/community).
+Mailing list is our main and preferred communication channel.
+
+This NuttX Contributing Guide is part of both
+[Git Repository](https://github.com/apache/nuttx/blob/master/CONTRIBUTING.md)
+and [NuttX Documentation](https://nuttx.apache.org/docs/latest/contributing/guide.html).
 
 
 
 
-## 1. Contribution Rules.
+## 1. Contributing Rules.
 
 ### 1.1. Goals.
 
@@ -37,7 +44,7 @@ standardized pull requests processing, as well as long term self-compatibility
 and maintenance of the project.
 
 Because every change may affect users, products, or services around the world,
-all rules apply equally to all authors, reviewers, committers and maintainters.
+all rules apply equally to all authors, reviewers, committers and maintainers.
 
 This is our Check-List for processing every incoming pull request.
 Also, we filter out breaking changes and handle them accordingly.
@@ -102,6 +109,30 @@ Git commit message consists of:
     lines, short sentences, or bullet points (see 1.3).
  4. Blank line.
  5. Signature (created with `git commit -s`).
+ 6. `Assisted-by: ` above the signature (see below)
+
+The `Assisted-by: ` field is required to be present for any and all commits in
+which generative tooling/AI tools were used in the assistance of development,
+writing commit messages, etc. This field may be omitted if no generative tooling
+was used. This follows the [Apache Software Foundation generative tooling
+guidance](https://www.apache.org/legal/generative-tooling.html), modifying the
+recommended `Generated-by:` tag to `Assisted-by`. This is in line with other
+major projects, such as [the Linux kernel
+guidelines](https://docs.kernel.org/process/coding-assistants.html).
+
+AI agents **MUST NOT** add `Signed-off-by` tags. Only humans can legally certify
+the commit.
+
+The format of this field should follow the following format:
+```
+Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]
+```
+where
+* `AGENT_NAME` is the name of the AI tool or framework
+* `MODEL_VERSION` is the specific model version used (if available)
+* `[TOOL1] [TOOL2]` are optional specialized analysis tools
+
+For example: `Assisted-by: Claude:claude-3-opus coccinelle sparse`
 
 Valid git commit example:
 
@@ -126,6 +157,7 @@ auto-rejected until fixed:
  1. topic.
  2. description.
  3. signature (`git commit -s`).
+ 4. `Assisted-by:`, if applicable (see section 1.5)
 
 Although this seems to repeat rule 1.5, it clearly filters out commits
 with no topic, description, or signature.
@@ -282,11 +314,18 @@ We avoid breaking changes unless absolutely necessary and unavoidable
     **mandatory**. Help of the community is welcome.
  7. Breaking change requires at least 4 independent positive PR reviews
     (see 1.16), all discussions resolved, and zero "request changes".
- 8. Change must be well documented (buid / runtime test logs, pr, git
+ 8. Change must be well documented (build / runtime test logs, pr, git
     commit, documentation, release notes, etc) with clear notes on how to
     fix the introduced problems.
- 9. Breaking Change must be clearly marked with a `[BREAKING]` tag in the
-    git commit topic and PR title that will propagate to Release Notes.
+ 9. **All breaking changes must be clearly marked both in git commits and
+    pull requests**:
+    1. Put `!` (exclamation mark) as first character of the each breaking
+       git commit and pull request title.
+    2. Put `BREAKING CHANGE:` in the git commit and pull request body with
+       a brief change description and the **quick-fix** instructions.
+
+    This helps users identify areas that need an update on their side,
+    grep git logs, and auto-generate release notes.
 
 See: https://github.com/apache/nuttx/blob/master/INVIOLABLES.md
 
@@ -306,7 +345,7 @@ verification and minimizes possible negative impact on various users.
 See: https://github.com/apache/nuttx/blob/master/INVIOLABLES.md
 
 
-### 1.15. Reviews reuqirements.
+### 1.15. Review requirements.
 
 Before PR can be merged to the master repository it requires:
 
@@ -341,8 +380,8 @@ See: https://github.com/apache/nuttx/blob/master/INVIOLABLES.md
 2. Single company / organization commit, review, and merge is not allowed.
 3. Merge of PRs with unresolved discussions and "change request" marks
    is not allowed.
-3. Self committed code merge with or without review is not allowed.
-4. Direct push to master is not allowed.
+4. Self committed code merge with or without review is not allowed.
+5. Direct push to master is not allowed.
 
 Breaking these rules will be punished.
 
@@ -351,7 +390,7 @@ See: https://github.com/apache/nuttx/blob/master/INVIOLABLES.md
 
 
 
-## 2. Contribution Templates.
+## 2. Contributing Templates.
 
 ### 2.1. Source Code.
 
@@ -381,7 +420,23 @@ Add g_ prefix to can_dlc_to_len and len_to_can_dlc to
 follow NuttX coding style conventions for global symbols,
 improving code readability and maintainability.
 * you can also use bullet points.
-* to note different thing briefly.
+* to note different things briefly.
+
+Signed-off-by: AuthorName <Valid@EmailAddress>
+```
+
+This template provides breaking change git commit example as described in requirement 1.13:
+
+```
+!interpreters/bas: Align naming of Kconfig options.
+
+Aligns `CONFIG_INTERPRETER_*` options to `CONFIG_INTERPRETERS_*` options
+to be consistent with other interpreters.
+
+BREAKING CHANGE: All configurations using `CONFIG_INTERPRETER_BAS_*`
+options will no longer compile due to missing symbol errors. The fix is
+very quick: any configurations using this options should add a trailing
+S following INTERPRETER in the affected Kconfig variables.
 
 Signed-off-by: AuthorName <Valid@EmailAddress>
 ```
@@ -397,6 +452,8 @@ This template uses MarkDown and provides example Pull Request content
 as described in requirement 1.7.
 
 ````
+functional/area: Self explanatory pull request title.
+
 ## Summary
 
   * Why change is necessary (fix, update, new feature)?
@@ -409,7 +466,7 @@ as described in requirement 1.7.
 
   * Is new feature added? Is existing feature changed? NO / YES (please describe if yes).
   * Impact on user (will user need to adapt to change)? NO / YES (please describe if yes).
-  * Impact on build (will build process change)? NO / YES (please descibe if yes).
+  * Impact on build (will build process change)? NO / YES (please describe if yes).
   * Impact on hardware (will arch(s) / board(s) / driver(s) change)? NO / YES (please describe if yes).
   * Impact on documentation (is update required / provided)? NO / YES (please describe if yes).
   * Impact on security (any sort of implications)? NO / YES (please describe if yes).
@@ -443,3 +500,15 @@ as described in requirement 1.7.
   * [ ] My PR is still work in progress (not ready for review).
   * [ ] My PR is ready for review and can be safely merged into a codebase.
 ````
+
+Breaking changes marking requirement 1.13 implies additional `!` (exclamation
+mark) as the first character of the pull request title and the
+`BREAKING CHANGES:` brief change description with a quick-fix instructions.
+
+```
+!functional/area: Self explanatory pull request title.
+
+## Summary
+
+  * BREAKING CHANGE: Brief change description with a quick-fix instructions.
+```

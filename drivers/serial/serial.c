@@ -38,7 +38,7 @@
 #include <poll.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <spawn.h>
 
 #include <nuttx/irq.h>
@@ -79,6 +79,32 @@
 
 #define POLL_DELAY_USEC 1000
 
+/* States for the local-echo VT100/ANSI escape sequence detector used by
+ * uart_readv() below (dev->escape).  This does not interpret the
+ * sequence, it only decides how many bytes to swallow from the local
+ * echo so that raw escape sequences typed by the user are not rendered
+ * as visible garbage; the sequence bytes themselves are still delivered
+ * to the reader unmodified either way.
+ *
+ * Two forms are recognized:
+ *
+ *   CSI: ESC '[' <zero or more parameter/intermediate bytes, 0x20-0x3f>
+ *        <one final byte, 0x40-0x7e>
+ *        e.g. ESC[D (left arrow), ESC[3~ (Delete), ESC[1;5D (Ctrl+Left)
+ *
+ *   SS3: ESC 'O' <one final byte>
+ *        e.g. ESC O F (End, as sent by xterm and many other terminals
+ *        that otherwise use CSI for the plain arrow keys)
+ *
+ * Any other byte following ESC is treated as an unrecognized two-byte
+ * "ESC x" sequence; 'x' itself is echoed normally, as before.
+ */
+
+#define UART_ESCAPE_NONE  0  /* Not in an escape sequence */
+#define UART_ESCAPE_START 1  /* Saw ESC, waiting for '[', 'O', or other */
+#define UART_ESCAPE_CSI   2  /* Saw "ESC [", consuming CSI bytes */
+#define UART_ESCAPE_SS3   3  /* Saw "ESC O", waiting for the final byte */
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -94,6 +120,10 @@ static void    uart_poll_notify(FAR uart_dev_t *dev, unsigned int min,
 
 /* Write support */
 
+#ifdef CONFIG_SERIAL_TXBULK
+static size_t  uart_putxmitbuf(FAR uart_dev_t *dev, FAR const char *buf,
+                               size_t len);
+#endif
 static int     uart_putxmitchar(FAR uart_dev_t *dev, int ch,
                                 bool oktoblock);
 static inline ssize_t uart_irqwrite(FAR uart_dev_t *dev,
@@ -223,6 +253,71 @@ static void uart_poll_notify(FAR uart_dev_t *dev, unsigned int min,
   leave_critical_section(flags);
 }
 
+#ifdef CONFIG_SERIAL_TXBULK
+/****************************************************************************
+ * Name: uart_putxmitbuf
+ *
+ * Description:
+ *   Copy as many bytes as currently fit into the TX buffer, without
+ *   blocking.  Returns the number of bytes copied, which may be zero if
+ *   the TX buffer is full.  The caller handles a full buffer with
+ *   uart_putxmitchar().
+ *
+ ****************************************************************************/
+
+static size_t uart_putxmitbuf(FAR uart_dev_t *dev, FAR const char *buf,
+                              size_t len)
+{
+  size_t total = 0;
+  size_t nfree;
+  size_t ncopy;
+  int head = dev->xmit.head;
+  int tail = dev->xmit.tail;  /* Snapshot: the drain side only frees space */
+
+  while (total < len)
+    {
+      /* Contiguous free space at the head, keeping one byte unused to
+       * distinguish a full buffer from an empty one.
+       */
+
+      if (head < tail)
+        {
+          nfree = tail - head - 1;
+        }
+      else if (tail > 0)
+        {
+          nfree = dev->xmit.size - head;
+        }
+      else
+        {
+          nfree = dev->xmit.size - head - 1;
+        }
+
+      if (nfree == 0)
+        {
+          break;
+        }
+
+      ncopy = MIN(len - total, nfree);
+      memcpy(&dev->xmit.buffer[head], buf + total, ncopy);
+      total += ncopy;
+
+      /* Publish the new head only after the data is in place */
+
+      head += ncopy;
+      if (head >= dev->xmit.size)
+        {
+          head = 0;
+        }
+
+      dev->xmit.head = head;
+    }
+
+  return total;
+}
+
+#endif /* CONFIG_SERIAL_TXBULK */
+
 /****************************************************************************
  * Name: uart_putxmitchar
  ****************************************************************************/
@@ -233,21 +328,21 @@ static int uart_putxmitchar(FAR uart_dev_t *dev, int ch, bool oktoblock)
   int nexthead;
   int ret;
 
-  /* Increment to see what the next head pointer will be.
-   * We need to use the "next" head pointer to determine when the circular
-   *  buffer would overrun
-   */
-
-  nexthead = dev->xmit.head + 1;
-  if (nexthead >= dev->xmit.size)
-    {
-      nexthead = 0;
-    }
-
   /* Loop until we are able to add the character to the TX buffer. */
 
   for (; ; )
     {
+      /* Increment to see what the next head pointer will be.
+       * We need to use the "next" head pointer to determine when the
+       * circular buffer would overrun
+       */
+
+      nexthead = dev->xmit.head + 1;
+      if (nexthead >= dev->xmit.size)
+        {
+          nexthead = 0;
+        }
+
       /* Check if the TX buffer is full */
 
       if (nexthead != dev->xmit.tail)
@@ -381,6 +476,7 @@ static inline void uart_putchars(FAR uart_dev_t *dev,
       if (dev->ops->sendbuf)
         {
           ssize_t ret = uart_sendbuf(dev, pbuf, len);
+
           if (ret > 0)
             {
               pbuf += ret;
@@ -455,12 +551,14 @@ static inline ssize_t uart_irqwritev(FAR uart_dev_t *dev,
   for (i = 0; i < iovcnt; i++)
     {
       const struct iovec *iov = &uio->uio_iov[i];
+
       if (iov->iov_len == 0)
         {
           continue;
         }
 
       ssize_t written = uart_irqwrite(dev, iov->iov_base, iov->iov_len);
+
       if (written < 0)
         {
           error = written;
@@ -513,7 +611,7 @@ static int uart_tcdrain(FAR uart_dev_t *dev,
 #endif
     }
 
-  /* Get exclusive access to the to dev->tmit.  We cannot permit new data to
+  /* Get exclusive access to the to dev->xmit.  We cannot permit new data to
    * be written while we are trying to flush the old data.
    *
    * A signal received while waiting for access to the xmit.head will abort
@@ -525,6 +623,14 @@ static int uart_tcdrain(FAR uart_dev_t *dev,
     {
       irqstate_t flags;
       clock_t start;
+      clock_t elapsed;
+
+      /* Take a single timestamp.  The caller-supplied timeout bounds the
+       * total time spent in this function, covering both the xmit-buffer
+       * drain wait below and the FIFO-empty polling loop further down.
+       */
+
+      start = clock_systime_ticks();
 
       /* Trigger emission to flush the contents of the tx buffer */
 
@@ -544,12 +650,11 @@ static int uart_tcdrain(FAR uart_dev_t *dev,
       else
 #endif
         {
-          /* Continue waiting while the TX buffer is not empty.
-           *
-           * NOTE: There is no timeout on the following loop.  In
-           * situations were this loop could hang (with hardware flow
-           * control, as an example),  the caller should call
-           * tcflush() first to discard this buffered Tx data.
+          /* Continue waiting while the TX buffer is not empty.  The wait is
+           * bounded by the caller-supplied timeout so this loop cannot hang
+           * indefinitely (e.g. on hardware-flow-control stalls).  The caller
+           * may still call tcflush() to discard the buffered Tx data on
+           * timeout.
            */
 
           ret = OK;
@@ -569,7 +674,17 @@ static int uart_tcdrain(FAR uart_dev_t *dev,
               uart_dmatxavail(dev);
 #endif
               uart_enabletxint(dev);
-              ret = nxsem_wait(&dev->xmitsem);
+
+              elapsed = clock_systime_ticks() - start;
+              if (elapsed >= timeout)
+                {
+                  ret = -ETIMEDOUT;
+                }
+              else
+                {
+                  ret = nxsem_tickwait(&dev->xmitsem, timeout - elapsed);
+                }
+
               uart_disabletxint(dev);
             }
         }
@@ -581,22 +696,16 @@ static int uart_tcdrain(FAR uart_dev_t *dev,
        * this event, so we have to do a busy wait poll.
        */
 
-      /* Set up for the timeout
-       *
-       * REVISIT:  This is a kludge.  The correct fix would be add an
+      /* REVISIT: This is a kludge.  The correct fix would be add an
        * interface to the lower half driver so that the tcflush() operation
        * all also cause the lower half driver to clear and reset the Tx FIFO.
        */
-
-      start = clock_systime_ticks();
 
       if (ret >= 0)
         {
           while (!uart_txempty(dev))
             {
-              clock_t elapsed;
-
-              nxsig_usleep(POLL_DELAY_USEC);
+              nxsched_usleep(POLL_DELAY_USEC);
 
               /* Check for a timeout */
 
@@ -604,6 +713,11 @@ static int uart_tcdrain(FAR uart_dev_t *dev,
               if (elapsed >= timeout)
                 {
                   nxmutex_unlock(&dev->xmit.lock);
+                  if (cancelable)
+                    {
+                      leave_cancellation_point();
+                    }
+
                   return -ETIMEDOUT;
                 }
             }
@@ -666,7 +780,7 @@ static int uart_tcsendbreak(FAR uart_dev_t *dev, FAR struct file *filep,
             {
               /* Wait 400 ms or the requested Break duration */
 
-              nxsig_usleep((ms == 0) ? 400000 : ms * 1000);
+              nxsched_usleep((ms == 0) ? 400000 : ms * 1000);
 
               /* Request lower half driver to end the Break */
 
@@ -901,12 +1015,13 @@ static ssize_t uart_readv(FAR struct file *filep, FAR struct uio *uio)
 #ifdef CONFIG_SERIAL_IFLOWCONTROL_WATERMARKS
   unsigned int nbuffered;
   unsigned int watermark;
+  sbuf_size_t head;
 #endif
   irqstate_t flags;
   ssize_t recvd = 0;
   ssize_t buflen;
   bool echoed = false;
-  int16_t tail;
+  sbuf_size_t tail;
   char ch;
   int ret;
 
@@ -953,9 +1068,13 @@ static ssize_t uart_readv(FAR struct file *filep, FAR struct uio *uio)
        * index is only modified in this function.  Therefore, no
        * special handshaking is required here.
        *
-       * The head and tail pointers are 16-bit values.  The only time that
-       * the following could be unsafe is if the CPU made two non-atomic
-       * 8-bit accesses to obtain the 16-bit head index.
+       * The head and tail pointers values are sized based
+       * on the architecture. If the architecture reads 16-bit values
+       * atomically by nature, they are 16-bit values. On architectures
+       * where 16-bit access is split into two non-atomic 8-bit accesses,
+       * the pointers are 8-bit.
+       *
+       * The following code is therefore safe even with interrupts enabled.
        */
 
       tail = rxbuf->tail;
@@ -1006,13 +1125,16 @@ static ssize_t uart_readv(FAR struct file *filep, FAR struct uio *uio)
               if (recvd > 0)
                 {
                   static const char zero = '\0';
+
                   uio_copyfrom(uio, recvd, &zero, 1);
                   recvd--;
                   if (dev->tc_lflag & ECHO)
                     {
+                      nxmutex_lock(&dev->xmit.lock);
                       uart_putxmitchar(dev, '\b', true);
                       uart_putxmitchar(dev, ' ', true);
                       uart_putxmitchar(dev, '\b', true);
+                      nxmutex_unlock(&dev->xmit.lock);
 
 #ifdef CONFIG_SERIAL_TXDMA
                       uart_dmatxavail(dev);
@@ -1021,7 +1143,7 @@ static ssize_t uart_readv(FAR struct file *filep, FAR struct uio *uio)
                     }
                 }
 
-                continue;
+              continue;
             }
 
           /* Specifically not handled:
@@ -1040,26 +1162,58 @@ static ssize_t uart_readv(FAR struct file *filep, FAR struct uio *uio)
 
           if (dev->tc_lflag & ECHO)
             {
-              /* Check for the beginning of a VT100 escape sequence, 3 byte */
-
               if (ch == ASCII_ESC)
                 {
-                  /* Mark that we should skip 2 more bytes */
+                  /* Start (or restart) tracking a possible escape
+                   * sequence.
+                   */
 
-                  dev->escape = 2;
+                  dev->escape = UART_ESCAPE_START;
                   continue;
                 }
-              else if (dev->escape == 2 && ch != ASCII_LBRACKET)
+              else if (dev->escape == UART_ESCAPE_START)
                 {
-                  /* It's not an <esc>[x 3 byte sequence, show it */
+                  /* First byte after ESC selects the sequence type */
 
-                  dev->escape = 0;
+                  if (ch == ASCII_LBRACKET)
+                    {
+                      dev->escape = UART_ESCAPE_CSI;
+                      continue;
+                    }
+                  else if (ch == ASCII_O)
+                    {
+                      dev->escape = UART_ESCAPE_SS3;
+                      continue;
+                    }
+
+                  /* Not CSI or SS3 -- an unrecognized two-byte "ESC x"
+                   * sequence.  Fall through and echo 'x' normally, as
+                   * before.
+                   */
+
+                  dev->escape = UART_ESCAPE_NONE;
                 }
-              else if (dev->escape > 0)
+              else if (dev->escape == UART_ESCAPE_CSI)
                 {
-                  /* Skipping character count down */
+                  /* Consuming CSI parameter/intermediate bytes
+                   * (0x20-0x3f); the sequence ends with exactly one
+                   * final byte in 0x40-0x7e.
+                   */
 
-                  dev->escape--;
+                  if (ch >= 0x40 && ch <= 0x7e)
+                    {
+                      dev->escape = UART_ESCAPE_NONE;
+                    }
+
+                  continue;
+                }
+              else if (dev->escape == UART_ESCAPE_SS3)
+                {
+                  /* The byte following "ESC O" is always the final
+                   * (and only) byte.
+                   */
+
+                  dev->escape = UART_ESCAPE_NONE;
                   continue;
                 }
 
@@ -1067,12 +1221,14 @@ static ssize_t uart_readv(FAR struct file *filep, FAR struct uio *uio)
 
               if (!iscntrl(ch & 0xff) || ch == '\n')
                 {
+                  nxmutex_lock(&dev->xmit.lock);
                   if (ch == '\n')
                     {
                       uart_putxmitchar(dev, '\r', true);
                     }
 
                   uart_putxmitchar(dev, ch, true);
+                  nxmutex_unlock(&dev->xmit.lock);
 
                   /* Mark the tx buffer have echoed content here,
                    * to avoid the tx buffer is empty such as special escape
@@ -1337,16 +1493,23 @@ static ssize_t uart_readv(FAR struct file *filep, FAR struct uio *uio)
 
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
 #ifdef CONFIG_SERIAL_IFLOWCONTROL_WATERMARKS
-  /* How many bytes are now buffered */
+  /* How many bytes are now buffered. Head needs to be copied
+   * to a non-volatile variable to prevent TOCTOU error in case
+   * the interrupt handler changes it between comparison and assignment.
+   * (Copy of tail is not strictly needed but saves us few instructions.)
+   */
 
   rxbuf = &dev->recv;
-  if (rxbuf->head >= rxbuf->tail)
+  head = rxbuf->head;
+  tail = rxbuf->tail;
+
+  if (head >= tail)
     {
-      nbuffered = rxbuf->head - rxbuf->tail;
+      nbuffered = head - tail;
     }
   else
     {
-      nbuffered = rxbuf->size - rxbuf->tail + rxbuf->head;
+      nbuffered = rxbuf->size - tail + head;
     }
 
   /* Is the level now below the watermark level that we need to report? */
@@ -1390,6 +1553,12 @@ static ssize_t uart_writev(FAR struct file *filep, FAR struct uio *uio)
 {
   FAR struct inode *inode    = filep->f_inode;
   FAR uart_dev_t   *dev      = inode->i_private;
+  FAR const char   *segbuf   = NULL;
+  size_t            seglen   = 0;
+  size_t            nseg     = 0;
+#ifdef CONFIG_SERIAL_TXBULK
+  size_t            ncopy;
+#endif
   ssize_t           nwritten;
   ssize_t           buflen;
   bool              oktoblock;
@@ -1464,9 +1633,45 @@ static ssize_t uart_writev(FAR struct file *filep, FAR struct uio *uio)
    */
 
   uart_disabletxint(dev);
-  for (; buflen; uio_advance(uio, 1), buflen--)
+  while (buflen > 0)
     {
-      uio_copyto(uio, 0, &ch, 1);
+      if (nseg >= seglen)
+        {
+          /* Consume the current segment and take a pointer to the next.
+           * uio_advance() steps over any zero-length iovec.
+           */
+
+          uio_advance(uio, nseg);
+          segbuf = (FAR const char *)uio->uio_iov->iov_base +
+                   uio->uio_offset_in_iov;
+          seglen = uio->uio_iov->iov_len - uio->uio_offset_in_iov;
+          nseg   = 0;
+        }
+
+      /* With no output processing, copy whole runs into the TX buffer at
+       * once.  The bulk copy caches the head index, so it is only used
+       * when this thread is provably the sole producer: ECHO makes
+       * uart_readv() echo into the same buffer, and on a console
+       * uart_irqwrite() produces into it from interrupt context.  A full
+       * TX buffer falls through to uart_putxmitchar() below, which keeps
+       * the canonical blocking, disconnect and O_NONBLOCK handling.
+       */
+
+#ifdef CONFIG_SERIAL_TXBULK
+      if ((dev->tc_oflag & OPOST) == 0 && (dev->tc_lflag & ECHO) == 0 &&
+          !dev->isconsole)
+        {
+          ncopy = uart_putxmitbuf(dev, segbuf + nseg, seglen - nseg);
+          if (ncopy > 0)
+            {
+              nseg   += ncopy;
+              buflen -= ncopy;
+              continue;
+            }
+        }
+#endif
+
+      ch  = segbuf[nseg];
       ret = OK;
 
       /* Do output post-processing */
@@ -1539,7 +1744,14 @@ static ssize_t uart_writev(FAR struct file *filep, FAR struct uio *uio)
 
           break;
         }
+
+      buflen--;
+      nseg++;
     }
+
+  /* Consume the bytes that were successfully queued */
+
+  uio_advance(uio, nseg);
 
   if (dev->xmit.head != dev->xmit.tail)
     {
@@ -1721,16 +1933,25 @@ static int uart_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           /* Make the controlling terminal of the calling process */
 
           case TIOCSCTTY:
+          case TIOCSPGRP:
             {
-              /* Save the PID of the recipient of the SIGINT signal. */
+              /* Save the PID of the foreground process group that is to
+               * receive tty-generated signals (SIGINT/SIGTSTP).
+               *
+               * POSIX passes a flag in 'arg' and uses the caller's PID, so
+               * a zero 'arg' selects the calling task.  NuttX historically
+               * passes the target PID directly in 'arg' (e.g. NSH registers
+               * the foreground command it just spawned), so a positive
+               * 'arg' is honored as the target PID.
+               */
 
-              if ((int)arg < 0 || dev->pid >= 0)
+              if ((int)arg < 0)
                 {
                   ret = -EINVAL;
                 }
               else
                 {
-                  dev->pid = (pid_t)arg;
+                  dev->pid = arg > 0 ? (pid_t)arg : nxsched_getpid();
                   ret = 0;
                 }
             }
@@ -1740,6 +1961,26 @@ static int uart_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
             {
               dev->pid = INVALID_PROCESS_ID;
               ret = 0;
+            }
+            break;
+
+          /* Get the foreground process group.  Since NuttX has no real
+           * process-group abstraction, the controlling task's PID doubles
+           * as the (single-member) foreground process group.
+           */
+
+          case TIOCGPGRP:
+          case TIOCGSID:
+            {
+              if (dev->pid < 0)
+                {
+                  ret = -ENOTTY;
+                }
+              else
+                {
+                  *(FAR pid_t *)((uintptr_t)arg) = dev->pid;
+                  ret = 0;
+                }
             }
             break;
 #endif
@@ -1902,7 +2143,7 @@ static int uart_poll(FAR struct file *filep,
 
       if (dev->disconnected)
         {
-           eventset |= (POLLERR | POLLHUP);
+          eventset |= (POLLERR | POLLHUP);
         }
 #endif
 
@@ -2120,7 +2361,7 @@ int uart_register(FAR const char *path, FAR uart_dev_t *dev)
 #endif
 
   sinfo("Registering %s\n", path);
-  return register_driver(path, &g_serialops, 0666, dev);
+  return register_driver(path, &g_serialops, 0600, dev);
 }
 
 /****************************************************************************

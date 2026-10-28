@@ -32,7 +32,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/net/net.h>
 
@@ -103,10 +103,14 @@ static int usrsock_sockif_setup(FAR struct socket *psock)
   int ret;
 
   if (psock->s_domain != PF_INET && psock->s_domain != PF_INET6 &&
-      psock->s_domain != PF_NETLINK)
+      psock->s_domain != PF_NETLINK
+#ifndef CONFIG_NET_LOCAL
+      && psock->s_domain != PF_LOCAL
+#endif
+      )
     {
-      return -ENOTSUP; /* Only ipv4, ipv6 and netlink support the offload */
-    };
+      return -ENOTSUP; /* Only supported families can use usrsock offload */
+    }
 
   /* Let the user socket logic handle the setup...
    *
@@ -138,7 +142,7 @@ static int usrsock_sockif_setup(FAR struct socket *psock)
  *           queried.
  *
  * Returned Value:
- *   The non-negative set of socket cababilities is returned.
+ *   The non-negative set of socket capabilities is returned.
  *
  ****************************************************************************/
 

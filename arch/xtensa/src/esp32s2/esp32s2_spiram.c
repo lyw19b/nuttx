@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <string.h>
 #include <sys/param.h>
 #include <nuttx/spinlock.h>
@@ -208,7 +208,7 @@ void IRAM_ATTR esp_spiram_init_cache(void)
     }
 
   /* After mapping, we DON'T care about the PSRAM PHYSICAL
-   * ADDRESSS ANYMORE!
+   * ADDRESS ANYMORE!
    */
 
   g_allocable_vaddr_start = g_mapped_vaddr_start;

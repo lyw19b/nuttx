@@ -19,7 +19,7 @@
 # the License.
 #
 # ##############################################################################
-get_directory_property(TOOLCHAIN_DIR_FLAGS DIRECTORY ${CMAKE_SOURCE_DIR}
+get_directory_property(TOOLCHAIN_DIR_FLAGS DIRECTORY ${NUTTX_DIR}
                                                      COMPILE_OPTIONS)
 
 set(NUTTX_EXTRA_FLAGS "")
@@ -54,6 +54,14 @@ if(CONFIG_LIBSUPCXX_TOOLCHAIN)
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAG_ARGS} ${NUTTX_EXTRA_FLAGS}
             --print-file-name=libsupc++.a
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE extra_library)
+  list(APPEND EXTRA_LIB ${extra_library})
+endif()
+if(CONFIG_LIBCXXTOOLCHAIN)
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAG_ARGS} ${NUTTX_EXTRA_FLAGS}
+            --print-file-name=libstdc++.a
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE extra_library)
   list(APPEND EXTRA_LIB ${extra_library})

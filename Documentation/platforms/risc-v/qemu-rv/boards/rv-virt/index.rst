@@ -143,6 +143,44 @@ To run it with QEMU, use the following command::
       -mon chardev=con,mode=readline \
       -bios none -kernel nuttx
 
+lvgl64_vector
+-------------
+
+This configuration uses the LVGL graphics framework with RISC-V 64-bit support
+and Vector Extension (V-extension) enabled. It allows developers to create
+graphical applications with LVGL on RISC-V QEMU while leveraging the Vector
+extension for potential SIMD optimization.
+
+Features:
+
+- 64-bit RISC-V architecture (RV64)
+- RISC-V Vector Extension (RVV/V-extension) support
+- LVGL graphics framework with 32-bit color depth
+- VirtIO GPU device for framebuffer access
+- NSH shell with built-in applications
+
+To build it::
+
+    $ ./tools/configure.sh rv-virt:lvgl64_vector
+    $ make -j$(nproc)
+
+To run it with QEMU with graphics output::
+
+    $ qemu-system-riscv64 -semihosting -M virt,aclint=on -cpu rv64,v=true -smp 1 \
+      -chardev stdio,id=con,mux=on \
+      -serial chardev:con \
+      -device virtio-gpu-device,xres=640,yres=480,bus=virtio-mmio-bus.0 \
+      -device virtio-mouse-device,bus=virtio-mmio-bus.1 \
+      -mon chardev=con,mode=readline \
+      -bios none -kernel nuttx
+
+After booting into the NSH shell, you can run the LVGL demo with::
+
+    nsh> lvgldemo
+
+This configuration is suitable for developing and testing LVGL applications
+on 64-bit RISC-V targets with Vector extension support.
+
 knetnsh64
 ---------
 
@@ -370,6 +408,39 @@ nsh64
 -----
 
 Identical to the `nsh`_ configuration, but for 64-bit RISC-V.
+
+nsbi
+----
+
+This is similar to the `knsh`, but using NuttX's native (minimalistic)
+SBI. It uses `hostfs` and QEMU in semi-hosting mode to load the
+user-space applications. This is intended for 32-bit RISC-V.
+
+To build it, use the following command::
+
+    $ make V=1 -j$(nproc)
+    $ make export V=1 -j$(nproc)
+    $ pushd ../apps
+    $ ./tools/mkimport.sh -z -x ../nuttx/nuttx-export-*.tar.gz
+    $ make import V=1 -j$(nproc)
+    $ popd
+
+Run it with QEMU using the default command for 32-bit RISC-V without
+the ``-bios none`` option. Please note that it still runs in S-mode,
+but bypasses QEMU's OpenSBI.
+
+In `nsh`, applications can be run directly::
+
+    nsh> hello
+
+nsbi64
+------
+
+Identical to the `nsbi`_ configuration, but for 64-bit RISC-V.
+
+Run it with QEMU using the default command for 64-bit RISC-V without
+the ``-bios none`` option. Please note that it still runs in S-mode,
+but bypasses QEMU's OpenSBI.
 
 smp
 ---

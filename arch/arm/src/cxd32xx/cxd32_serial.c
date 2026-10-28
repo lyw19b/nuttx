@@ -32,7 +32,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #ifdef CONFIG_SERIAL_TERMIOS
 #  include <termios.h>
@@ -328,7 +328,7 @@ static void up_set_format(struct uart_dev_s *dev)
 
   up_serialout(priv, CXD32_UART_LCR_H, lcr);
 
-  /* CXD32 does not have CTS/RTS pin, so these are disbled */
+  /* CXD32 does not have CTS/RTS pin, so these are disabled */
 
   cr &= ~(UART_CR_RTSEN | UART_CR_CTSEN);
   up_serialout(priv, CXD32_UART_CR, cr | cr_en);
@@ -428,7 +428,7 @@ static void up_shutdown(struct uart_dev_s *dev)
  * Description:
  *   Configure the UART to operation in interrupt driven mode.
  *   This method is called when the serial port is opened.
- *   Normally, this is just after the the setup() method is called,
+ *   Normally, this is just after the setup() method is called,
  *   however, the serial console may operate in  a non-interrupt driven mode
  *   during the boot phase.
  *
@@ -925,7 +925,7 @@ static bool up_txempty(struct uart_dev_s *dev)
  *
  * Description:
  *   Performs the low level UART initialization early in debug so that the
- *   serial console will be available during bootup.  This must be called
+ *   serial console will be available during boot up.  This must be called
  *   before arm_serialinit.
  *
  *   NOTE: Configuration of the CONSOLE UART was performed by up_lowsetup()

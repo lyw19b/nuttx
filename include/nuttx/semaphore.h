@@ -45,19 +45,58 @@
 /* semcount, flags, waitlist, hhead */
 
 #    define NXSEM_INITIALIZER(c, f) \
-       {(c), (f), SEM_WAITLIST_INITIALIZER, NULL}
+       {{(c)}, (f), SEM_WAITLIST_INITIALIZER, NULL}
 #  else
 /* semcount, flags, waitlist, holder[2] */
 
 #    define NXSEM_INITIALIZER(c, f) \
-       {(c), (f), SEM_WAITLIST_INITIALIZER, SEMHOLDER_INITIALIZER}
+       {{(c)}, (f), SEM_WAITLIST_INITIALIZER, SEMHOLDER_INITIALIZER}
 #  endif
 #else /* CONFIG_PRIORITY_INHERITANCE */
 /* semcount, flags, waitlist */
 
 #  define NXSEM_INITIALIZER(c, f) \
-     {(c), (f), SEM_WAITLIST_INITIALIZER}
+     {{(c)}, (f), SEM_WAITLIST_INITIALIZER}
 #endif /* CONFIG_PRIORITY_INHERITANCE */
+
+/* Macros to retrieve sem count and to check if nxsem is mutex */
+
+#define NXSEM_COUNT(s)        ((FAR atomic_t *)&((s)->val.semcount))
+#define NXSEM_IS_MUTEX(s)     (((s)->flags & SEM_TYPE_MUTEX) != 0)
+
+/* Mutex related helper macros */
+
+#define NXSEM_MBLOCKING_BIT   ((uint32_t)0x80000000)
+#define NXSEM_NO_MHOLDER      ((uint32_t)0x7ffffffe)
+#define NXSEM_MRESET          ((uint32_t)0x7fffffff)
+
+/* Macro to retrieve mutex's atomic holder's ptr */
+
+#define NXSEM_MHOLDER(s)      ((FAR atomic_t *)&((s)->val.mholder))
+
+/* Make a mutex holder value from a task id.  The holder field keeps it in
+ * the low 31 bits because bit 31 is the blocking flag, and a task id can
+ * be negative here: nxsched_gettid() reports -ESRCH for a context that no
+ * longer maps to a task, which is exactly the state a task is in while
+ * nxtask_exit() tears it down and its group's mutexes get their final
+ * lock and unlock.  Storing such an id unmasked would raise the blocking
+ * flag by accident, and an unlock would then try to wake waiters that do
+ * not exist.  Masking keeps a lock and unlock from the same context
+ * consistent with each other, whatever the id's sign.
+ *
+ * The ids -1 and -2 would alias NXSEM_MRESET and NXSEM_NO_MHOLDER, but
+ * nxsched_gettid() produces only valid ids and -ESRCH, which is -3.
+ */
+
+#define NXSEM_MAKE_MHOLDER(tid) ((uint32_t)(tid) & ~NXSEM_MBLOCKING_BIT)
+
+/* Check if holder value (TID) is not NO_HOLDER or RESET */
+
+#define NXSEM_MACQUIRED(h)    (((h) & NXSEM_NO_MHOLDER) != NXSEM_NO_MHOLDER)
+
+/* Check if mutex is acquired and blocks some other task */
+
+#define NXSEM_MBLOCKING(h)    (((h) & NXSEM_MBLOCKING_BIT) != 0)
 
 /****************************************************************************
  * Public Type Definitions
@@ -119,12 +158,11 @@ extern "C"
  *
  * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
- *   It follows the NuttX internal error return policy:  Zero (OK) is
- *   returned on success.  A negated errno value is returned on failure.
+ *   Zero (OK) is always returned.
  *
  ****************************************************************************/
 
-int nxsem_init(FAR sem_t *sem, int pshared, unsigned int value);
+int nxsem_init(FAR sem_t *sem, int pshared, int32_t value);
 
 /****************************************************************************
  * Name: nxsem_destroy
@@ -145,15 +183,14 @@ int nxsem_init(FAR sem_t *sem, int pshared, unsigned int value);
  *
  * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
- *   It follows the NuttX internal error return policy:  Zero (OK) is
- *   returned on success.  A negated errno value is returned on failure.
+ *   Zero (OK) is always returned.
  *
  ****************************************************************************/
 
 int nxsem_destroy(FAR sem_t *sem);
 
 /****************************************************************************
- * Name: nxsem_wait
+ * Name: nxsem_wait / nxsem_wait_slow
  *
  * Description:
  *   This function attempts to lock the semaphore referenced by 'sem'.  If
@@ -181,9 +218,10 @@ int nxsem_destroy(FAR sem_t *sem);
  ****************************************************************************/
 
 int nxsem_wait(FAR sem_t *sem);
+int nxsem_wait_slow(FAR sem_t *sem);
 
 /****************************************************************************
- * Name: nxsem_trywait
+ * Name: nxsem_trywait / nxsem_trywait_slow
  *
  * Description:
  *   This function locks the specified semaphore only if the semaphore is
@@ -207,6 +245,7 @@ int nxsem_wait(FAR sem_t *sem);
  ****************************************************************************/
 
 int nxsem_trywait(FAR sem_t *sem);
+int nxsem_trywait_slow(FAR sem_t *sem);
 
 /****************************************************************************
  * Name: nxsem_timedwait
@@ -328,7 +367,7 @@ int nxsem_clockwait(FAR sem_t *sem, clockid_t clockid,
 int nxsem_tickwait(FAR sem_t *sem, uint32_t delay);
 
 /****************************************************************************
- * Name: nxsem_post
+ * Name: nxsem_post / nxsem_post_slow
  *
  * Description:
  *   When a kernel thread has finished with a semaphore, it will call
@@ -357,6 +396,7 @@ int nxsem_tickwait(FAR sem_t *sem, uint32_t delay);
  ****************************************************************************/
 
 int nxsem_post(FAR sem_t *sem);
+int nxsem_post_slow(FAR sem_t *sem);
 
 /****************************************************************************
  * Name:  nxsem_get_value
@@ -385,6 +425,27 @@ int nxsem_post(FAR sem_t *sem);
  ****************************************************************************/
 
 int nxsem_get_value(FAR sem_t *sem, FAR int *sval);
+
+#ifdef CONFIG_CUSTOM_SEMAPHORE_MAXVALUE
+/****************************************************************************
+ * Name:  nxsem_setmaxvalue
+ *
+ * Description:
+ *   This function sets the maximum allowed value for a specific semaphore.
+ *
+ * Input Parameters:
+ *   sem - Semaphore descriptor
+ *   maxvalue - The maximum allowed value
+ *
+ * Returned Value:
+ *   This is an internal OS interface and should not be used by applications.
+ *   It follows the NuttX internal error return policy:  Zero (OK) is
+ *   returned on success.  A negated errno value is returned on failure.
+ *
+ ****************************************************************************/
+
+int nxsem_setmaxvalue(FAR sem_t *sem, int32_t maxvalue);
+#endif
 
 /****************************************************************************
  * Name: nxsem_open

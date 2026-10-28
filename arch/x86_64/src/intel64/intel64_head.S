@@ -61,12 +61,10 @@
 #define X86_XSAVE_XCOMPBC_OFFSET   520
 #define X86_XSAVE_RESERVED0_OFFSET 528
 
-/* Memory Map: _sbss is the start of the BSS region (see ld.script) _ebss is
- * the end of the BSS region (see ld.script). The idle task stack starts at
- * the end of BSS and is of size CONFIG_IDLETHREAD_STACKSIZE.  The IDLE thread
- * is the thread that the system boots on and, eventually, becomes the idle,
- * do nothing task that runs only when there is nothing else to run.  The
- * heap continues from there until the end of memory.  See g_idle_topstack below.
+/* Memory Map: _sbss is the start of the BSS region, _ebss is the end of the
+ * BSS region.  One idle task stack is reserved for each configured CPU.  The
+ * heap follows the reserved idle stack area and continues until the end of
+ * memory.  See g_idle_topstack below.
  */
 
 /****************************************************************************
@@ -80,14 +78,14 @@
 	.global    __enable_sse_avx
 	.global    __enable_pcid
 	.global    __revoke_low_memory
-#ifdef CONFIG_LIB_SYSCALL
+#ifdef CONFIG_ARCH_HAVE_SYSCALL
 	.global    x86_64_syscall_entry
 	.global    x86_64_syscall
 #endif
 	.global    __nxstart                       /* __nxstart is defined elsewhere */
 	.global    nx_start                        /* nx_start is defined elsewhere */
 	.global    x86_64_ap_boot                  /* x86_64_ap_boot is defined elsewhere */
-	.global    g_idle_topstack                 /* The end of the idle stack, the start of the heap */
+	.global    g_idle_topstack                 /* Top of the CPU0 idle stack */
 	.global    g_mb_info_struct
 	.global    g_mb_magic
 	.global    g_cpu_count
@@ -270,10 +268,10 @@ start32:
 	movl    %eax, g_mb_magic
 #endif
 
-	/* Jump to 64 bit initialiation if this is AP core */
+	/* Jump to 64 bit initialization if this is AP core */
 	mov     bsp_done, %eax
-	cmp     $0, %eax
-	jne     start64_init
+	test	%eax, %eax
+	jnz     start64_init
 
 	/* initialize rest of the page directory */
 	lea     g_pd_low, %edi
@@ -348,7 +346,7 @@ start64_init:
 
 	movl    $MSR_EFER,  %ecx
 	rdmsr
-#ifdef CONFIG_LIB_SYSCALL
+#ifdef CONFIG_ARCH_HAVE_SYSCALL
 	or      $(EFER_LME | EFER_SCE),  %eax
 #else
 	or      $EFER_LME,  %eax
@@ -373,7 +371,7 @@ start64_init:
 	.code64
 
 start64:
-	/* Set Segement Registers for proper iret, etc. operation */
+	/* Set Segment Registers for proper iret, etc. operation */
 	mov     $(X86_GDT_DATA_SEL),  %ax
 	mov     %ax,    %ss
 	mov     %ax,    %ds
@@ -383,15 +381,18 @@ start64:
 
 	/* Start BSP or AP */
 	mov     bsp_done, %eax
-	cmp     $0, %eax
-	jne     ap_start
+	test    %eax, %eax
+	jnz     ap_start
 
 	/* Properly setup RSP to idle stack */
 	movabs  $g_idle_topstack,    %rbx
 	mov     (%rbx),   %rsp
 
-	/* Allocate space XCPTCONTEXT */
+	/* Start RSP below the IDLE register save area which up_initial_state()
+	 * places at ALIGN_DOWN(topstack - XCPTCONTEXT_SIZE).
+	 */
 	leaq    -XCPTCONTEXT_SIZE(%rsp), %rsp
+	and     $(~(XCPTCONTEXT_ALIGN - 1)), %rsp
 
 	/* Set bsp_done flag */
 	movl     $1, bsp_done
@@ -413,14 +414,17 @@ ap_start:
 
 	/* Setup AP stack */
 	movabs  $g_idle_topstack,    %rbx
-	movl    %edi, %eax
-	imul    $8, %eax, %eax
-	add     %rax, %rbx
 	mov     (%rbx),   %rsp
+	movl    %edi, %eax
+	imulq   $CONFIG_IDLETHREAD_STACKSIZE, %rax, %rax
+	add     %rax, %rsp
 
-	/* Move initial RSP below IDLE TCB regs */
-	sub     $XCPTCONTEXT_SIZE, %rsp
-	and     $(~XCPTCONTEXT_SIZE), %rsp
+	/* Start RSP below the IDLE register save area which up_initial_state()
+	 * places at ALIGN_DOWN(topstack - 8 - XCPTCONTEXT_SIZE) for AP CPUs
+	 * (up_cpu_idlestack() adjusts the stack size by 8).
+	 */
+	sub     $(XCPTCONTEXT_SIZE + 8), %rsp
+	and     $(~(XCPTCONTEXT_ALIGN - 1)), %rsp
 
 	/* Jump to ap_start routine */
 	movabs  $x86_64_ap_boot,   %rbx
@@ -456,7 +460,6 @@ __revoke_low_memory:
 	lea     g_pd_low, %edi
 	add     %rcx, %rdi
 	lea     g_pt_low, %esi
-	add     %rcx, %rsi
 
 	/* for ecx = 0...64 : Loop and setup 64x 2MB page directories */
 	mov     $64,   %ecx
@@ -503,8 +506,8 @@ __enable_sse_avx:
 	/* Configure XSAVE/XRSTOR for user state*/
 	mov     $X86_XCR0_VAL, %eax
 
-	xor     %rdx,  %rdx
-	xor     %rcx,  %rcx
+	xor     %edx,  %edx
+	xor     %ecx,  %ecx
 	xsetbv
 
 #else
@@ -536,7 +539,7 @@ __enable_pcid:
 
 	.size   __enable_pcid, . - __enable_pcid
 
-#ifdef CONFIG_LIB_SYSCALL
+#ifdef CONFIG_ARCH_HAVE_SYSCALL
   /****************************************************************************
   * Name: x86_64_syscall_entry
   *
@@ -611,7 +614,7 @@ no_kstack_switch:
 #else
 #  ifdef CONFIG_ARCH_CHIP_INTEL64_QEMU
 	/* BUGFIX for QEMU: make sure that xsave header is zeroed!
-	 * QEMU desn't clear these fields during xsave, so if the memory region
+	 * QEMU doesn't clear these fields during xsave, so if the memory region
 	 * for xsave state was not cleared before use, there may be junk data there,
 	 * that cause xrstor to crash later.
 	 */
@@ -696,6 +699,10 @@ no_kstack_switch:
 
 syscall_no_ring3:
 #  endif
+	/* Restore the value of RFLAGS from R11 */
+	pushq   %r11
+	popfq
+
 	/* Return to address pointed in RCX - must be on stack */
 	pushq   %rcx
 	ret

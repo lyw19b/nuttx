@@ -30,8 +30,8 @@
 #include <stdint.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <arch/irq.h>
@@ -221,6 +221,7 @@ void up_irqinitialize(void)
   /* And finally, enable interrupts */
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
+  avr_color_intstack();
   up_irq_restore(0);
 #endif
 }
@@ -260,7 +261,7 @@ int up_prioritize_irq(int irq, int priority)
  *   Return the highest priority pending INTn interrupt (hwere n=level).
  *   This is called directly from interrupt handling logic.  This should be
  *   save since the UC3B will save all C scratch/volatile registers (and
- *   this function should not alter the perserved/static registers).
+ *   this function should not alter the preserved/static registers).
  *
  ****************************************************************************/
 

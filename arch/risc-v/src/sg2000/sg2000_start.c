@@ -29,7 +29,7 @@
 #include <nuttx/arch.h>
 #include <nuttx/serial/uart_16550.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <arch/board/board.h>
 #include <arch/board/board_memorymap.h>
@@ -295,7 +295,7 @@ void sg2000_start(int mhartid)
  *
  * Description:
  *   Performs the low level UART initialization early in debug so that the
- *   serial console will be available during bootup.  This must be called
+ *   serial console will be available during boot up.  This must be called
  *   before riscv_serialinit.  NOTE:  This function depends on GPIO pin
  *   configuration performed in up_consoleinit() and main clock
  *   initialization performed in up_clkinitialize().

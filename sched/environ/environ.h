@@ -36,7 +36,7 @@
 
 #ifdef CONFIG_DISABLE_ENVIRON
 #  define env_dup(group, envp) (0)
-#  define env_release(group)   (0)
+#  define env_release(group)   ((void)0)
 #else
 
 #  define SCHED_ENVIRON_RESERVED (4)
@@ -103,6 +103,19 @@ int env_dup(FAR struct task_group_s *group, FAR char * const *envp);
  ****************************************************************************/
 
 void env_release(FAR struct task_group_s *group);
+
+#ifdef CONFIG_SCHED_USER_IDENTITY
+/****************************************************************************
+ * Name: env_sanitize_secure
+ *
+ * Description:
+ *   Remove environment variables that must not be inherited by a secure
+ *   (set-user-ID or set-group-ID) executable.
+ *
+ ****************************************************************************/
+
+void env_sanitize_secure(FAR struct task_group_s *group);
+#endif
 
 /****************************************************************************
  * Name: env_findvar

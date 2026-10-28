@@ -1,6 +1,9 @@
 /****************************************************************************
  * libs/libc/string/lib_bsdstrchr.c
  *
+ * SPDX-License-Identifier: BSD
+ * SPDX-FileCopyrightText: 1994-2009  Red Hat, Inc. All rights reserved
+ *
  * Copyright (c) 1994-2009  Red Hat, Inc. All rights reserved.
  *
  * This copyrighted material is made available to anyone wishing to use,
@@ -30,22 +33,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define UNALIGNED(x) ((long)(uintptr_t)(x) & (sizeof(long) - 1))
-
-/* How many bytes are loaded each iteration of the word copy loop. */
-
-#define LBLOCKSIZE (sizeof(long))
-
-/* Macros for detecting endchar */
-
-#if LONG_MAX == 2147483647
-#  define DETECTNULL(x) (((x) - 0x01010101) & ~(x) & 0x80808080)
-#elif LONG_MAX == 9223372036854775807
-/* Nonzero if x (a long int) contains a NULL byte. */
-
-#  define DETECTNULL(x) (((x) - 0x0101010101010101) & ~(x) & 0x8080808080808080)
-#endif
-
 #define DETECTCHAR(x, mask) (DETECTNULL((x) ^ (mask)))
 
 /****************************************************************************
@@ -67,21 +54,22 @@
  ****************************************************************************/
 
 #if !defined(CONFIG_LIBC_ARCH_STRCHR) && defined(LIBC_BUILD_STRCHR)
-#undef strchr /* See mm/README.txt */
+#undef strchr
+no_builtin("strchr")
 nosanitize_address
 FAR char *strchr(FAR const char *s, int c)
 {
   FAR const unsigned char *s1 = (FAR const unsigned char *)s;
-  FAR unsigned long *aligned_addr;
+  FAR libc_data_t *aligned_addr;
   unsigned char i = c;
-  unsigned long mask;
-  unsigned long j;
+  libc_data_t mask;
+  libc_data_t j;
 
   /* Special case for finding 0. */
 
   if (!i)
     {
-      while (UNALIGNED(s1))
+      while (UNALIGNED_X(s1))
         {
           if (!*s1)
             {
@@ -93,7 +81,7 @@ FAR char *strchr(FAR const char *s, int c)
 
       /* Operate a word at a time. */
 
-      aligned_addr = (FAR unsigned long *)s1;
+      aligned_addr = (FAR libc_data_t *)s1;
       while (!DETECTNULL(*aligned_addr))
         {
           aligned_addr++;
@@ -110,9 +98,11 @@ FAR char *strchr(FAR const char *s, int c)
       return (FAR char *)s1;
     }
 
-  /* All other bytes.  Align the pointer, then search a long at a time. */
+  /* All other bytes.  Align the pointer,
+   * then search a libc_data_t at a time.
+   */
 
-  while (UNALIGNED(s1))
+  while (UNALIGNED_X(s1))
     {
       if (!*s1)
         {
@@ -128,12 +118,12 @@ FAR char *strchr(FAR const char *s, int c)
     }
 
   mask = i;
-  for (j = 8; j < LBLOCKSIZE * 8; j <<= 1)
+  for (j = 8; j < LITTLEBLOCKSIZE * 8; j <<= 1)
     {
       mask = (mask << j) | mask;
     }
 
-  aligned_addr = (FAR unsigned long *)s1;
+  aligned_addr = (FAR libc_data_t *)s1;
   while (!DETECTNULL(*aligned_addr) && !DETECTCHAR(*aligned_addr, mask))
     {
       aligned_addr++;

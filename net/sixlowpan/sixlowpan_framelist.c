@@ -54,7 +54,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/mm/iob.h>
 #include <nuttx/net/netdev.h>
@@ -540,7 +540,7 @@ int sixlowpan_queue_frames(FAR struct radio_driver_s *radio,
       /* The outbound IPv6 packet is too large to fit into a single 15.4
        * packet, so we fragment it into multiple packets and send them.
        * The first fragment contains frag1 dispatch, then
-       * IPv6/HC1/HC06/HC_UDP dispatchs/headers.
+       * IPv6/HC1/HC06/HC_UDP dispatches/headers.
        * The following fragments contain only the fragn dispatch.
        */
 

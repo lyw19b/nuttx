@@ -36,7 +36,7 @@ if(CONFIG_LIBM_OPENLIBM)
     FetchContent_Declare(
       openlibm_fetch
       URL ${OPENLIBM_URL} SOURCE_DIR ${OPENLIBM_URL}/openlibm BINARY_DIR
-          ${CMAKE_BINARY_DIR}/libs/libm/openlibm/openlibm
+          ${NUTTX_BINARY_DIR}/libs/libm/openlibm/openlibm
       PATCH_COMMAND
         patch -p1 -d ${CMAKE_CURRENT_LIST_DIR} <
         ${CMAKE_CURRENT_LIST_DIR}/0001-fix-build-float_t-error-float_t-has-not-been-declare.patch
@@ -227,6 +227,8 @@ if(CONFIG_LIBM_OPENLIBM)
   file(GLOB_RECURSE ARCH_CSRCS ${OPENLIBM_DIR}/${ARCH}/*.c)
   file(GLOB_RECURSE ARCH_ASRCS ${OPENLIBM_DIR}/${ARCH}/*.S)
   file(GLOB_RECURSE BD_CSRCS ${OPENLIBM_DIR}/bsdsrc/*.c)
+
+  add_compile_options(-Wno-attribute-alias -Wno-shadow -Wno-maybe-uninitialized)
 
   # ############################################################################
   # Include Directory

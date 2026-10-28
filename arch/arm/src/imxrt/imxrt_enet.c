@@ -33,7 +33,7 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 #include <endian.h>
 
@@ -1508,6 +1508,7 @@ static int imxrt_ifup_action(struct net_driver_s *dev, bool resetphy)
   imxrt_enet_modifyreg32(priv, IMXRT_ENET_EIMR_OFFSET, TX_INTERRUPTS,
                          priv->ints);
 
+  netdev_carrier_on(dev);
   return OK;
 }
 
@@ -1595,6 +1596,7 @@ static int imxrt_ifdown(struct net_driver_s *dev)
   /* Mark the device "down" */
 
   priv->bifup = false;
+  netdev_carrier_off(dev);
   leave_critical_section(flags);
   return OK;
 }
@@ -2226,7 +2228,7 @@ static int imxrt_determine_phy(struct imxrt_driver_s *priv)
           retries = 0;
           do
             {
-              nxsig_usleep(100);
+              nxsched_usleep(100);
               phydata = 0xffff;
               ret = imxrt_readmii(priv, phyaddr, MII_PHYID1, &phydata);
             }
@@ -2237,7 +2239,7 @@ static int imxrt_determine_phy(struct imxrt_driver_s *priv)
             {
               do
                 {
-                  nxsig_usleep(100);
+                  nxsched_usleep(100);
                   phydata = 0xffff;
                   ret = imxrt_readmii(priv, phyaddr, MII_PHYID2, &phydata);
                 }
@@ -2263,7 +2265,7 @@ static int imxrt_determine_phy(struct imxrt_driver_s *priv)
  *
  * Input Parameters:
  *   priv - Reference to the private ENET driver state structure
- *   name - a pointer to comapre to.
+ *   name - a pointer to compare to.
  *
  * Returned Value:
  *   1 on match, a 0 on no match.
@@ -2286,7 +2288,7 @@ static int imxrt_phy_is(struct imxrt_driver_s *priv, const char *name)
  *   phydata - last read phy data - may be ignored if there is no
  *             status register defined by the current PHY.
  *   mask - A value to and with phydata if a status register is
- *          defined. Or the value retunred if no status register is
+ *          defined. Or the value returned if no status register is
  *          defined.
  *
  * Returned Value:
@@ -2550,7 +2552,7 @@ static inline int imxrt_initphy(struct imxrt_driver_s *priv, bool renogphy)
       retries = 0;
       do
         {
-          nxsig_usleep(LINK_WAITUS);
+          nxsched_usleep(LINK_WAITUS);
 
           ninfo("%s: Read PHYID1, retries=%d\n",
                 BOARD_PHY_NAME, retries + 1);
@@ -2786,7 +2788,7 @@ static inline int imxrt_initphy(struct imxrt_driver_s *priv, bool renogphy)
                   break;
                 }
 
-              nxsig_usleep(LINK_WAITUS);
+              nxsched_usleep(LINK_WAITUS);
             }
 
           if (phydata & MII_MSR_ANEGCOMPLETE)
@@ -3088,7 +3090,7 @@ int imxrt_netinitialize(int intf)
 
   memset(priv, 0, sizeof(struct imxrt_driver_s));
 
-  priv->base = IMXRT_ENETN_BASE;        /* Assigne base address */
+  priv->base = IMXRT_ENETN_BASE;        /* Assign base address */
 
   priv->dev.d_ifup    = imxrt_ifup;     /* I/F up (new IP address) callback */
   priv->dev.d_ifdown  = imxrt_ifdown;   /* I/F down callback */

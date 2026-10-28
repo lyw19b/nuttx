@@ -32,7 +32,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/irq.h>
@@ -552,6 +552,17 @@ static int  imx9_ioctl(struct net_driver_s *dev, int cmd,
                        unsigned long arg);
 #endif
 
+/* CAN ID filtering */
+
+#ifdef CONFIG_NETDEV_CAN_IOCTL
+static uint32_t imx9_add_filter(struct imx9_driver_s *priv,
+                                 uint8_t filter_type,
+                                 bool ext_id,
+                                 uint32_t filter_id1,
+                                 uint32_t filter_id2);
+static uint8_t imx9_reset_filter(struct imx9_driver_s *priv);
+#endif
+
 /* Initialization */
 
 static int  imx9_initialize(struct imx9_driver_s *priv);
@@ -583,6 +594,7 @@ static bool imx9_txringfull(struct imx9_driver_s *priv)
   for (mbi = RXMBCOUNT; mbi < TOTALMBCOUNT; mbi++)
     {
       volatile struct mb_s *mb = flexcan_get_mb(priv, mbi);
+
       if (CAN_MB_CS_CODE(mb->cs) != CAN_TXMB_DATAORREMOTE)
         {
           return false;
@@ -646,11 +658,12 @@ static int imx9_transmit(struct imx9_driver_s *priv)
     {
       nwarn("No TX MB available mbi %" PRIi32 "\n", mbi);
       NETDEV_TXERRORS(&priv->dev);
-      return ERROR;
+      return -EBUSY;
     }
 
 #ifdef CONFIG_NET_CAN_RAW_TX_DEADLINE
   struct timespec ts;
+
   clock_systime_timespec(&ts);
 
   if (priv->dev.d_sndlen > priv->dev.d_len)
@@ -663,7 +676,7 @@ static int imx9_transmit(struct imx9_driver_s *priv)
                  + ((tv->tv_usec - ts.tv_nsec / 1000)*CLK_TCK) / 1000000;
       if (timeout < 0)
         {
-          return ERROR;
+          return -ETIMEDOUT;
         }
     }
   else
@@ -691,6 +704,7 @@ static int imx9_transmit(struct imx9_driver_s *priv)
   if (priv->dev.d_len == sizeof(struct can_frame))
     {
       struct can_frame *frame = (struct can_frame *)priv->dev.d_buf;
+
       can_id = frame->can_id;
       len = 8;
       can_dlc = frame->can_dlc;
@@ -700,6 +714,7 @@ static int imx9_transmit(struct imx9_driver_s *priv)
   else
     {
       struct canfd_frame *frame = (struct canfd_frame *)priv->dev.d_buf;
+
       cs |= CAN_MB_CS_EDL;
       cs |= frame->flags & CANFD_BRS ? CAN_MB_CS_BRS : 0;
       can_id = frame->can_id;
@@ -887,6 +902,7 @@ static void imx9_receive(struct imx9_driver_s *priv)
   size_t frame_len;
 
   uint32_t flags = getreg32(priv->base + IMX9_CAN_IFLAG1_OFFSET);
+
   flags &= IFLAG1_RX;
 
   while (flags != 0)
@@ -1070,7 +1086,7 @@ static void imx9_txdone(struct imx9_driver_s *priv, uint32_t flags)
             {
               /* Received something in this buffer?
                * This should only happen if we sent RTR and then did
-               * run out of RX MBs (which are at lower indecies).
+               * run out of RX MBs (which are at lower indices).
                * Or perhaps this shouldn't happen at all when AEN=1. This
                * is unclear in the RM.
                */
@@ -1081,7 +1097,7 @@ static void imx9_txdone(struct imx9_driver_s *priv, uint32_t flags)
 
           /* Only possible TX codes after transmission are ABORT or
            * INACTIVE. If it transitioned to RX MB after RTR sent,
-           * inactivate it.
+           * deactivate it.
            */
 
           if (code != CAN_TXMB_ABORT && code != CAN_TXMB_INACTIVE)
@@ -1267,6 +1283,7 @@ static void imx9_txtimeout_work(void *arg)
   volatile struct mb_s *mb;
   struct timespec ts;
   struct timeval *now = (struct timeval *)&ts;
+
   clock_systime_timespec(&ts);
   now->tv_usec = ts.tv_nsec / 1000; /* timespec to timeval conversion */
 
@@ -1426,7 +1443,7 @@ static volatile struct mb_s *flexcan_get_mb(struct imx9_driver_s *priv,
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
- *   OK or ERROR
+ *   return OK on success, negated error number on failure
  *
  * Assumptions:
  *
@@ -1439,7 +1456,7 @@ static int imx9_ifup(struct net_driver_s *dev)
   if (imx9_initialize(priv) != OK)
     {
       canerr("initialize failed");
-      return ERROR;
+      return -EIO;
     }
 
   priv->bifup = true;
@@ -1449,6 +1466,8 @@ static int imx9_ifup(struct net_driver_s *dev)
 
   up_enable_irq(priv->irq);
   up_enable_irq(priv->irq + 1);
+
+  netdev_carrier_on(dev);
 
   return OK;
 }
@@ -1463,7 +1482,7 @@ static int imx9_ifup(struct net_driver_s *dev)
  *   dev  - Reference to the NuttX driver state structure
  *
  * Returned Value:
- *   None
+ *   return OK on success, negated error number on failure
  *
  * Assumptions:
  *
@@ -1481,6 +1500,9 @@ static int imx9_ifdown(struct net_driver_s *dev)
   imx9_reset(priv);
 
   priv->bifup = false;
+
+  netdev_carrier_off(dev);
+
   return OK;
 }
 
@@ -1591,17 +1613,18 @@ static int imx9_ioctl(struct net_driver_s *dev, int cmd,
 
   switch (cmd)
     {
-#ifdef CONFIG_NETDEV_CAN_BITRATE_IOCTL
+#ifdef CONFIG_NETDEV_CAN_IOCTL
       case SIOCGCANBITRATE: /* Get bitrate from a CAN controller */
         {
           struct imx9_driver_s *priv = (struct imx9_driver_s *)dev;
           struct can_ioctl_data_s *req =
               (struct can_ioctl_data_s *)((uintptr_t)arg);
-          req->arbi_bitrate = priv->arbi_timing.bitrate / 1000; /* kbit/s */
+
+          req->arbi_bitrate = priv->arbi_timing.bitrate;
           req->arbi_samplep = priv->arbi_timing.samplep;
           if (priv->canfd_capable)
             {
-              req->data_bitrate = priv->data_timing.bitrate / 1000; /* kbit/s */
+              req->data_bitrate = priv->data_timing.bitrate;
               req->data_samplep = priv->data_timing.samplep;
             }
           else
@@ -1622,31 +1645,69 @@ static int imx9_ioctl(struct net_driver_s *dev, int cmd,
           struct flexcan_timeseg arbi_timing;
           struct flexcan_timeseg data_timing;
 
-          arbi_timing.bitrate = req->arbi_bitrate * 1000;
+          arbi_timing.bitrate = req->arbi_bitrate;
           arbi_timing.samplep = req->arbi_samplep;
           ret = imx9_bitratetotimeseg(priv, &arbi_timing, false);
           if (ret == OK && priv->canfd_capable)
             {
-              data_timing.bitrate = req->data_bitrate * 1000;
+              data_timing.bitrate = req->data_bitrate;
               data_timing.samplep = req->data_samplep;
               ret = imx9_bitratetotimeseg(priv, &data_timing, true);
             }
 
           if (ret == OK)
             {
-              /* Reset CAN controller and start with new timings */
+              /* Apply the new timings (interface is guaranteed to be down) */
 
               priv->arbi_timing = arbi_timing;
               if (priv->canfd_capable)
-              {
-                priv->data_timing = data_timing;
-              }
-
-              imx9_ifup(dev);
+                {
+                  priv->data_timing = data_timing;
+                }
             }
         }
         break;
+
+      case SIOCACANSTDFILTER: /* Set STD ID CAN filter */
+        {
+          struct imx9_driver_s *priv = (struct imx9_driver_s *)dev;
+          struct can_ioctl_filter_s *req =
+            (struct can_ioctl_filter_s *)((uintptr_t)arg);
+
+          if (!req)
+            {
+              return -EINVAL;
+            }
+
+          ret = imx9_add_filter(priv, req->ftype, 0, req->fid1, req->fid2);
+        }
+        break;
+
+      case SIOCACANEXTFILTER: /* Set EXT ID CAN filter */
+        {
+          struct imx9_driver_s *priv = (struct imx9_driver_s *)dev;
+          struct can_ioctl_filter_s *req =
+            (struct can_ioctl_filter_s *)((uintptr_t)arg);
+
+          if (!req)
+            {
+              return -EINVAL;
+            }
+
+          ret = imx9_add_filter(priv, req->ftype, 1, req->fid1, req->fid2);
+        }
+        break;
+
+      case SIOCDCANSTDFILTER: /* Reset STD ID CAN filter */
+      case SIOCDCANEXTFILTER: /* Reset EXT ID CAN filter */
+        {
+          struct imx9_driver_s *priv = (struct imx9_driver_s *)dev;
+
+          ret = imx9_reset_filter(priv);
+        }
+        break;
 #endif
+
       default:
         ret = -ENOTTY;
         break;
@@ -1655,6 +1716,168 @@ static int imx9_ioctl(struct net_driver_s *dev, int cmd,
   return ret;
 }
 #endif /* CONFIG_NETDEV_IOCTL */
+
+/****************************************************************************
+ * Name: imx9_add_filter
+ *
+ * Description:
+ *   Add new MB filter. Currently only support single ID mask filter.
+ *   TODO: add support for multiple ID mask filters
+ *
+ * Input Parameters:
+ *   priv          - Pointer to the private CAN driver state structure
+ *   filter_type   - The type of the filter: mask, range or dual filter
+ *   ext_id        - true: extended id, false: standard id
+ *   filter_id1    - filter id 1 (refer to can_ioctl_filter_s in if.h)
+ *   filter_id2    - filter id 2 (refer to can_ioctl_filter_s in if.h)
+ *
+ * Returned Value:
+ *   return OK on success, negated error number on failure
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NETDEV_CAN_IOCTL
+static uint32_t imx9_add_filter(struct imx9_driver_s *priv,
+                               uint8_t filter_type,
+                               bool ext_id,
+                               uint32_t filter_id1,
+                               uint32_t filter_id2)
+{
+  volatile struct mb_s *mb;
+  uint32_t mbi = 0;
+
+  /* Enter freeze mode */
+
+  if (!imx9_setfreeze(priv->base, true))
+    {
+      canerr("FLEXCAN: freeze fail\n");
+      return -EIO;
+    }
+
+  switch (filter_type)
+    {
+      case CAN_FILTER_MASK:
+        {
+          if (ext_id)
+            {
+              for (mbi = 0; mbi < RXMBCOUNT; mbi++)
+                {
+                  /* Set individual mask register */
+
+                  putreg32(filter_id2 & CAN_MB_ID_ID_MASK,
+                           priv->base + IMX9_CAN_RXIMR_OFFSET(mbi));
+
+                  /* Set the acceptance EXT ID filter in MB */
+
+                  mb = flexcan_get_mb(priv, mbi);
+                  mb->id = filter_id1 & CAN_MB_ID_ID_MASK;
+                }
+            }
+          else
+            {
+              for (mbi = 0; mbi < RXMBCOUNT; mbi++)
+                {
+                  /* Set individual mask register */
+
+                  putreg32(((filter_id2 & CAN_SFF_MASK)
+                           << CAN_MB_ID_ID_STD_SHIFT)
+                           & CAN_MB_ID_ID_STD_MASK,
+                           priv->base + IMX9_CAN_RXIMR_OFFSET(mbi));
+
+                  /* Set the acceptance STD ID filter in MB */
+
+                  mb = flexcan_get_mb(priv, mbi);
+                  mb->id = ((filter_id1 & CAN_SFF_MASK)
+                           << CAN_MB_ID_ID_STD_SHIFT)
+                           & CAN_MB_ID_ID_STD_MASK;
+                }
+            }
+        }
+        break;
+
+      case CAN_FILTER_RANGE:
+        {
+          canerr("Range filter type not supported\n");
+          return -EINVAL;
+        }
+        break;
+
+      case CAN_FILTER_DUAL:
+        {
+          canerr("Dual filter type not supported\n");
+          return -EINVAL;
+        }
+        break;
+
+      default:
+        {
+          canerr("FLEXCAN: invalid filter type\n");
+          return -EINVAL;
+        }
+        break;
+    }
+
+  /* Exit freeze mode */
+
+  if (!imx9_setfreeze(priv->base, false))
+    {
+      canerr("FLEXCAN: unfreeze fail\n");
+      return -EIO;
+    }
+
+  return OK;
+}
+
+/****************************************************************************
+ * Name: imx9_reset_filter
+ *
+ * Description:
+ *   Clear all ID filters in the MBs
+ *
+ * Input Parameters:
+ *   priv - Reference to the private FLEXCAN driver state structure
+ *
+ * Returned Value:
+ *   return OK on success, negated error number on failure
+ *
+ ****************************************************************************/
+
+static uint8_t imx9_reset_filter(struct imx9_driver_s *priv)
+{
+  volatile struct mb_s *mb;
+  uint32_t mbi = 0;
+
+  /* Enter freeze mode */
+
+  if (!imx9_setfreeze(priv->base, true))
+    {
+      canerr("FLEXCAN: freeze fail\n");
+      return -EIO;
+    }
+
+  for (mbi = 0; mbi < RXMBCOUNT; mbi++)
+    {
+      /* Clear individual mask register */
+
+      putreg32(0, priv->base + IMX9_CAN_RXIMR_OFFSET(mbi));
+
+      /* clear the acceptance ID filter */
+
+      mb = flexcan_get_mb(priv, mbi);
+      mb->id = 0;
+    }
+
+  /* Exit freeze mode */
+
+  if (!imx9_setfreeze(priv->base, false))
+    {
+      canerr("FLEXCAN: unfreeze fail\n");
+      return -EIO;
+    }
+
+  return OK;
+}
+#endif /* CONFIG_NETDEV_CAN_IOCTL */
 
 /****************************************************************************
  * Function: imx9_init_eccram
@@ -1755,7 +1978,7 @@ static int imx9_init_eccram(struct imx9_driver_s *priv)
  *   priv - Reference to the private FLEXCAN driver state structure
  *
  * Returned Value:
- *   OK or ERROR
+ *   return OK on success, negated error number on failure
  *
  * Assumptions:
  *
@@ -1772,7 +1995,7 @@ static int imx9_initialize(struct imx9_driver_s *priv)
   if (!imx9_setenable(priv->base, true))
     {
       canerr("FLEXCAN: enable fail\n");
-      return ERROR;
+      return -EIO;
     }
 
   /* Enter freeze mode */
@@ -1780,7 +2003,7 @@ static int imx9_initialize(struct imx9_driver_s *priv)
   if (!imx9_setfreeze(priv->base, true))
     {
       canerr("FLEXCAN: freeze fail\n");
-      return ERROR;
+      return -EIO;
     }
 
   /* Initialize memory buffers */
@@ -1890,7 +2113,7 @@ static int imx9_initialize(struct imx9_driver_s *priv)
   if (!imx9_setfreeze(priv->base, false))
     {
       canerr("FLEXCAN: unfreeze fail\n");
-      return ERROR;
+      return -EIO;
     }
 
   return OK;
@@ -2001,23 +2224,23 @@ int imx9_caninitialize(int intf)
   switch (intf)
     {
 #ifdef CONFIG_IMX9_FLEXCAN1
-    case 1:
-      imx9_ccm_configure_root_clock(CCM_CR_CAN1, SYS_PLL1PFD1DIV2, 5);
-      imx9_ccm_gate_on(CCM_LPCG_CAN1, true);
-      priv = &g_flexcan1;
-      break;
+      case 1:
+        imx9_ccm_configure_root_clock(CCM_CR_CAN1, SYS_PLL1PFD1DIV2, 5);
+        imx9_ccm_gate_on(CCM_LPCG_CAN1, true);
+        priv = &g_flexcan1;
+        break;
 #endif
 
 #ifdef CONFIG_IMX9_FLEXCAN2
-    case 2:
-      imx9_ccm_configure_root_clock(CCM_CR_CAN2, SYS_PLL1PFD1DIV2, 5);
-      imx9_ccm_gate_on(CCM_LPCG_CAN2, true);
-      priv = &g_flexcan2;
-      break;
+      case 2:
+        imx9_ccm_configure_root_clock(CCM_CR_CAN2, SYS_PLL1PFD1DIV2, 5);
+        imx9_ccm_gate_on(CCM_LPCG_CAN2, true);
+        priv = &g_flexcan2;
+        break;
 #endif
 
-    default:
-      return -ENODEV;
+      default:
+        return -ENODEV;
     }
 
   /* Get and store the clock (should be 80 MHz now) */

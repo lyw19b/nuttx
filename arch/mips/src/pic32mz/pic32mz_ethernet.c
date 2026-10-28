@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <string.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 #include <assert.h>
 
@@ -113,7 +113,7 @@
 #  define CONFIG_PIC32MZ_MULTICAST 1
 #endif
 
-/* Use defaults if the number of discriptors is not provided */
+/* Use defaults if the number of descriptors is not provided */
 
 #ifndef CONFIG_PIC32MZ_ETH_NTXDESC
 #  define CONFIG_PIC32MZ_ETH_NTXDESC 2
@@ -778,7 +778,7 @@ static inline void pic32mz_txdescinit(struct pic32mz_driver_s *priv)
   int i;
 
   /* Assign a buffer to each TX descriptor.  For now, just mark each TX
-   * descriptor as owned by softare and not linked.
+   * descriptor as owned by software and not linked.
    */
 
   for (i = 0; i < CONFIG_PIC32MZ_ETH_NTXDESC; i++)
@@ -916,7 +916,7 @@ static inline void pic32mz_rxdescinit(struct pic32mz_driver_s *priv)
  *
  * Returned Value:
  *   A pointer to the next available Tx descriptor on success; NULL if the
- *   next Tx dscriptor is not available.
+ *   next Tx descriptor is not available.
  *
  ****************************************************************************/
 
@@ -2340,6 +2340,8 @@ static int pic32mz_ifup(struct net_driver_s *dev)
   up_enable_irq(PIC32MZ_IRQ_ETH);
 #endif
 
+  netdev_carrier_on(dev);
+
   return OK;
 }
 
@@ -2382,6 +2384,9 @@ static int pic32mz_ifdown(struct net_driver_s *dev)
   pic32mz_ethreset(priv);
   priv->pd_ifup = false;
   leave_critical_section(flags);
+
+  netdev_carrier_off(dev);
+
   return OK;
 }
 

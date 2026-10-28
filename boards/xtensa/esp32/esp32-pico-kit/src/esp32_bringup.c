@@ -33,19 +33,21 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <errno.h>
-#if defined(CONFIG_ESP32_EFUSE)
+#if defined(CONFIG_ESPRESSIF_EFUSE)
 #include <nuttx/efuse/efuse.h>
 #endif
 #include <nuttx/fs/fs.h>
 #include <nuttx/himem/himem.h>
 
-#if defined(CONFIG_ESP32_EFUSE)
-#include "esp32_efuse.h"
+#if defined(CONFIG_ESPRESSIF_EFUSE)
+#include "espressif/esp_efuse.h"
 #endif
 #include "esp32_partition.h"
+#include "espressif/esp_gpio.h"
+#include "esp32_start.h"
 
 #ifdef CONFIG_TIMER
 #include <esp32_tim_lowerhalf.h>
@@ -79,16 +81,12 @@
 #  include "esp32_board_i2c.h"
 #endif
 
-#ifdef CONFIG_ESP32_I2S
-#  include "esp32_i2s.h"
+#ifdef CONFIG_ESPRESSIF_I2S
+#  include "espressif/esp_i2s.h"
 #endif
 
 #ifdef CONFIG_ESP32_AES_ACCELERATOR
 #  include "esp32_aes.h"
-#endif
-
-#ifdef CONFIG_ESP32_RT_TIMER
-#  include "esp32_rt_timer.h"
 #endif
 
 #ifdef CONFIG_INPUT_BUTTONS
@@ -96,7 +94,11 @@
 #endif
 
 #ifdef CONFIG_RTC_DRIVER
-#  include "esp32_rtc_lowerhalf.h"
+#  include "espressif/esp_rtc.h"
+#endif
+
+#ifdef CONFIG_ESPRESSIF_HR_TIMER
+#  include "espressif/esp_hr_timer.h"
 #endif
 
 #ifdef CONFIG_SPI_DRIVER
@@ -117,9 +119,6 @@
  *
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
- *
- *   CONFIG_BOARD_LATE_INITIALIZE=n && CONFIG_BOARDCTL=y :
- *     Called from the NSH library
  *
  ****************************************************************************/
 
@@ -145,8 +144,8 @@ int esp32_bringup(void)
     }
 #endif
 
-#if defined(CONFIG_ESP32_EFUSE)
-  ret = esp32_efuse_initialize("/dev/efuse");
+#if defined(CONFIG_ESPRESSIF_EFUSE)
+  ret = esp_efuse_initialize("/dev/efuse");
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to init EFUSE: %d\n", ret);
@@ -220,14 +219,6 @@ int esp32_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_ESP32_RT_TIMER
-  ret = esp32_rt_timer_init();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "Failed to initialize RT timer: %d\n", ret);
-    }
-#endif
-
 #ifdef CONFIG_ESPRESSIF_WIFI_BT_COEXIST
   ret = esp32_wifi_bt_coexist_init();
   if (ret)
@@ -249,8 +240,16 @@ int esp32_bringup(void)
   ret = board_wlan_init();
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to initialize wireless subsystem=%d\n",
+      syslog(LOG_ERR, "ERROR: Failed to initialize wlan subsystem=%d\n",
              ret);
+    }
+#endif
+
+#ifdef CONFIG_ESPRESSIF_HR_TIMER
+  ret = esp_hr_timer_init();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: esp_hr_timer_init() failed: %d\n", ret);
     }
 #endif
 
@@ -260,7 +259,7 @@ int esp32_bringup(void)
 
 #ifdef CONFIG_TIMER
 
-#if defined(CONFIG_ESP32_TIMER0) && !defined(CONFIG_ESP32_RT_TIMER)
+#if defined(CONFIG_ESP32_TIMER0) && !defined(CONFIG_ESPRESSIF_HR_TIMER)
   ret = esp32_timer_initialize("/dev/timer0", TIMER0);
   if (ret < 0)
     {
@@ -334,8 +333,6 @@ int esp32_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_I2C_DRIVER
-
 #ifdef CONFIG_ESP32_I2C0
   ret = esp32_i2c_register(0);
 
@@ -354,30 +351,28 @@ int esp32_bringup(void)
     }
 #endif
 
-#endif
+#ifdef CONFIG_ESPRESSIF_I2S
 
-#ifdef CONFIG_ESP32_I2S
-
-#if defined(CONFIG_ESP32_I2S0) && || defined(CONFIG_ESP32_I2S1)
+#if defined(CONFIG_ESPRESSIF_I2S0) && || defined(CONFIG_ESPRESSIF_I2S1)
   bool i2s_enable_tx;
   bool i2s_enable_rx;
 #endif
 
-#ifdef CONFIG_ESP32_I2S0
+#ifdef CONFIG_ESPRESSIF_I2S0
 
   /* Configure I2S0 */
 
-#ifdef CONFIG_ESP32_I2S0_TX
+#ifdef CONFIG_ESPRESSIF_I2S0_TX
   i2s_enable_tx = true;
 #else
   i2s_enable_tx = false;
-#endif /* CONFIG_ESP32_I2S0_TX */
+#endif /* CONFIG_ESPRESSIF_I2S0_TX */
 
-#ifdef CONFIG_ESP32_I2S0_RX
+#ifdef CONFIG_ESPRESSIF_I2S0_RX
     i2s_enable_rx = true;
 #else
     i2s_enable_rx = false;
-#endif /* CONFIG_ESP32_I2S0_RX */
+#endif /* CONFIG_ESPRESSIF_I2S0_RX */
 
   /* Configure I2S generic audio on I2S0 */
 
@@ -385,24 +380,24 @@ int esp32_bringup(void)
   if (ret < 0)
     {
       syslog(LOG_ERR, "Failed to initialize I2S%d driver: %d\n",
-             CONFIG_ESP32_I2S0, ret);
+             CONFIG_ESPRESSIF_I2S0, ret);
     }
 
-#endif /* CONFIG_ESP32_I2S0 */
+#endif /* CONFIG_ESPRESSIF_I2S0 */
 
-#ifdef CONFIG_ESP32_I2S1
+#ifdef CONFIG_ESPRESSIF_I2S1
 
-#ifdef CONFIG_ESP32_I2S1_TX
+#ifdef CONFIG_ESPRESSIF_I2S1_TX
   i2s_enable_tx = true;
 #else
   i2s_enable_tx = false;
-#endif /* CONFIG_ESP32_I2S1_TX */
+#endif /* CONFIG_ESPRESSIF_I2S1_TX */
 
-#ifdef CONFIG_ESP32_I2S1_RX
+#ifdef CONFIG_ESPRESSIF_I2S1_RX
     i2s_enable_rx = true;
 #else
     i2s_enable_rx = false;
-#endif /* CONFIG_ESP32_I2S1_RX */
+#endif /* CONFIG_ESPRESSIF_I2S1_RX */
 
   /* Configure I2S generic audio on I2S1 */
 
@@ -410,12 +405,12 @@ int esp32_bringup(void)
   if (ret < 0)
     {
       syslog(LOG_ERR, "Failed to initialize I2S%d driver: %d\n",
-             CONFIG_ESP32_I2S1, ret);
+             CONFIG_ESPRESSIF_I2S1, ret);
     }
 
-#endif /* CONFIG_ESP32_I2S1 */
+#endif /* CONFIG_ESPRESSIF_I2S1 */
 
-#endif /* CONFIG_ESP32_I2S */
+#endif /* CONFIG_ESPRESSIF_I2S */
 
 #ifdef CONFIG_INPUT_BUTTONS
   /* Register the BUTTON driver */
@@ -430,7 +425,7 @@ int esp32_bringup(void)
 #ifdef CONFIG_RTC_DRIVER
   /* Instantiate the ESP32 RTC driver */
 
-  ret = esp32_rtc_driverinit();
+  ret = esp_rtc_driverinit();
   if (ret < 0)
     {
       syslog(LOG_ERR,

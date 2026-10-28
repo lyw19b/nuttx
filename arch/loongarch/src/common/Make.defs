@@ -60,13 +60,13 @@ CMN_CSRCS += loongarch_smp.c
 CMN_ASRCS += loongarch_secondary.S
 endif
 
-CMN_CSRCS += loongarch_timer.c
+CMN_CSRCS += loongarch_timer.c loongarch_fpucmp.c
 
 ifeq ($(CONFIG_LOONGARCH_MMU_TEST),y)
 CMN_CSRCS += loongarch_mmutest.c
 endif
 
-ifeq ($(CONFIG_ARCH_HAVE_FORK),y)
+ifeq ($(CONFIG_ARCH_HAVE_VFORK),y)
 CMN_CSRCS += loongarch_fork.c
 CMN_ASRCS += loongarch_forkentry.S
 endif

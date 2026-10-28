@@ -24,7 +24,7 @@
  * XMC CCU Driver
  *
  * For now, this file contains only helper methods mandatory for xmc tickless
- * feature. Contibutions are welcomed.
+ * feature. Contributions are welcome.
  *
  ****************************************************************************/
 
@@ -37,7 +37,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include "arm_internal.h"
 #include "hardware/xmc4_ccu4.h"

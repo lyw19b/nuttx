@@ -48,7 +48,7 @@
 #  define CONFIG_DEBUG_GRAPHICS_WARN  1
 #  define CONFIG_DEBUG_GRAPHICS_INFO  1
 #endif
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kthread.h>
 #include <nuttx/video/fb.h>
@@ -555,8 +555,8 @@ static inline int vnc_wait_start(int display)
    * first things that the VNC server will do with the kernel thread is
    * started.  But we might be here before the thread has gotten that far.
    *
-   * If it has been allocated, then wait until it is in the INIITIALIZED
-   * state.  The INITIAILIZED states indicates that the session structure
+   * If it has been allocated, then wait until it is in the INITIALIZED
+   * state.  The INITIALIZED states indicates that the session structure
    * has been allocated and fully initialized.
    */
 

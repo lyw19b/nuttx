@@ -151,7 +151,7 @@
 #  undef HAVE_MACADDR
 #endif
 
-#if !defined(CONFIG_MTD_CONFIG)
+#if defined(CONFIG_MTD_CONFIG_NONE)
 #  undef HAVE_MTDCONFIG
 #endif
 
@@ -235,7 +235,7 @@
  *
  *   ------ --------- ---------
  *   SAME70 SAME70    Ethernet
- *   Pin    Function  Functio
+ *   Pin    Function  Function
  *   ------ --------- ---------
  *   PD0    GTXCK     REF_CLK
  *   PD1    GTXEN     TXEN

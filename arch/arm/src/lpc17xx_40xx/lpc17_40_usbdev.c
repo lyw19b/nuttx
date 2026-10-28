@@ -33,7 +33,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/kmalloc.h>
@@ -306,7 +306,7 @@ struct lpc17_40_dmadesc_s
   uint32_t                nextdesc;      /* Address of the next DMA descriptor in RAM */
   uint32_t                config;        /* Misc. bit encoded configuration information */
   uint32_t                start;         /* DMA start address */
-  uint32_t                status;        /* Misc. bit encoded status inforamation */
+  uint32_t                status;        /* Misc. bit encoded status information */
 #ifdef CONFIG_USBDEV_ISOCHRONOUS
   uint32_t                size;          /* Isochronous packet size address */
 #endif

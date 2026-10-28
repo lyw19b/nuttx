@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <sched.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/addrenv.h>
 #include <nuttx/arch.h>
@@ -105,13 +105,14 @@ size_t loongarch_stack_check(uintptr_t alloc, size_t size)
  * Name: up_check_tcbstack
  *
  * Description:
- *   Measure the task stack high-water mark. Temporarily select its
+ *   Measure usage within the requested prefix of the task stack. The
+ *   scheduler supplies check_size for bounded overflow scans. Select its
  *   address environment when the stack belongs to a user process, then
  *   restore the caller environment.
  *
  ****************************************************************************/
 
-size_t up_check_tcbstack(struct tcb_s *tcb)
+size_t up_check_tcbstack(struct tcb_s *tcb, size_t check_size)
 {
   size_t size;
 
@@ -125,7 +126,7 @@ size_t up_check_tcbstack(struct tcb_s *tcb)
 #endif
 
   size = loongarch_stack_check((uintptr_t)tcb->stack_base_ptr,
-                               tcb->adj_stack_size);
+                               check_size);
 
 #ifdef CONFIG_ARCH_ADDRENV
   if (tcb->addrenv_own != NULL)
@@ -142,13 +143,19 @@ size_t up_check_tcbstack(struct tcb_s *tcb)
  * Name: up_check_intstack
  *
  * Description:
- *   Return the measured interrupt-stack usage for the selected CPU.
+ *   Scan the requested prefix of the selected CPU interrupt stack. A zero
+ *   check_size requests the full stack; clamp larger requests to its size.
  *
  ****************************************************************************/
 
-size_t up_check_intstack(int cpu)
+size_t up_check_intstack(int cpu, size_t check_size)
 {
-  return loongarch_stack_check(up_get_intstackbase(cpu), INT_STACK_SIZE);
+  if (check_size == 0 || check_size > INT_STACK_SIZE)
+    {
+      check_size = INT_STACK_SIZE;
+    }
+
+  return loongarch_stack_check(up_get_intstackbase(cpu), check_size);
 }
 #endif
 

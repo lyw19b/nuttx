@@ -22,10 +22,6 @@
 
 set(SRCS nrf53_boot.c nrf53_bringup.c)
 
-if(CONFIG_BOARDCTL)
-  list(APPEND SRCS nrf53_appinit.c)
-endif()
-
 if(CONFIG_NRF53_APPCORE)
   list(APPEND SRCS nrf53_cpunet_boot.c)
 endif()
@@ -34,6 +30,10 @@ if(CONFIG_ARCH_LEDS)
   list(APPEND SRCS nrf53_autoleds.c)
 else()
   list(APPEND SRCS nrf53_userleds.c)
+endif()
+
+if(CONFIG_DEV_GPIO)
+  list(APPEND SRCS nrf53_gpio.c)
 endif()
 
 if(CONFIG_ARCH_BUTTONS)
@@ -58,6 +58,10 @@ endif()
 
 if(CONFIG_NRF53_QSPI)
   list(APPEND SRCS nrf53_mx25.c)
+endif()
+
+if(CONFIG_NRF53_QDEC)
+  list(APPEND SRCS nrf53_qencoder.c)
 endif()
 
 target_sources(board PRIVATE ${SRCS})

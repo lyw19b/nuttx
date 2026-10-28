@@ -79,6 +79,15 @@
 #  define CONFIG_HAVE_CXX14 1
 #endif
 
+/* Keyword about _Atomic */
+
+#if defined(__cplusplus) || defined(__clang__) || \
+    !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+#  define __Atomic(t) t
+#else
+#  define __Atomic(t) _Atomic(t)
+#endif
+
 /* Green Hills Software definitions *****************************************/
 
 #if defined(__ghs__)
@@ -113,10 +122,6 @@
 #      warning requires compiling with optimization (-O2 or higher)
 #    endif
 #    if CONFIG_FORTIFY_SOURCE == 3
-#      if __GNUC__ < 12 || (defined(__clang__) && __clang_major__ < 12)
-#        error compiler version less than 12 does not support dynamic object size
-#      endif
-
 #      define fortify_size(__o, type) __builtin_dynamic_object_size(__o, type)
 #    else
 #      define fortify_size(__o, type) __builtin_object_size(__o, type)
@@ -131,12 +136,21 @@
                                         } \
                                       while (0)
 
-#    define fortify_va_arg_pack __builtin_va_arg_pack
+#    if !defined(__clang__)
+#      define fortify_va_arg_pack __builtin_va_arg_pack
+#    endif
 #    define fortify_real(fn) __typeof__(fn) __real_##fn __asm__(#fn)
 #    define fortify_function(fn) fortify_real(fn); \
                                  extern __inline__ no_builtin(#fn) \
                                  __attribute__((__always_inline__, \
                                                 __gnu_inline__, __artificial__))
+#  elif defined(__OPTIMIZE__) && __OPTIMIZE__ > 0 && defined(__has_builtin)
+#    define builtin_original(fn)  __typeof__(fn)  __orig_##fn __asm__(#fn)
+#    define builtin_function(fn)  builtin_original(fn); \
+                                  extern __inline__ no_builtin(#fn) \
+                                  __attribute__((__always_inline__, \
+                                                 __gnu_inline__, __artificial__))
+#    define CONFIG_HAVE_BUILTIN 1 /* Use built-in functions */
 #  endif
 
 /* Pre-processor */
@@ -170,6 +184,14 @@
 #  define offsetof(a, b) __builtin_offsetof(a, b)
 #  define return_address(x) __builtin_return_address(x)
 
+#  define PRAGMA(x)         _Pragma(#x)
+
+#  if defined(__clang__)
+#    define unroll_loop(n)  PRAGMA(clang loop unroll_count(n))
+#  else
+#    define unroll_loop(n)  PRAGMA(GCC unroll n)
+#  endif
+
 /* Attributes
  *
  * GCC supports weak symbols which can be used to reduce code size because
@@ -198,6 +220,13 @@
 
 #  define noreturn_function __attribute__((noreturn))
 
+/* The pure function attribute informs the compiler that
+ * the function is pure or const.
+ */
+
+#  define pure_function  __attribute__((pure))
+#  define const_function __attribute__((const))
+
 /* The farcall_function attribute informs GCC that is should use long calls
  * (even though -mlong-calls does not appear in the compilation options)
  */
@@ -212,6 +241,25 @@
 
 #  define predict_true(x)  __builtin_expect(!!(x), 1)
 #  define predict_false(x) __builtin_expect(!!(x), 0)
+
+/* `x` can be evaluated at compile time */
+
+#  define is_constexpr(x) __builtin_constant_p(x)
+
+/* Assume the condition is satisfied.
+ * We can use this to perform more aggressive compiler optimizations.
+ * Please use this with caution, as it may cause runtime errors if you fail
+ * to ensure that the condition is satisfied.
+ */
+
+#  if defined(__clang__)
+#    define compiler_assume(x) __builtin_assume(x)
+#  elif __GNUC__ >= 13 /* The assume(x) is supported since GCC 13. */
+#    define compiler_assume(x) __attribute__((assume(x)))
+#  else
+#    define compiler_assume(x) \
+     do { if (!(x)) { __builtin_unreachable(); } } while(0)
+#  endif
 
 /* Code locate */
 
@@ -249,10 +297,19 @@
 /* The always_inline_function attribute informs GCC that the function should
  * always be inlined, regardless of the level of optimization.  The
  * noinline_function indicates that the function should never be inlined.
+ * Note that if the compiler optimization is disabled, the stack-usage of
+ * the inline functions will not be optimized. In this case, force inlining
+ * can lead to stack-overflow.
  */
 
-#  define always_inline_function __attribute__((always_inline,no_instrument_function)) inline
-#  define inline_function __attribute__((always_inline)) inline
+#  ifdef CONFIG_DEBUG_NOOPT
+#    define always_inline_function inline
+#    define inline_function inline
+#  else
+#    define always_inline_function __attribute__((always_inline,no_instrument_function)) inline
+#    define inline_function __attribute__((always_inline)) inline
+#  endif
+
 #  define noinline_function __attribute__((noinline))
 
 /* The noinstrument_function attribute informs GCC don't instrument it */
@@ -268,7 +325,7 @@
 
 /* The nooptimiziation_function attribute no optimize */
 
-#  if defined(__clang__)
+#  if defined(__clang__) || defined(CONFIG_TRICORE_TOOLCHAIN_GNU)
 #    define nooptimiziation_function __attribute__((optnone))
 #  else
 #    define nooptimiziation_function __attribute__((optimize("O0")))
@@ -278,7 +335,7 @@
 
 #  define nosanitize_address __attribute__((no_sanitize_address))
 
-/* the Greenhills compiler do not support the following atttributes */
+/* the Greenhills compiler do not support the following attributes */
 
 #  if defined(__ghs__)
 #    undef nooptimiziation_function
@@ -349,7 +406,7 @@
 #  define used_code __attribute__((used))
 #  define used_data __attribute__((used))
 
-/* The allocation function annonations */
+/* The allocation function annotations */
 
 #  if __GNUC__ >= 11
 #    define fopen_like __attribute__((__malloc__(fclose, 1)))
@@ -394,7 +451,6 @@
 
 /* Define these here and allow specific architectures to override as needed */
 
-#  define CONFIG_HAVE_LONG_LONG 1
 #  define CONFIG_HAVE_FLOAT 1
 #  define CONFIG_HAVE_DOUBLE 1
 #  define CONFIG_HAVE_LONG_DOUBLE 1
@@ -437,7 +493,37 @@
 #    if defined(CONFIG_AVR_HAS_MEMX_PTR)
 /* I-space access qualifiers needed by Harvard architecture */
 
-#      define IOBJ __flash
+#      if defined(CONFIG_AVR_HAS_RAMPZ)
+#        define IOBJ __memx
+/* Compiler will not copy const variables declared with this qualifier
+ * to RAM, they will be kept in .progmemx.data section and read from there.
+ * This is used for chips with more than 64kB program memory, the compiler
+ * will use 24 bit pointers when accessing such variables. 16 bit pointer
+ * register "Z" is extended using additional "RAMPZ" register. All of this
+ * happens automatically.
+ *
+ * When working with these variables - passing pointers to them as function
+ * parameters for example, the same qualifier needs to be used (see IPTR
+ * below.) IPTR (__memx) linearizes flash and RAM and allows using generic
+ * pointer to both. Underlying memory for such access is then determined
+ * in runtime, with some impact on performance.
+ *
+ * To alleviate this, avr-gcc introduces __flashx qualifier which still
+ * provides 24 bit access to the variable but only allows program memory
+ * access. The check for pointer's underlying memory can then be skipped.
+ *
+ * This is currently not in use, it was introduced in avr-gcc 15 which
+ * is still fairly fresh. Can be considered at later time.
+ */
+#      else
+#        define IOBJ __flash
+/* Compiler will not copy variables declared with this qualifier to RAM.
+ * Instead, it will read them using LPM (Load from Program Memory.)
+ * Only first 64kB of program memory can be accessed this way so for
+ * chips with more memory than that, __memx is preferred
+ */
+#      endif
+
 #      define IPTR __memx
 
 #    else
@@ -544,9 +630,17 @@
 
 #  endif
 
+/* Use compiler definition to define long double mantisa digits */
+
+#  ifdef CONFIG_HAVE_LONG_DOUBLE
+#    define LDBL_MANT_DIG __LDBL_MANT_DIG__
+#  endif
+
 /* Indicate that a local variable is not used */
 
-#  define UNUSED(a) ((void)(1 || &(a)))
+#  ifndef UNUSED
+#    define UNUSED(a) ((void)(1 || &(a)))
+#  endif
 
 #  if defined(__clang__)
 #    define no_builtin(n) __attribute__((no_builtin(n)))
@@ -556,11 +650,44 @@
 #    define no_builtin(n)
 #  endif
 
-/* CMSE extention */
+/* CMSE extension */
 
 #  ifdef CONFIG_ARCH_HAVE_TRUSTZONE
 #    define tz_nonsecure_entry __attribute__((cmse_nonsecure_entry))
 #    define tz_nonsecure_call  __attribute__((cmse_nonsecure_call))
+#  endif
+
+/* Warning about usage of deprecated features. */
+
+#  define deprecated_function  __attribute__((deprecated))
+
+/* Memory barrier. */
+
+#  define memory_barrier()  __asm__ __volatile__ ("" : : : "memory")
+
+/* Atomic functions. */
+
+#  ifdef CONFIG_LIBC_ATOMIC_TOOLCHAIN
+#    define atomic_store_4(obj, val, memorder)     __atomic_store_n(obj, val, memorder)
+#    define atomic_store_8(obj, val, memorder)     __atomic_store_n(obj, val, memorder)
+#    define atomic_load_4(obj, memorder)           __atomic_load_n(obj, memorder)
+#    define atomic_load_8(obj, memorder)           __atomic_load_n(obj, memorder)
+#    define atomic_fetch_add_4(obj, val, memorder) __atomic_fetch_add(obj, val, memorder)
+#    define atomic_fetch_add_8(obj, val, memorder) __atomic_fetch_add(obj, val, memorder)
+#    define atomic_fetch_sub_4(obj, val, memorder) __atomic_fetch_sub(obj, val, memorder)
+#    define atomic_fetch_sub_8(obj, val, memorder) __atomic_fetch_sub(obj, val, memorder)
+#    define atomic_fetch_and_4(obj, val, memorder) __atomic_fetch_and(obj, val, memorder)
+#    define atomic_fetch_and_8(obj, val, memorder) __atomic_fetch_and(obj, val, memorder)
+#    define atomic_fetch_or_4(obj, val, memorder)  __atomic_fetch_or(obj, val, memorder)
+#    define atomic_fetch_or_8(obj, val, memorder)  __atomic_fetch_or(obj, val, memorder)
+#    define atomic_fetch_xor_4(obj, val, memorder) __atomic_fetch_xor(obj, val, memorder)
+#    define atomic_fetch_xor_8(obj, val, memorder) __atomic_fetch_xor(obj, val, memorder)
+#    define atomic_exchange_4(obj, val, memorder)  __atomic_exchange_n(obj, val, memorder)
+#    define atomic_exchange_8(obj, val, memorder)  __atomic_exchange_n(obj, val, memorder)
+#    define atomic_compare_exchange_4(obj, expected, desired, weak, success, failure) \
+       __atomic_compare_exchange_n(obj, expected, desired, weak, success, failure)
+#    define atomic_compare_exchange_8(obj, expected, desired, weak, success, failure) \
+       __atomic_compare_exchange_n(obj, expected, desired, weak, success, failure)
 #  endif
 
 /* SDCC-specific definitions ************************************************/
@@ -609,8 +736,12 @@
  */
 
 #  define noreturn_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define locate_code(n)
 #  define aligned_data(n)
 #  define locate_data(n)
@@ -674,7 +805,9 @@
 
 /* Indicate that a local variable is not used */
 
-#  define UNUSED(a) ((void)(1 || &(a)))
+#  ifndef UNUSED
+#    define UNUSED(a) ((void)(1 || &(a)))
+#  endif
 
 /* It is assumed that the system is build using the small
  * data model with storage defaulting to internal RAM.
@@ -720,7 +853,6 @@
  * double.
  */
 
-#  define CONFIG_HAVE_LONG_LONG 1
 #  define CONFIG_HAVE_FLOAT 1
 #  undef  CONFIG_HAVE_DOUBLE
 #  undef  CONFIG_HAVE_LONG_DOUBLE
@@ -728,7 +860,18 @@
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
+
+/* Warning about usage of deprecated features. */
+
+#  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
 
 /* Zilog-specific definitions ***********************************************/
 
@@ -772,8 +915,12 @@
  */
 
 #  define noreturn_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define aligned_data(n)
 #  define locate_code(n)
 #  define locate_data(n)
@@ -863,7 +1010,9 @@
 
 /* Indicate that a local variable is not used */
 
-#  define UNUSED(a) ((void)(1 || &(a)))
+#  ifndef UNUSED
+#    define UNUSED(a) ((void)(1 || &(a)))
+#  endif
 
 /* Older Zilog compilers support both types double and long long, but the
  * size is 32-bits (same as long and single precision) so it is safer to say
@@ -871,7 +1020,6 @@
  * simply do not support long long or double.
  */
 
-#  undef  CONFIG_HAVE_LONG_LONG
 #  define CONFIG_HAVE_FLOAT 1
 #  undef  CONFIG_HAVE_DOUBLE
 #  undef  CONFIG_HAVE_LONG_DOUBLE
@@ -879,7 +1027,18 @@
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
+
+/* Warning about usage of deprecated features. */
+
+#  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
 
 /* ICCARM-specific definitions **********************************************/
 
@@ -891,8 +1050,12 @@
 #  define weak_const_function
 #  define noreturn_function
 #  define farcall_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define locate_code(n)
 #  define aligned_data(n)
 #  define locate_data(n)
@@ -950,7 +1113,9 @@
 
 /* Indicate that a local variable is not used */
 
-#  define UNUSED(a) ((void)(1 || &(a)))
+#  ifndef UNUSED
+#    define UNUSED(a) ((void)(1 || &(a)))
+#  endif
 
 #  define CONFIG_CPP_HAVE_VARARGS 1 /* Supports variable argument macros */
 #  define CONFIG_HAVE_FILENAME 1    /* Has __FILE__ */
@@ -959,7 +1124,18 @@
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
+
+/* Warning about usage of deprecated features. */
+
+#  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
 
 /* MSVC(Microsoft Visual C++)-specific definitions **************************/
 
@@ -967,7 +1143,6 @@
 
 /* Define these here and allow specific architectures to override as needed */
 
-#  define CONFIG_HAVE_LONG_LONG 1
 #  define CONFIG_HAVE_FLOAT 1
 #  define CONFIG_HAVE_DOUBLE 1
 #  define CONFIG_HAVE_LONG_DOUBLE 1
@@ -990,8 +1165,12 @@
 #  define restrict
 #  define noreturn_function
 #  define farcall_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x) __assume(x)
 #  define aligned_data(n)
 #  define locate_code(n)
 #  define locate_data(n)
@@ -1042,12 +1221,70 @@
 #  undef  CONFIG_LONG_IS_NOT_INT
 #  undef  CONFIG_PTR_IS_NOT_INT
 
-#  define UNUSED(a) ((void)(1 || &(a)))
+#  ifndef UNUSED
+#    define UNUSED(a) ((void)(1 || &(a)))
+#  endif
 
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
+
+/* Warning about usage of deprecated features. */
+
+#  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
+
+/* long double is suppose to be same as double on MSVC. */
+
+#  define LDBL_MANT_DIG 53
+
+/* Atomic functions. */
+
+#  ifdef CONFIG_LIBC_ATOMIC_TOOLCHAIN
+#    define atomic_store_4(obj, val, memorder) \
+       _InterlockedExchange((FAR long volatile *)(obj), val)
+#    define atomic_store_8(obj, val, memorder) \
+       _InterlockedExchange64((FAR long long volatile *)(obj), val)
+#    define atomic_load_4(obj, memorder) \
+       _InterlockedOr((FAR long volatile *)(obj), 0)
+#    define atomic_load_8(obj, memorder) \
+       _InterlockedOr64((FAR long long volatile *)(obj), 0)
+#    define atomic_fetch_add_4(obj, val, memorder) \
+       _InterlockedExchangeAdd((FAR long volatile *)(obj), val)
+#    define atomic_fetch_add_8(obj, val, memorder) \
+       _InterlockedExchangeAdd64((FAR long long volatile *)(obj), val)
+#    define atomic_fetch_sub_4(obj, val, memorder) \
+       _InterlockedExchangeAdd((FAR long volatile *)(obj), -val)
+#    define atomic_fetch_sub_8(obj, val, memorder) \
+       _InterlockedExchangeAdd64((FAR long long volatile *)(obj), -val)
+#    define atomic_fetch_and_4(obj, val, memorder) \
+       _InterlockedAnd((FAR long volatile *)(obj), val)
+#    define atomic_fetch_and_8(obj, val, memorder) \
+       _InterlockedAnd64((FAR long long volatile *)(obj), val)
+#    define atomic_fetch_or_4(obj, val, memorder) \
+       _InterlockedOr((FAR long volatile *)(obj), val)
+#    define atomic_fetch_or_8(obj, val, memorder) \
+       _InterlockedOr64((FAR long long volatile *)(obj), val)
+#    define atomic_fetch_xor_4(obj, val, memorder) \
+       _InterlockedXor((FAR long volatile *)(obj), val)
+#    define atomic_fetch_xor_8(obj, val, memorder) \
+       _InterlockedXor64((FAR long long volatile *)(obj), val)
+#    define atomic_exchange_4(obj, val, memorder) \
+       _InterlockedExchange((FAR long volatile *)(obj), val)
+#    define atomic_exchange_8(obj, val, memorder) \
+       _InterlockedExchange64((FAR long long volatile *)(obj), val)
+#    define atomic_compare_exchange_4(obj, expect, desired, weak, success, failure) \
+       (_InterlockedCompareExchange((FAR long volatile *)(obj), desired, *expect) == *expect)
+#    define atomic_compare_exchange_8(obj, expect, desired, weak, success, failure) \
+       (_InterlockedCompareExchange64((FAR long long volatile *)(obj), desired, *expect) == *expect)
+#  endif
 
 /* TASKING (Infineon AURIX C/C++)-specific definitions **********************/
 
@@ -1055,7 +1292,6 @@
 
 /* Define these here and allow specific architectures to override as needed */
 
-#  define CONFIG_HAVE_LONG_LONG         1
 #  define CONFIG_HAVE_FLOAT             1
 #  define CONFIG_HAVE_DOUBLE            1
 #  define CONFIG_HAVE_LONG_DOUBLE       1
@@ -1078,8 +1314,12 @@
 #  define restrict
 #  define noreturn_function
 #  define farcall_function              __attribute__((long_call))
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define aligned_data(n)               __attribute__((aligned(n)))
 #  define locate_code(n)                __attribute__((section(n)))
 #  define locate_data(n)                __attribute__((section(n)))
@@ -1129,12 +1369,52 @@
 #  undef  CONFIG_LONG_IS_NOT_INT
 #  undef  CONFIG_PTR_IS_NOT_INT
 
-#  define UNUSED(a) ((void)(1 || &(a)))
+#  ifndef UNUSED
+#    define UNUSED(a) ((void)(1 || &(a)))
+#  endif
 
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
+
+/* Warning about usage of deprecated features. */
+
+#  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()  __asm__ __volatile__ ("" : : : "memory")
+
+/* Atomic functions. */
+
+#  ifdef CONFIG_LIBC_ATOMIC_TOOLCHAIN
+#    define atomic_store_4(obj, val, memorder)     __c11_atomic_store(obj, val, memorder)
+#    define atomic_store_8(obj, val, memorder)     __c11_atomic_store(obj, val, memorder)
+#    define atomic_load_4(obj, memorder)           __c11_atomic_load(obj, memorder)
+#    define atomic_load_8(obj, memorder)           __c11_atomic_load(obj, memorder)
+#    define atomic_fetch_add_4(obj, val, memorder) __c11_atomic_add(obj, val, memorder)
+#    define atomic_fetch_add_8(obj, val, memorder) __c11_atomic_add(obj, val, memorder)
+#    define atomic_fetch_sub_4(obj, val, memorder) __c11_atomic_sub(obj, val, memorder)
+#    define atomic_fetch_sub_8(obj, val, memorder) __c11_atomic_sub(obj, val, memorder)
+#    define atomic_fetch_and_4(obj, val, memorder) __c11_atomic_and(obj, val, memorder)
+#    define atomic_fetch_and_8(obj, val, memorder) __c11_atomic_and(obj, val, memorder)
+#    define atomic_fetch_or_4(obj, val, memorder)  __c11_atomic_or(obj, val, memorder)
+#    define atomic_fetch_or_8(obj, val, memorder)  __c11_atomic_or(obj, val, memorder)
+#    define atomic_fetch_xor_4(obj, val, memorder) __c11_atomic_xor(obj, val, memorder)
+#    define atomic_fetch_xor_8(obj, val, memorder) __c11_atomic_xor(obj, val, memorder)
+#    define atomic_exchange_4(obj, val, memorder)  __c11_atomic_exchange(obj, val, memorder)
+#    define atomic_exchange_8(obj, val, memorder)  __c11_atomic_exchange(obj, val, memorder)
+#    define atomic_compare_exchange_4(obj, expected, desired, weak, success, failure) \
+       ((weak) ? __c11_atomic_compare_exchange_weak(obj, expected, desired, success, failure) \
+               : __c11_atomic_compare_exchange_strong(obj, expected, desired, success, failure))
+#    define atomic_compare_exchange_8(obj, expected, desired, weak, success, failure) \
+       ((weak) ? __c11_atomic_compare_exchange_weak(obj, expected, desired, success, failure) \
+               : __c11_atomic_compare_exchange_strong(obj, expected, desired, success, failure))
+#  endif
 
 /* Unknown compiler *********************************************************/
 
@@ -1152,8 +1432,12 @@
 #  define restrict
 #  define noreturn_function
 #  define farcall_function
+#  define pure_function
+#  define const_function
 #  define predict_true(x) (x)
 #  define predict_false(x) (x)
+#  define is_constexpr(x)  (0)
+#  define compiler_assume(x)
 #  define aligned_data(n)
 #  define locate_code(n)
 #  define locate_data(n)
@@ -1202,28 +1486,52 @@
 #  undef  CONFIG_SMALL_MEMORY
 #  undef  CONFIG_LONG_IS_NOT_INT
 #  undef  CONFIG_PTR_IS_NOT_INT
-#  undef  CONFIG_HAVE_LONG_LONG
 #  define CONFIG_HAVE_FLOAT 1
 #  undef  CONFIG_HAVE_DOUBLE
 #  undef  CONFIG_HAVE_LONG_DOUBLE
 
-#  define UNUSED(a) ((void)(1 || &(a)))
+#  ifndef UNUSED
+#    define UNUSED(a) ((void)(1 || &(a)))
+#  endif
 
 #  define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 #  define return_address(x) 0
 
+#  define PRAGMA(x)
+#  define unroll_loop(n)
+
 #  define no_builtin(n)
 
-#endif
+/* Warning about usage of deprecated features. */
 
-#ifndef CONFIG_HAVE_LONG_LONG
-#  undef CONFIG_FS_LARGEFILE
+#  define deprecated_function
+
+/* Memory barrier. */
+
+#  define memory_barrier()
+
 #endif
 
 #ifdef CONFIG_DISABLE_FLOAT
 #  undef CONFIG_HAVE_FLOAT
 #  undef CONFIG_HAVE_DOUBLE
 #  undef CONFIG_HAVE_LONG_DOUBLE
+#  define float  int
+#  define double long
+#endif
+
+/* Decorators */
+
+#ifdef CONFIG_ARCH_RAMFUNCS
+#  define osentry_function no_builtin("memcpy") no_builtin("memset")
+#else
+#  define osentry_function
+#endif
+
+/* Micro about __has_include */
+
+#ifndef __has_include
+#  define __has_include(x) 0
 #endif
 
 /****************************************************************************

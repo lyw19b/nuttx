@@ -28,7 +28,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -49,6 +49,12 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+/* Only float data type supported now */
+
+#ifdef CONFIG_SENSORS_USE_B16
+#  error fixed-point data type not supported yet
+#endif
 
 #ifndef CONFIG_ENDIAN_BIG
 #  define ds18b20_leuint64(x) (x)
@@ -81,7 +87,7 @@
 #define DS18B20_RES_VAL(x)             (((x) >> 5) & 0x3)
 #define DS18B20_RES_CONV(x)            (((x) & 0x3) << 5)
 
-/* Measurement timneout offset */
+/* Measurement timeout offset */
 
 #define DS18B20_TIMEOUT_OFFSET(x)      (DS18B20_RESMAX - (x))
 
@@ -616,7 +622,7 @@ static int ds18b20_measure_read(FAR struct ds18b20_dev_s *dev,
       return ret;
     }
 
-  nxsig_usleep(g_res_timeout[DS18B20_RES_VAL(dev->reg.res)]);
+  nxsched_usleep(g_res_timeout[DS18B20_RES_VAL(dev->reg.res)]);
 
   ret = ds18b20_read_spad(dev, data->spad);
   if (ret < 0)
@@ -631,7 +637,7 @@ static int ds18b20_measure_read(FAR struct ds18b20_dev_s *dev,
 /****************************************************************************
  * Name: ds18b20_fetch
  *
- * Description: Performs a measuremnt cylce and data read with data
+ * Description: Performs a measuremnt cycle and data read with data
  *              conversion.
  *
  * Parameter:
@@ -857,7 +863,7 @@ static int ds18b20_thread(int argc, char** argv)
                * is up to date.
                */
 
-              nxsig_usleep(g_res_timeout[DS18B20_RES_VAL(priv->reg.res)]);
+              nxsched_usleep(g_res_timeout[DS18B20_RES_VAL(priv->reg.res)]);
 
               /* Check for existing temperature alarm */
 
@@ -876,7 +882,7 @@ static int ds18b20_thread(int argc, char** argv)
         }
       else
         {
-          /* Default nofitication when temperature has been changed */
+          /* Default notification when temperature has been changed */
 
           ret = ds18b20_measure_read(priv, &data);
           if (!ret)
@@ -896,7 +902,7 @@ static int ds18b20_thread(int argc, char** argv)
 
       /* Sleeping thread before fetching the next sensor data */
 
-      nxsig_usleep(priv->interval);
+      nxsched_usleep(priv->interval);
     }
 
   return OK;

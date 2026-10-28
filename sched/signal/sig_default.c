@@ -149,6 +149,9 @@ static const struct nxsig_defaction_s g_defactions[] =
 #ifdef CONFIG_SIG_SIGPOLL_ACTION
   { SIGPOLL,   0,                nxsig_abnormal_termination },
 #endif
+#ifdef CONFIG_SIG_SIGURG_ACTION
+  { SIGURG,    0,                nxsig_null_action },
+#endif
 };
 
 #define NACTIONS (sizeof(g_defactions) / sizeof(struct nxsig_defaction_s))
@@ -289,7 +292,7 @@ static void nxsig_stop_task(int signo)
   group_suspend_children(rtcb);
 #endif
 
-  /* Lock the scheduler so this thread is not pre-empted until after we
+  /* Lock the scheduler so this thread is not preempted until after we
    * call nxsched_suspend().
    */
 
@@ -303,6 +306,8 @@ static void nxsig_stop_task(int signo)
 
   if ((group->tg_waitflags & WUNTRACED) != 0)
     {
+      int semvalue;
+
       /* Return zero for exit status (we are not exiting, however) */
 
       if (group->tg_statloc != NULL)
@@ -319,11 +324,13 @@ static void nxsig_stop_task(int signo)
 
       /* Wakeup any tasks waiting for this task to exit or stop. */
 
-      while (group->tg_exitsem.semcount < 0)
+      nxsem_get_value(&group->tg_exitsem, &semvalue);
+      while (semvalue < 0)
         {
           /* Wake up the thread */
 
           nxsem_post(&group->tg_exitsem);
+          nxsem_get_value(&group->tg_exitsem, &semvalue);
         }
     }
 #endif
@@ -507,7 +514,7 @@ bool nxsig_iscatchable(int signo)
  *   defaction - True: the default action is in place
  *
  * Returned Value:
- *   The address of the default signal action handler is returne on success.
+ *   The address of the default signal action handler is returned on success.
  *   SIG_IGN is returned if there is no default action.
  *
  ****************************************************************************/

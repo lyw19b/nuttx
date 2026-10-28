@@ -65,7 +65,7 @@ class Registers:
 
                 # Name         Nr  Rel Offset    Size  Type            Rmt Nr  g/G Offset
                 match = re.match(
-                    r"\s(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)(?:\s+(\d+)\s+(\d+))?",
+                    r"\s*(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)(?:\s+(\d+)\s+(\d+))?",
                     line,
                 )
                 if not match:
@@ -216,7 +216,7 @@ class Nxinfothreads(gdb.Command):
     def invoke(self, args, from_tty):
         npidhash = gdb.parse_and_eval("g_npidhash")
         pidhash = gdb.parse_and_eval("g_pidhash")
-        statenames = gdb.parse_and_eval("g_statenames")
+        statenames = gdb.parse_and_eval("nxsched_get_stateinfo::g_statenames")
 
         if utils.is_target_smp():
             gdb.write(
@@ -435,6 +435,8 @@ class TaskState(Enum):
     Inactive = auto()
     Waiting_Semaphore = auto()
     Waiting_Signal = auto()
+    if utils.get_symbol_value("CONFIG_SCHED_EVENTS"):
+        Waiting_Event = auto()
     if not utils.get_symbol_value(
         "CONFIG_DISABLE_MQUEUE"
     ) or not utils.get_symbol_value("CONFIG_DISABLE_MQUEUE_SYSV"):
@@ -450,7 +452,7 @@ class Ps(gdb.Command):
     def __init__(self):
         super().__init__("ps", gdb.COMMAND_USER)
         self._fmt_wxl = "{0: <{width}}"
-        # By default we align to the right, whcih respects the nuttx foramt
+        # By default we align to the right, which respects the nuttx format
         self._fmt_wx = "{0: >{width}}"
 
     def parse_and_show_info(self, tcb):

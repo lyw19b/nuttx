@@ -24,7 +24,7 @@
  * Included Files
  ****************************************************************************/
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 #include <ifaddrs.h>
 #include <net/if.h>
@@ -45,7 +45,7 @@
 #define broadaddr dstaddr
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Types
  ****************************************************************************/
 
 struct myifaddrs

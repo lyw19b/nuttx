@@ -27,7 +27,7 @@
 #include <nuttx/config.h>
 #include <nuttx/nuttx.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -49,10 +49,10 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* The LIS2MDL supports up to 3.4MHz bus speeds */
+/* Only float data type supported now */
 
-#ifndef CONFIG_SENSORS_LIS2MDL_I2C_FREQUENCY
-#define CONFIG_SENSORS_LIS2MDL_I2C_FREQUENCY 1000000
+#ifdef CONFIG_SENSORS_USE_B16
+#  error fixed-point data type not supported yet
 #endif
 
 /* The value that should be in the "who am I" register */
@@ -887,7 +887,7 @@ static int lis2mdl_selftest(FAR struct sensor_lowerhalf_s *lower,
 
       /* Wait for the measurement interval */
 
-      nxsig_usleep(ODR_TO_INTERVAL[dev->odr]);
+      nxsched_usleep(ODR_TO_INTERVAL[dev->odr]);
     }
 
   sninfo("LIS2MDL regular samples complete.");
@@ -902,7 +902,7 @@ static int lis2mdl_selftest(FAR struct sensor_lowerhalf_s *lower,
     }
 
   sninfo("LIS2MDL waiting for self-test.");
-  nxsig_usleep(60000); /* Wait 60ms as per AN5069 */
+  nxsched_usleep(60000); /* Wait 60ms as per AN5069 */
   sninfo("LIS2MDL waiting for self-test over.");
 
   for (uint8_t i = 0; i < SELFTEST_SAMPLES; i++)
@@ -928,7 +928,7 @@ static int lis2mdl_selftest(FAR struct sensor_lowerhalf_s *lower,
 
       /* Wait for the measurement interval */
 
-      nxsig_usleep(ODR_TO_INTERVAL[dev->odr]);
+      nxsched_usleep(ODR_TO_INTERVAL[dev->odr]);
     }
 
   sninfo("LIS2MDL self-test samples complete.");
@@ -1019,6 +1019,7 @@ static int lis2mdl_set_calibvalue(FAR struct sensor_lowerhalf_s *lower,
   /* Get user calibration values */
 
   FAR float *vals = (float *)(arg);
+
   if (vals == NULL)
     {
       err = -EINVAL;
@@ -1061,6 +1062,7 @@ static int lis2mdl_fetch(FAR struct sensor_lowerhalf_s *lower,
 {
   FAR struct lis2mdl_dev_s *dev =
       container_of(lower, FAR struct lis2mdl_dev_s, lower);
+
   return lis2mdl_push_data(dev);
 }
 #endif /* CONFIG_SENSORS_LIS2MDL_FETCH */
@@ -1085,63 +1087,64 @@ static int lis2mdl_control(FAR struct sensor_lowerhalf_s *lower,
 
   switch (cmd)
     {
-      /* Get the WHOAMI register value */
+        /* Get the WHOAMI register value */
 
-    case SNIOC_WHO_AM_I:
-      {
-        uint8_t *id = ((uint8_t *)(arg));
-        if (id == NULL)
-          {
-            err = -EINVAL;
-            break;
-          }
+      case SNIOC_WHO_AM_I:
+        {
+          uint8_t *id = ((uint8_t *)(arg));
 
-        err = lis2mdl_read_reg(dev, REG_WHO_AM_I, id, 1);
-      }
-      break;
+          if (id == NULL)
+            {
+              err = -EINVAL;
+              break;
+            }
 
-      /* Set low power mode if `arg` is truthy */
+          err = lis2mdl_read_reg(dev, REG_WHO_AM_I, id, 1);
+        }
+        break;
 
-    case SNIOC_SET_POWER_MODE:
-      {
-        err = lis2mdl_low_power(dev, arg);
-      }
-      break;
+        /* Set low power mode if `arg` is truthy */
 
-      /* Soft reset */
+      case SNIOC_SET_POWER_MODE:
+        {
+          err = lis2mdl_low_power(dev, arg);
+        }
+        break;
 
-    case SNIOC_RESET:
-      {
-        err = lis2mdl_reset(dev);
-      }
-      break;
+        /* Soft reset */
 
-      /* Reboot memory contents */
+      case SNIOC_RESET:
+        {
+          err = lis2mdl_reset(dev);
+        }
+        break;
 
-    case SNIOC_SENSOR_OFF:
-      {
-        err = lis2mdl_reboot(dev);
-      }
-      break;
+        /* Reboot memory contents */
 
-      /* Enable/disable temperature compensation */
+      case SNIOC_SENSOR_OFF:
+        {
+          err = lis2mdl_reboot(dev);
+        }
+        break;
 
-    case SNIOC_SET_TEMP_OFFSET:
-      {
-        err = lis2mdl_temp_compensation(dev, arg);
-      }
-      break;
+        /* Enable/disable temperature compensation */
 
-    case SNIOC_LPF:
-      {
-        err = lis2mdl_enable_lpf(dev, arg);
-      }
-      break;
+      case SNIOC_SET_TEMP_OFFSET:
+        {
+          err = lis2mdl_temp_compensation(dev, arg);
+        }
+        break;
 
-    default:
-      err = -EINVAL;
-      snerr("Unknown command for LIS2MDL: lu\n", cmd);
-      break;
+      case SNIOC_LPF:
+        {
+          err = lis2mdl_enable_lpf(dev, arg);
+        }
+        break;
+
+      default:
+        err = -EINVAL;
+        snerr("Unknown command for LIS2MDL: %d\n", cmd);
+        break;
     }
 
   nxmutex_unlock(&dev->devlock);
@@ -1159,6 +1162,7 @@ static int lis2mdl_control(FAR struct sensor_lowerhalf_s *lower,
 static void lis2mdl_worker(FAR void *arg)
 {
   FAR struct lis2mdl_dev_s *dev = (FAR struct lis2mdl_dev_s *)(arg);
+
   DEBUGASSERT(dev != NULL);
   lis2mdl_push_data(dev);
 }
@@ -1175,6 +1179,7 @@ static int lis2mdl_int_handler(int irq, FAR void *context, FAR void *arg)
 {
   FAR struct lis2mdl_dev_s *dev = (FAR struct lis2mdl_dev_s *)(arg);
   int err;
+
   (void)context;
 
   DEBUGASSERT(dev != NULL);
@@ -1228,7 +1233,7 @@ static int lis2mdl_thread(int argc, char **argv)
 
       /* Wait for next measurement cycle */
 
-      nxsig_usleep(ODR_TO_INTERVAL[dev->odr]);
+      nxsched_usleep(ODR_TO_INTERVAL[dev->odr]);
     }
 
   return err;
@@ -1251,7 +1256,7 @@ static int lis2mdl_thread(int argc, char **argv)
  *   devno   - The device number to use for the topic (i.e. /dev/mag0)
  *   attach  - A function which is called by this driver to attach the
  *             LIS2MDL interrupt handler to an IRQ. Pass NULL to operate
- *             in polling mode. This function should return 0 on succes
+ *             in polling mode. This function should return 0 on success
  *             and a negated error code otherwise.
  *
  * Returned Value:
@@ -1295,24 +1300,15 @@ int lis2mdl_register(FAR struct i2c_master_s *i2c, int devno, uint8_t addr,
   priv->i2c = i2c;
   priv->addr = addr;
 
-  err = nxmutex_init(&priv->devlock);
-  if (err < 0)
-    {
-      snerr("Failed to register LIS2MDL driver: %d\n", err);
-      goto del_mem;
-    }
+  nxmutex_init(&priv->devlock);
 
-  err = nxsem_init(&priv->run, 0, 0);
-  if (err < 0)
-    {
-      snerr("Failed to register LIS2MDL driver: %d\n", err);
-      goto del_mutex;
-    }
+  nxsem_init(&priv->run, 0, 0);
 
   /* Register UORB Sensor */
 
   priv->lower.ops = &g_sensor_ops;
   priv->lower.type = SENSOR_TYPE_MAGNETIC_FIELD;
+  priv->lower.nbuffer = CONFIG_SENSORS_LIS2MDL_ORB_BUFSIZE;
   priv->enabled = false;
   priv->lowpower = false;
   priv->offsets = false;
@@ -1375,13 +1371,11 @@ int lis2mdl_register(FAR struct i2c_master_s *i2c, int devno, uint8_t addr,
 
   if (err < 0)
     {
-    sensor_unreg:
+sensor_unreg:
       sensor_unregister(&priv->lower, devno);
-    del_sem:
+del_sem:
       nxsem_destroy(&priv->run);
-    del_mutex:
       nxmutex_destroy(&priv->devlock);
-    del_mem:
       kmm_free(priv);
       return err;
     }

@@ -27,7 +27,7 @@
 #include <nuttx/config.h>
 
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/kmalloc.h>
@@ -53,7 +53,7 @@ void inode_release(FAR struct inode *inode)
     {
       /* Decrement the references of the inode */
 
-      if (atomic_fetch_sub(&inode->i_crefs, 1) <= 1)
+      if (atomic_sub(&inode->i_crefs, 1) <= 1)
         {
           DEBUGASSERT(inode->i_peer == NULL);
           inode_free(inode);

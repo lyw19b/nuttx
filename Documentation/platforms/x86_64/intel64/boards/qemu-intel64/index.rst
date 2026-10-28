@@ -5,8 +5,6 @@ qemu-intel64
 This page file describes the contents of the build configurations available
 for the NuttX QEMU x86_64 port.
 
-
-
 QEMU/KVM
 ========
 
@@ -171,6 +169,23 @@ ostest
 The "standard" NuttX examples/ostest configuration with
 the default console on legacy UART0 port (base=0x3f8)
 
+python
+------
+
+This configuration runs the CPython interpreter (``apps/interpreters/python``)
+with SMP and networking (e1000) enabled.  It works only with the Make-based
+build system.
+
+Command to run the image with user-mode networking::
+
+  qemu-system-x86_64 -m 2G -smp 4 -cpu host -enable-kvm \
+  -kernel nuttx -nographic -serial mon:stdio \
+  -device e1000,netdev=u0 -netdev user,id=u0
+
+Then start the interpreter from NSH::
+
+  nsh> python
+
 jumbo
 -----
 
@@ -181,6 +196,18 @@ Basic command to run the image without additional PCI devices attached::
   qemu-system-x86_64 -m 2G -cpu host -smp 4 -enable-kvm \
   -kernel nuttx -nographic -serial mon:stdio
 
+Command to run the image with some xHCI devices attached::
+
+  qemu-system-x86_64 -m 4G -smp 4 -cpu host -enable-kvm \
+  -kernel nuttx -serial mon:stdio -chardev pty,id=ch1 \
+  -device qemu-xhci -device usb-mouse -device usb-kbd
+
+Command to run the image with e1000 NIC device with TAP::
+
+  qemu-system-x86_64 -m 2G -smp 4 -cpu host -enable-kvm \
+  -kernel nuttx -nographic -serial mon:stdio \
+  -device e1000,netdev=mynet0 \
+  -netdev tap,id=mynet0,ifname=tap0,script=no,downscript=no
 
 knsh_romfs
 ----------
@@ -191,7 +218,7 @@ are built separately. It uses ROMFS to load the user-space applications.
 This is intended to run on QEMU with COM serial port support.
 
 Steps to build kernel image with user-space apps in ROMFS::
-    
+
     ./tools/configure.sh qemu-intel64/knsh_romfs
     make -j
     make export -j
@@ -203,6 +230,24 @@ Steps to build kernel image with user-space apps in ROMFS::
     popd
     make -j
 
+With CMake the user-space applications and the ROMFS image are built as
+part of the normal build (``genromfs`` and ``xxd`` must be available on
+the host)::
+
+    cmake -B build -GNinja -DBOARD_CONFIG=qemu-intel64/knsh_romfs .
+    cmake --build build
+
+Then run the image with::
+
+    qemu-system-x86_64 -cpu host -enable-kvm -m 2G -kernel build/nuttx \
+        -nographic -serial mon:stdio
+
+The applications are installed to ``build/bin`` and mounted from ROMFS
+at ``/system/bin``. The configuration does not set ``CONFIG_PATH_INITIAL``,
+so start applications with an absolute path (``/system/bin/hello``) or
+enable ``CONFIG_LIBC_ENVPATH`` and ``CONFIG_PATH_INITIAL="/system/bin"``
+to resolve bare command names.
+
 knsh_romfs_pci
 --------------
 
@@ -212,9 +257,26 @@ to run on a bare metal Intel hardware with PCI serial port support.
 lvgl
 ----
 
-LVGL demo example that demonstrates x86_64 framebufer feature.
+LVGL demo example that demonstrates x86_64 framebuffer feature.
 
 fb
 ---
 
 Configuration that enables NuttX framebuffer examples.
+
+nxterm
+------
+
+This configuration starts NSH in a full-screen NXTerm and selects the first
+supported PCI 16550 device, allowing the same image to use QEMU's PCI serial
+device or a supported PCI serial card on real hardware.  A serial NSH is used
+as a fallback if the framebuffer console cannot start.
+
+Create a Multiboot2 ISO and run it with a PCI serial device, xHCI controller,
+and USB keyboard::
+
+  qemu-system-x86_64 -cpu host -enable-kvm -m 2G -smp 4 \
+      -cdrom boot.iso -vga std -display gtk -no-reboot \
+      -chardev stdio,id=pciser,signal=off \
+      -device pci-serial,chardev=pciser \
+      -device qemu-xhci,id=xhci -device usb-kbd,bus=xhci.0

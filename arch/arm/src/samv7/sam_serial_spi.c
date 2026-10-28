@@ -33,7 +33,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/irq.h>
@@ -246,7 +246,7 @@ static inline void serial_flush(struct sam_serial_spi_s *priv)
   status = serial_getreg(priv, SAM_UART_SR_OFFSET);
   while ((status & UART_INT_TXRDY) == 0)
     {
-      nxsig_usleep(100);
+      nxsched_usleep(100);
       status = serial_getreg(priv, SAM_UART_SR_OFFSET);
     }
 
@@ -639,7 +639,7 @@ static void serial_spi_exchange(struct spi_dev_s *dev, const void *txbuffer,
       status = serial_getreg(priv, SAM_UART_SR_OFFSET);
       while ((status & UART_INT_TXRDY) == 0)
         {
-          nxsig_usleep(100);
+          nxsched_usleep(100);
           status = serial_getreg(priv, SAM_UART_SR_OFFSET);
         }
 
@@ -652,7 +652,7 @@ static void serial_spi_exchange(struct spi_dev_s *dev, const void *txbuffer,
       status = serial_getreg(priv, SAM_UART_SR_OFFSET);
       while ((status & UART_INT_RXRDY) == 0)
         {
-          nxsig_usleep(100);
+          nxsched_usleep(100);
           status = serial_getreg(priv, SAM_UART_SR_OFFSET);
         }
 
@@ -818,9 +818,10 @@ struct spi_dev_s *sam_serial_spi_initialize(int port)
 
       leave_critical_section(flags);
 
-      /* Configure mode register. */
+      /* Configure mode register. Set master mode, 8 bits and SPI Mode 0 */
 
-      regval = UART_MR_MODE_SPIMSTR | UART_MR_CLKO | UART_MR_CHRL_8BITS;
+      regval = UART_MR_MODE_SPIMSTR | UART_MR_CLKO | UART_MR_CHRL_8BITS |
+               UART_MR_CPHA;
       serial_putreg(priv, SAM_UART_MR_OFFSET, regval);
 
       /* Enable receiver & transmitter */

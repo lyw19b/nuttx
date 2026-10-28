@@ -28,7 +28,7 @@
 #include <nuttx/compiler.h>
 
 #include <sys/types.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/board.h>
 #include <nuttx/clock.h>
@@ -68,6 +68,10 @@
 
 #if defined(CONFIG_INPUT_BUTTONS_LOWER) && defined(CONFIG_SIM_BUTTONS)
 #include <nuttx/input/buttons.h>
+#endif
+
+#ifdef CONFIG_TIMER_WDOG
+#include <nuttx/timers/timer_wdog.h>
 #endif
 
 #include "sim_internal.h"
@@ -208,6 +212,22 @@ int sim_bringup(void)
 
           smart_initialize(0, mtd, NULL);
 
+#elif defined(CONFIG_FS_XIPFS)
+          /* Mount the XIPFS file system.  rammtd answers BIOC_XIPBASE with
+           * the base of its RAM buffer, which makes it a usable stand-in
+           * for memory mapped NOR: extents are directly addressable, so
+           * the XIP mmap path can be exercised end to end.
+           */
+
+          ret = nx_mount("/dev/rammtd", "/mnt/xipfs", "xipfs", 0,
+                         "autoformat");
+          if (ret < 0)
+            {
+              syslog(LOG_ERR,
+                     "ERROR: Failed to mount XIPFS at /mnt/xipfs: %d\n",
+                     ret);
+            }
+
 #elif defined(CONFIG_FS_SPIFFS)
           /* Mount the SPIFFS file system */
 
@@ -311,12 +331,10 @@ int sim_bringup(void)
 #ifdef CONFIG_SIM_CAMERA
   /* Initialize and register the simulated video driver */
 
-  sim_camera_initialize();
-
-  ret = capture_initialize(CONFIG_SIM_CAMERA_DEV_PATH);
+  ret = sim_camera_initialize();
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: capture_initialize() failed: %d\n", ret);
+      syslog(LOG_ERR, "ERROR: sim_camera_initialize() failed: %d\n", ret);
     }
 
 #endif
@@ -551,6 +569,30 @@ int sim_bringup(void)
   mac[4] = (CONFIG_SIM_RNDIS_MACADDR >> (8 * 1)) & 0xff;
   mac[5] = (CONFIG_SIM_RNDIS_MACADDR >> (8 * 0)) & 0xff;
   usbdev_rndis_initialize(mac);
+#endif
+
+#ifdef CONFIG_SIM_CANDEV_CHAR
+  ret = sim_canchar_initialize(CONFIG_SIM_CANDEV_CHAR_IDX, 0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: sim_canchar_initialize() failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_SIM_CANDEV_SOCK
+  ret = sim_cansock_initialize(CONFIG_SIM_CANDEV_SOCK_IDX);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: sim_cansock_initialize() failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_TIMER_WDOG
+  ret = timer_wdog_initialize(0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: timer_wdog_initialize failed: %d\n", ret);
+    }
 #endif
 
   return ret;

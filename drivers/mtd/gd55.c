@@ -25,7 +25,7 @@
 #include <nuttx/config.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -524,7 +524,7 @@ static int gd55_command_address(FAR struct gd55_dev_s *priv, uint8_t cmd,
 static int gd55_read_bytes(FAR struct gd55_dev_s *priv, FAR uint8_t *buffer,
                            off_t address, size_t buflen)
 {
-  bool                  mode_4byte_addr;
+  bool                  mode_4byte_addr = false;
   int                   ret;
   struct qspi_meminfo_s meminfo;
 
@@ -580,7 +580,7 @@ static int gd55_write_page(FAR struct gd55_dev_s *priv,
   struct qspi_meminfo_s meminfo;
   uint8_t               status;
   unsigned int          npages;
-  int                   ret;
+  int                   ret = OK;
   int                   i;
 
   npages = (buflen >> GD55_PAGE_SHIFT);
@@ -710,7 +710,7 @@ static int gd55_erase_sector(FAR struct gd55_dev_s *priv, off_t sector)
 
   do
     {
-      nxsig_usleep(10 * 1000); /* Typical sector erase time is 30ms */
+      nxsched_usleep(10 * 1000); /* Typical sector erase time is 30ms */
       status = gd55_read_status1(priv);
     }
   while ((status & GD55_SR_WIP) != 0);
@@ -780,7 +780,7 @@ static int gd55_erase_64kblock(FAR struct gd55_dev_s *priv, off_t sector)
 
   do
     {
-      nxsig_usleep(50 * 1000); /* typical 64k erase time is 220ms */
+      nxsched_usleep(50 * 1000); /* typical 64k erase time is 220ms */
       status = gd55_read_status1(priv);
     }
   while ((status & GD55_SR_WIP) != 0);
@@ -848,7 +848,7 @@ static int gd55_erase_32kblock(FAR struct gd55_dev_s *priv, off_t sector)
 
   do
     {
-      nxsig_usleep(50 * 1000); /* typical 32k erase time is 150ms */
+      nxsched_usleep(50 * 1000); /* typical 32k erase time is 150ms */
       status = gd55_read_status1(priv);
     }
   while ((status & GD55_SR_WIP) != 0);
@@ -900,7 +900,7 @@ static int gd55_erase_chip(FAR struct gd55_dev_s *priv)
 
   while ((status & GD55_SR_WIP) != 0)
     {
-      nxsig_sleep(2);
+      nxsched_sleep(2);
       status = gd55_read_status1(priv);
     }
 
@@ -911,7 +911,7 @@ static int gd55_erase_chip(FAR struct gd55_dev_s *priv)
  * Name: gd55_write_enable
  *
  * Description:
- *   Enable the device for writing by setting the wriet enable latch bit
+ *   Enable the device for writing by setting the write enable latch bit
  *
  * Input Parameters:
  *   priv         - a reference to the device structure

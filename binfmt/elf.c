@@ -30,12 +30,14 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/binfmt/binfmt.h>
 #include <nuttx/kmalloc.h>
+
+#include "binfmt.h"
 
 #ifdef CONFIG_ELF
 
@@ -44,11 +46,11 @@
  ****************************************************************************/
 
 /* CONFIG_DEBUG_FEATURES, CONFIG_DEBUG_INFO, and CONFIG_DEBUG_BINFMT
- * have to be defined or CONFIG_MODLIB_DUMPBUFFER does nothing.
+ * have to be defined or CONFIG_LIBC_ELF_DUMPBUFFER does nothing.
  */
 
 #if !defined(CONFIG_DEBUG_INFO) || !defined(CONFIG_DEBUG_BINFMT)
-#  undef CONFIG_MODLIB_DUMPBUFFER
+#  undef CONFIG_LIBC_ELF_DUMPBUFFER
 #endif
 
 #ifndef CONFIG_ELF_STACKSIZE
@@ -96,24 +98,39 @@ static int elf_loadbinary(FAR struct binary_s *binp,
                           int nexports)
 {
   struct mod_loadinfo_s loadinfo;
+  Elf_Sym sym;
   int ret;
 
   binfo("Loading file: %s\n", filename);
 
   /* Initialize the ELF library to load the program binary. */
 
-  ret = modlib_initialize(filename, &loadinfo);
-  modlib_dumploadinfo(&loadinfo);
+  ret = libelf_initialize(filename, &loadinfo);
+  libelf_dumploadinfo(&loadinfo);
   if (ret != 0)
     {
       berr("Failed to initialize to load ELF program binary: %d\n", ret);
-      return ret;
+      goto errout_with_init;
     }
+
+#ifdef CONFIG_SCHED_USER_IDENTITY
+  /* Save IDs and mode from file system before loading segments */
+
+  binp->uid  = loadinfo.fileuid;
+  binp->gid  = loadinfo.filegid;
+  binp->mode = loadinfo.filemode;
+
+  ret = binfmt_checkexecperm(binp);
+  if (ret < 0)
+    {
+      goto errout_with_init;
+    }
+#endif
 
   /* Load the program binary */
 
-  ret = modlib_load_with_addrenv(&loadinfo);
-  modlib_dumploadinfo(&loadinfo);
+  ret = libelf_load_with_addrenv(&loadinfo);
+  libelf_dumploadinfo(&loadinfo);
   if (ret != 0)
     {
       berr("Failed to load ELF program binary: %d\n", ret);
@@ -124,7 +141,7 @@ static int elf_loadbinary(FAR struct binary_s *binp,
 
   if (loadinfo.ehdr.e_type == ET_REL || loadinfo.gotindex >= 0)
     {
-      ret = modlib_bind(&binp->mod, &loadinfo, exports, nexports);
+      ret = libelf_bind(&binp->mod, &loadinfo, exports, nexports);
       if (ret != 0)
         {
           berr("Failed to bind symbols program binary: %d\n", ret);
@@ -157,7 +174,57 @@ static int elf_loadbinary(FAR struct binary_s *binp,
 
   /* Return the load information */
 
-  binp->stacksize = CONFIG_ELF_STACKSIZE;
+  ret = libelf_findsymbol(&loadinfo, "nx_stacksize", &sym);
+  if (ret == 0)
+    {
+      binp->stacksize = sym.st_value;
+    }
+  else
+    {
+      binp->stacksize = CONFIG_ELF_STACKSIZE;
+    }
+
+  ret = libelf_findsymbol(&loadinfo, "nx_priority", &sym);
+  if (ret == 0)
+    {
+      binp->priority = sym.st_value;
+    }
+  else
+    {
+      binp->priority = SCHED_PRIORITY_DEFAULT;
+    }
+
+#ifdef CONFIG_SCHED_USER_IDENTITY
+  ret = libelf_findsymbol(&loadinfo, "nx_uid", &sym);
+  if (ret == 0)
+    {
+      binp->uid = sym.st_value;
+    }
+  else
+    {
+      binp->uid = 0;
+    }
+
+  ret = libelf_findsymbol(&loadinfo, "nx_gid", &sym);
+  if (ret == 0)
+    {
+      binp->gid = sym.st_value;
+    }
+  else
+    {
+      binp->gid = 0;
+    }
+
+  ret = libelf_findsymbol(&loadinfo, "nx_mode", &sym);
+  if (ret == 0)
+    {
+      binp->mode = sym.st_value;
+    }
+  else
+    {
+      binp->mode = 0;
+    }
+#endif
 
   /* Add the ELF allocation to the alloc[] only if there is no address
    * environment.  If there is an address environment, it will automatically
@@ -201,15 +268,7 @@ static int elf_loadbinary(FAR struct binary_s *binp,
   binp->mod.nfini   = loadinfo.nfini;
 #endif
 
-#ifdef CONFIG_SCHED_USER_IDENTITY
-  /* Save IDs and mode from file system */
-
-  binp->uid  = loadinfo.fileuid;
-  binp->gid  = loadinfo.filegid;
-  binp->mode = loadinfo.filemode;
-#endif
-
-  modlib_dumpentrypt(&loadinfo);
+  libelf_dumpentrypt(&loadinfo);
 #ifdef CONFIG_PIC
   if (loadinfo.gotindex >= 0)
     {
@@ -227,13 +286,13 @@ static int elf_loadbinary(FAR struct binary_s *binp,
     }
 #endif
 
-  modlib_uninitialize(&loadinfo);
+  libelf_uninitialize(&loadinfo);
   return OK;
 
 errout_with_load:
-  modlib_unload(&loadinfo);
+  libelf_unload(&loadinfo);
 errout_with_init:
-  modlib_uninitialize(&loadinfo);
+  libelf_uninitialize(&loadinfo);
   return ret;
 }
 
@@ -248,7 +307,7 @@ errout_with_init:
 static int elf_unloadbinary(FAR struct binary_s *binp)
 {
   binfo("Unloading %p\n", binp);
-  modlib_uninit(&binp->mod);
+  libelf_uninit(&binp->mod);
 
   return OK;
 }

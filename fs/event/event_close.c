@@ -34,7 +34,7 @@
 #include <nuttx/fs/fs.h>
 
 #include "inode/inode.h"
-#include "notify/notify.h"
+#include "vfs/vfs.h"
 
 /****************************************************************************
  * Public Functions
@@ -79,7 +79,7 @@ int nxevent_close(FAR nxevent_t *event)
    * now.
    */
 
-  if (atomic_fetch_sub(&inode->i_crefs, 1) <= 1)
+  if (atomic_sub(&inode->i_crefs, 1) <= 1)
     {
       nxevent_destroy(&nevent->ne_event);
       group_free(NULL, nevent);

@@ -7,6 +7,7 @@
 /gencromfs
 /initialconfig
 /mkconfig
+/mknxflat
 /mkdeps
 /cnvwindeps
 /logparser
@@ -14,6 +15,7 @@
 /mksymtab
 /mksyscall
 /mkversion
+/mkpasswd
 /nxstyle
 /rmcr
 /incdir

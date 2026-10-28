@@ -30,7 +30,7 @@
 #include <nuttx/config.h>
 #include <nuttx/sdio.h>
 #include <stdint.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -44,7 +44,11 @@
 #  undef CONFIG_MMCSD_DUMPALL
 #endif
 
-#define MMCSD_PART_COUNT             8
+#ifdef CONFIG_MMCSD_MMCSUPPORT
+#  define MMCSD_PART_COUNT           8
+#else
+#  define MMCSD_PART_COUNT           1
+#endif
 
 /* Card type */
 
@@ -98,6 +102,7 @@ struct mmcsd_state_s
   uint8_t type:4;                  /* Card type (See MMCSD_CARDTYPE_* definitions) */
   uint8_t buswidth:4;              /* Bus widths supported (SD only) */
   uint8_t cmd23support:1;          /* CMD23 supported (SD only) */
+  uint8_t sdversion:4;             /* SD physical layer version (SD only) */
   sdio_capset_t caps;              /* SDIO driver capabilities/limitations */
   uint32_t cid[4];                 /* CID register */
   uint32_t csd[4];                 /* CSD register */

@@ -41,7 +41,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #ifdef CONFIG_SERIAL_TERMIOS
 #  include <termios.h>
@@ -648,7 +648,8 @@ static int a64_uart_attach(struct uart_dev_s *dev)
 
   /* Set Interrupt Priority in Generic Interrupt Controller v2 */
 
-  arm64_gic_irq_set_priority(port->irq_num, 0, IRQ_TYPE_LEVEL);
+  up_prioritize_irq(port->irq_num, 0);
+  up_set_irq_type(port->irq_num, IRQ_HIGH_LEVEL);
 
   /* Enable UART Interrupt */
 
@@ -1334,7 +1335,7 @@ static struct uart_dev_s g_uart4port =
  * Description:
  *   Performs the low level UART initialization early in
  *   debug so that the serial console will be available
- *   during bootup.  This must be called before arm64_serialinit.
+ *   during boot up.  This must be called before arm64_serialinit.
  *
  * Returned Value:
  *   None

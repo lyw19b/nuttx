@@ -87,13 +87,13 @@ function(nuttx_add_symtab)
     DEPENDS symtab_${NAME}_dat)
 
   # generate code which instantiates the symbol table
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/symtab.c.in symtab_${NAME}.c @ONLY)
+  configure_file(${NUTTX_DIR}/cmake/symtab.c.in symtab_${NAME}.c @ONLY)
 
   # define an internal library to build the symtab file on its own
   add_library(symtab_${NAME} OBJECT
               ${CMAKE_CURRENT_BINARY_DIR}/symtab_${NAME}.c)
 
-  # Make the dependance between .c and .h explicit. This is necessary since
+  # Make the dependence between .c and .h explicit. This is necessary since
   # using configure_file() does not seem to allow this to be automatically
   # guessed by CMake
   set_property(

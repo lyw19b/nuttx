@@ -35,23 +35,11 @@
 #include "libc.h"
 
 /****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/* Can't support CONFIG_LIBC_MEMSET_64BIT if the platform does not
- * have 64-bit integer types.
- */
-
-#ifndef CONFIG_HAVE_LONG_LONG
-#  undef CONFIG_LIBC_MEMSET_64BIT
-#endif
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 #if !defined(CONFIG_LIBC_ARCH_MEMSET) && defined(LIBC_BUILD_MEMSET)
-#undef memset /* See mm/README.txt */
+#undef memset
 no_builtin("memset")
 FAR void *memset(FAR void *s, int c, size_t n)
 {
@@ -62,7 +50,8 @@ FAR void *memset(FAR void *s, int c, size_t n)
    */
 
   uintptr_t addr  = (uintptr_t)s;
-  uint16_t  val16 = ((uint16_t)c << 8) | (uint16_t)c;
+  uint8_t   val8  = (uint8_t)c;
+  uint16_t  val16 = ((uint16_t)val8 << 8) | (uint16_t)val8;
   uint32_t  val32 = ((uint32_t)val16 << 16) | (uint32_t)val16;
 #ifdef CONFIG_LIBC_MEMSET_64BIT
   uint64_t  val64 = ((uint64_t)val32 << 32) | (uint64_t)val32;

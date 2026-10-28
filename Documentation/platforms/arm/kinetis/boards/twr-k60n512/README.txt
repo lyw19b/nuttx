@@ -481,7 +481,7 @@ Where <subdir> is one of the following:
       CONFIG_MMCSD_SDIO=y                  : Use the SDIO-based MMC/SD driver
       CONFIG_MMCSD_NSLOTS=1                : One MMC/SD slot
 
-      CONFIG_FAT=y                         : Eable FAT file system
+      CONFIG_FAT=y                         : Enable FAT file system
       CONFIG_FAT_LCNAMES=y                 : FAT lower case name support
       CONFIG_FAT_LFN=y                     : FAT long file name support
       CONFIG_FAT_MAXFNAME=32               : Maximum length of a long file name
@@ -490,5 +490,3 @@ Where <subdir> is one of the following:
       CONFIG_KINETIS_PORTEINTS=y           : Enable PortE GPIO interrupts
 
       CONFIG_SCHED_WORKQUEUE=y             : Enable the NuttX workqueue
-
-      CONFIG_NSH_ARCHINIT=y                : Provide NSH initialization logic

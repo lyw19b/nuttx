@@ -32,8 +32,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/fs/ioctl.h>
@@ -749,8 +749,8 @@ static bool up_txempty(struct uart_dev_s *dev)
  *
  * Description:
  *   Performs the low level UART initialization early in debug so that the
- *   serial console will be available during bootup (via up_putc).  This must
- *   be called before arm_serialinit.
+ *   serial console will be available during boot up (via up_putc).  This
+ *   must be called before arm_serialinit.
  *
  ****************************************************************************/
 

@@ -34,7 +34,7 @@
 
 #include <stdlib.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <assert.h>
 
 #include <nuttx/elf.h>
@@ -191,7 +191,7 @@ int up_relocateadd(const Elf64_Rela *rel, const Elf64_Sym *sym,
         value = (sym->st_value + rel->r_addend - addr +
                  CONFIG_ARCH_TEXT_VBASE);
 
-        /* Convert MOV to LEA - other relocations not suported */
+        /* Convert MOV to LEA - other relocations not supported */
 
         if (*(uint8_t *)(addr - 2) != OPCODE_MOV)
           {

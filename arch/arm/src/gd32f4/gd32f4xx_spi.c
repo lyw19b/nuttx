@@ -56,7 +56,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/mutex.h>
@@ -1080,7 +1080,7 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev,
   uint32_t actual;
   uint32_t plk_div;
 
-  /* Check if the requested frequence is the same as the frequency
+  /* Check if the requested frequency is the same as the frequency
    * selection.
    */
 

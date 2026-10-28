@@ -30,7 +30,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -888,7 +888,7 @@ static int aw86225_haptic_cont_get_f0(FAR struct aw86225 *aw86225)
       else
         {
           cnt--;
-          iinfo("%s waitting for standby, glb_state=0x%02X\n",
+          iinfo("%s waiting for standby, glb_state=0x%02X\n",
                  __func__, reg_val);
         }
 
@@ -1133,7 +1133,7 @@ static void aw86225_rtp_work_routine(FAR void *arg)
           atomic_set(&aw86225->exit_in_rtp_loop, 0);
           nxsem_post(&aw86225->stop_wait_q);
           nxmutex_unlock(&aw86225->lock);
-          ierr("%s: wake up by signal return erro\n", __func__);
+          ierr("%s: wake up by signal return error\n", __func__);
           return;
         }
     }
@@ -2144,7 +2144,7 @@ static int aw86225_haptics_upload_effect(FAR struct ff_lowerhalf_s *lower,
   FAR struct aw86225 *aw86225 = (FAR struct aw86225 *)lower;
   FAR struct aw86225_hap_play_info *play = &aw86225->play;
   int16_t data[AW86225_CUSTOM_DATA_LEN];
-  sclock_t time_us;
+  clock_t time_us;
   int ret;
 
   time_us = wd_gettime(&aw86225->timer);
@@ -2163,7 +2163,7 @@ static int aw86225_haptics_upload_effect(FAR struct ff_lowerhalf_s *lower,
       iinfo("%s: wakeup \n", __func__);
       if (ret == -ERESTART)
         {
-          ierr("%s: wake up by signal return erro\n", __func__);
+          ierr("%s: wake up by signal return error\n", __func__);
           return ret;
         }
 

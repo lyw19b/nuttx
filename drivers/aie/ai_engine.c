@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/aie/ai_engine.h>
 #include <nuttx/fs/fs.h>
@@ -34,7 +34,7 @@
 #include <nuttx/mutex.h>
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Types
  ****************************************************************************/
 
 /* This structure describes the state of the upper half driver */
@@ -243,7 +243,7 @@ int aie_register(FAR const char *path,
 
   /* Register the aie device */
 
-  ret = register_driver(path, &g_aie_ops, 0666, upper);
+  ret = register_driver(path, &g_aie_ops, 0600, upper);
   if (ret < 0)
     {
       _err("register aie driver failed: %d\n", ret);

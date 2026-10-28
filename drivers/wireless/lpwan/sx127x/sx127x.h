@@ -143,7 +143,7 @@
 #define SX127X_LRM_PAYLOADMAX             0x23 /* LORA: LORA maximum payload length */
 #define SX127X_LRM_HOPPER                 0x24 /* LORA: FHSS Hop period */
 #define SX127X_LRM_RXFIFOADDR             0x25 /* LORA: Address of last byte written in FIFO */
-#define SX127X_LRM_MODEMCFG3              0x26 /* LORA: Modem PHY confgi 3*/
+#define SX127X_LRM_MODEMCFG3              0x26 /* LORA: Modem PHY config 3*/
 #define SX127X_LRM_FEIMSB                 0x28 /* LORA: Estimated frequency error MSB */
 #define SX127X_LRM_FEIMID                 0x29 /* LORA: Estimated frequency error, MID */
 #define SX127X_LRM_FEILSB                 0x2a /* LORA: Estimated frequency error, LSB*/
@@ -181,7 +181,8 @@
 /* FSK/OOK/LORA: RF carrier frequency */
 
 #define SX127X_CMN_FRF_MAX                (0xffffff)
-#define SX127X_FRF_FROM_FREQ(freq)        (freq/SX127X_FSTEP)
+#define SX127X_FRF_FROM_FREQ(freq) \
+  ((uint32_t)(((uint64_t)(freq) << SX127X_FSTEP_SHIFT) / SX127X_FXOSC))
 #define SX127X_CMN_FRF_MSB(frf)           ((frf >> 16) & 0xff)
 #define SX127X_CMN_FRF_MID(frf)           ((frf >> 8) & 0xff)
 #define SX127X_CMN_FRF_LSB(frf)           ((frf >> 0) & 0xff)
@@ -337,7 +338,8 @@
 
 #define SX127X_FOM_FDEV_MSB_MASK          (0x3f)
 #define SX127X_FOM_FDEV_MAX               (0x3fff)
-#define SX127X_FDEV_FROM_FREQ(freq)       (freq/SX127X_FSTEP)
+#define SX127X_FDEV_FROM_FREQ(freq) \
+  ((uint32_t)(((uint64_t)(freq) << SX127X_FSTEP_SHIFT) / SX127X_FXOSC))
 #define SX127X_FOM_FDEV_MSB(v)            ((v >> 8) & 0xff)
 #define SX127X_FOM_FDEV_LSB(v)            ((v >> 0) & 0xff)
 
@@ -760,7 +762,7 @@
 
 #define SX127X_LRM_HOPPER_DEFAULT         (0x00)
 
-/* LORA: Modem PHY confgi 3 */
+/* LORA: Modem PHY config 3 */
 
 #define SX127X_LRM_MODEMCFG3_AGCAUTOON    (1 << 2) /* Bit 2: AGC auto ON */
 #define SX127X_LRM_MODEMCFG3_LOWDRATEOPT  (1 << 3) /* Bit 3: Low data rate optimize enable */
@@ -790,7 +792,7 @@
 
 /* LORA: LORA Sync Word */
 
-#define SX127X_LRM_SYNCWORD_DEFAULT       (0x12)
+#define SX127X_LRM_SYNCWORD_DEFAULT       CONFIG_LPWAN_SX127X_LORA_SYNCWORD
 #define SX127X_LRM_SYNCWORD_LORAWAN       (0x34)
 
 /* Lora data rate:
@@ -810,9 +812,14 @@
 
 #define SX127X_FXOSC                      (32000000)
 
-/* FSTEP is FXOSC/(2**19) =~ 61 Hz */
+/* One step of the frequency synthesiser is FXOSC/(2**19), about 61.035 Hz.
+ * It is not an integer, so the conversions below multiply first and divide
+ * afterwards instead of dividing by a truncated step: rounding it down to
+ * 61 Hz places a 915 MHz channel more than 500 kHz away from the requested
+ * frequency, well outside the bandwidth of the channel.
+ */
 
-#define SX127X_FSTEP                      (SX127X_FXOSC/(2<<18))
+#define SX127X_FSTEP_SHIFT                (19)
 
 /****************************************************************************
  * Public Data Types

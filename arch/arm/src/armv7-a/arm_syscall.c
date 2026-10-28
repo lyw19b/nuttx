@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <syscall.h>
 
 #include <nuttx/addrenv.h>
@@ -184,7 +184,7 @@ uint32_t *arm_syscall(uint32_t *regs)
   cmd = regs[REG_R0];
 
   /* if cmd == SYS_restore_context (*running_task)->xcp.regs is valid
-   * should not be overwriten
+   * should not be overwritten
    */
 
   if (cmd != SYS_restore_context)
@@ -270,19 +270,29 @@ uint32_t *arm_syscall(uint32_t *regs)
 
         /* Update scheduler parameters */
 
-        nxsched_resume_scheduler(tcb);
+        nxsched_switch_context(*running_task, tcb);
 
       case SYS_restore_context:
-        nxsched_suspend_scheduler(*running_task);
+
+#ifdef CONFIG_ARCH_ADDRENV
+        /* The addrenv_switch may change this_task, for example addrenv drop
+         * will post sem to hpwork, so we have to call before restore context
+         */
+
+        addrenv_switch(tcb);
+        tcb = this_task();
+#endif
+        /* No context switch occurs in SYS_restore_context, or the
+         * context switch has been completed, so there is no
+         * need to update scheduler parameters.
+         */
+
         *running_task = tcb;
 
         /* Restore the cpu lock */
 
         restore_critical_section(tcb, cpu);
         regs = tcb->xcp.regs;
-#ifdef CONFIG_ARCH_ADDRENV
-        addrenv_switch(tcb);
-#endif
         break;
 
       /* R0=SYS_task_start:  This a user task start
@@ -354,7 +364,7 @@ uint32_t *arm_syscall(uint32_t *regs)
         break;
 #endif
 
-#ifdef CONFIG_BUILD_KERNEL
+#if defined(CONFIG_BUILD_KERNEL) && defined(CONFIG_ENABLE_ALL_SIGNALS)
       /* R0=SYS_signal_handler:  This a user signal handler callback
        *
        * void signal_handler(_sa_sigaction_t sighand, int signo,
@@ -411,7 +421,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 
               /* Copy "info" into user stack */
 
-              if ((rtcb->flags & TCB_FLAG_SIGDELIVER) != 0)
+              if (rtcb->sigdeliver)
                 {
                   usp = rtcb->xcp.saved_regs[REG_SP];
                 }
@@ -434,9 +444,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 #endif
         }
         break;
-#endif
 
-#ifdef CONFIG_BUILD_KERNEL
       /* R0=SYS_signal_handler_return:  This a user signal handler callback
        *
        *   void signal_handler_return(void);
@@ -475,7 +483,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 #endif
         }
         break;
-#endif
+#endif /* CONFIG_BUILD_KERNEL && CONFIG_ENABLE_ALL_SIGNALS */
 
       /* This is not an architecture-specific system call.  If NuttX is built
        * as a standalone kernel with a system call interface, then all of the
@@ -504,6 +512,20 @@ uint32_t *arm_syscall(uint32_t *regs)
 #ifdef CONFIG_BUILD_KERNEL
           rtcb->xcp.syscall[index].cpsr      = regs[REG_CPSR];
 #endif
+
+          /* Remember where the caller's registers are.  The cloning
+           * primitives need them:  the child of a fork() or vfork() made
+           * from user space resumes from this very SVC, so it is built from
+           * this frame and not from the registers the kernel-side stub
+           * happens to be running with.  Only the outermost system call is
+           * of interest, since that is the one the caller made.  See
+           * arm_fork().
+           */
+
+          if (index == 0)
+            {
+              rtcb->xcp.sregs = regs;
+            }
 
           regs[REG_PC]   = (uint32_t)dispatch_syscall;
 #ifdef CONFIG_BUILD_KERNEL

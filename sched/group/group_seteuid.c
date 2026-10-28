@@ -64,25 +64,25 @@ int seteuid(uid_t uid)
   FAR struct tcb_s *rtcb;
   FAR struct task_group_s *rgroup;
 
-  /* Verify that the UID is in the valid range of 0 through INT16_MAX.
-   * OpenGroup.org does not specify a UID_MAX or UID_MIN.  Instead we use a
-   * priori knowledge that uid_t is type int16_t.
-   */
-
-  if ((uint16_t)uid > INT16_MAX)
-    {
-      set_errno(EINVAL);
-      return ERROR;
-    }
-
   /* Get the currently executing thread's task group. */
 
   rtcb   = this_task();
   rgroup = rtcb->group;
 
-  /* Set the task group's group identity. */
-
   DEBUGASSERT(rgroup != NULL);
-  rgroup->tg_euid = uid;
+
+  if (rgroup->tg_euid == 0 ||
+      uid == rgroup->tg_uid || uid == rgroup->tg_suid)
+    {
+      /* Root may set any value; non-root may only set to real or saved. */
+
+      rgroup->tg_euid = uid;
+    }
+  else
+    {
+      set_errno(EPERM);
+      return ERROR;
+    }
+
   return OK;
 }

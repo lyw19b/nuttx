@@ -27,17 +27,17 @@
 #include <nuttx/config.h>
 
 #include <stdint.h>
+#include <string.h>
 #include <sched.h>
 #include <assert.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
 #include <arch/board/board.h>
 
 #include "sched/sched.h"
-#include "signal/signal.h"
 #include "arm_internal.h"
 
 /****************************************************************************
@@ -58,6 +58,9 @@ void arm_sigdeliver(void)
 {
   struct tcb_s *rtcb = this_task();
   uint32_t *regs = rtcb->xcp.saved_regs;
+  uint32_t *new_regs;
+  uint32_t desired_sp;
+  uint32_t implied_sp;
 
 #ifdef CONFIG_SMP
   /* In the SMP case, we must terminate the critical section while the signal
@@ -70,9 +73,9 @@ void arm_sigdeliver(void)
 
   board_autoled_on(LED_SIGNAL);
 
-  sinfo("rtcb=%p sigpendactionq.head=%p\n",
-        rtcb, rtcb->sigpendactionq.head);
-  DEBUGASSERT((rtcb->flags & TCB_FLAG_SIGDELIVER) != 0);
+  sinfo("rtcb=%p sigdeliver=%p sigpendactionq.head=%p\n",
+        rtcb, rtcb->sigdeliver, rtcb->sigpendactionq.head);
+  DEBUGASSERT(rtcb->sigdeliver != NULL);
 
 retry:
 #ifdef CONFIG_SMP
@@ -104,7 +107,7 @@ retry:
 
   /* Deliver the signal */
 
-  nxsig_deliver(rtcb);
+  (rtcb->sigdeliver)(rtcb);
 
   /* Output any debug messages BEFORE restoring errno (because they may
    * alter errno), then disable interrupts again and restore the original
@@ -151,9 +154,7 @@ retry:
    * could be modified by a hostile program.
    */
 
-  /* Allows next handler to be scheduled */
-
-  rtcb->flags &= ~TCB_FLAG_SIGDELIVER;
+  rtcb->sigdeliver = NULL;  /* Allows next handler to be scheduled */
 
   /* Then restore the correct state for this thread of
    * execution.
@@ -163,10 +164,29 @@ retry:
 #ifdef CONFIG_SMP
   /* We need to keep the IRQ lock until task switching */
 
-  rtcb->irqcount++;
-  leave_critical_section((uint8_t)regs[REG_BASEPRI]);
-  rtcb->irqcount--;
+  leave_critical_section(up_irq_save());
 #endif
+
+  /* If the signal handler modified SP (REG_R13), relocate the saved
+   * context so that the hardware exception return produces the correct SP.
+   *
+   * On ARMv8-M, the exception return path sets PSP to the HW frame address
+   * and hardware computes final SP = PSP + frame_size.  The implied SP is
+   * determined by the physical location of the context, not by REG_R13.
+   * To honor a modified SP, we memmove the entire context frame to the
+   * address where the end of the frame equals the desired SP.
+   */
+
+  desired_sp = regs[REG_R13];
+  implied_sp = (uint32_t)regs + XCPTCONTEXT_SIZE;
+
+  if (desired_sp != implied_sp)
+    {
+      new_regs = (uint32_t *)(desired_sp - XCPTCONTEXT_SIZE);
+      memmove(new_regs, regs, XCPTCONTEXT_SIZE);
+      regs = new_regs;
+      rtcb->xcp.saved_regs = new_regs;
+    }
 
   rtcb->xcp.regs = rtcb->xcp.saved_regs;
   arm_fullcontextrestore();

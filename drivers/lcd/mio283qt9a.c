@@ -32,7 +32,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/spi/spi.h>
@@ -110,7 +110,7 @@
 #define ILI9341_ID_2 0x41
 
 /****************************************************************************
- * Private Type Definition
+ * Private Types
  ****************************************************************************/
 
 /* This structure describes the state of this driver */
@@ -468,7 +468,7 @@ static int mio283qt9a_getrun(FAR struct lcd_dev_s *dev,
 
   lcd->select(lcd);
 
-  /* Red the run fram GRAM. */
+  /* Read the run from GRAM. */
 
   mio283qt9a_setarea(lcd, col, row, col + npixels - 1, row);
   mio283qt9a_gramselect_read(lcd);

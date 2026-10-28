@@ -2,6 +2,8 @@
 ST Nucleo F446RE
 ================
 
+.. tags:: chip:stm32, chip:stm32f4, chip:stm32f446
+
 This page discusses issues unique to NuttX configurations for the ST
 NucleoF446RE boards from ST Micro.  See
 
@@ -317,7 +319,6 @@ There is nothing in the configuration that currently uses the joystick.
 For testing, you can add the following configuration options to enable the
 analog joystick example at apps/examples/ajoystick::
 
-    CONFIG_NSH_ARCHINIT=y
     CONFIG_EXAMPLES_AJOYSTICK=y
     CONFIG_EXAMPLES_AJOYSTICK_DEVNAME="/dev/ajoy0"
 

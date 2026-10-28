@@ -27,7 +27,7 @@
 #include <nuttx/config.h>
 #include <nuttx/nuttx.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/fs/fs.h>
 #include <nuttx/i2c/i2c_master.h>
@@ -46,6 +46,12 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+/* Only float data type supported now */
+
+#ifdef CONFIG_SENSORS_USE_B16
+#  error fixed-point data type not supported yet
+#endif
+
 /* The value that should be in the WHO_AM_I register. */
 
 #define WHO_AM_I_VAL 0x6c
@@ -57,10 +63,6 @@
 /* Convert milli-dps to rad/s */
 
 #define MDPS_TO_RADS (3.141592653f / (180.0f * 1000.0f))
-
-#ifndef CONFIG_SENSORS_LSM6DSO32_I2C_FREQUENCY
-#define CONFIG_SENSORS_LSM6DSO32_I2C_FREQUENCY 400000
-#endif /* CONFIG_SENSORS_LSM6DSO32_I2C_FREQUENCY */
 
 /* Number of measurement rounds for gyro self test */
 
@@ -518,6 +520,7 @@ static int gyro_set_fsr(FAR struct lsm6dso32_dev_s *dev,
                         enum lsm6dso32_fsr_gyro_e fsr)
 {
   int err;
+
   err = lsm6dso32_set_bits(dev, CTRL2_G, (fsr & 0x7) << 1, 0x0c);
 
   if (err < 0)
@@ -770,6 +773,7 @@ static int gyro_int_handler(int irq, FAR void *context, FAR void *arg)
 {
   FAR struct lsm6dso32_dev_s *dev = (FAR struct lsm6dso32_dev_s *)(arg);
   int err;
+
   (void)(context);
 
   DEBUGASSERT(arg != NULL);
@@ -798,6 +802,7 @@ static int accel_int_handler(int irq, FAR void *context, FAR void *arg)
 {
   FAR struct lsm6dso32_dev_s *dev = (FAR struct lsm6dso32_dev_s *)(arg);
   int err;
+
   (void)(context);
 
   DEBUGASSERT(arg != NULL);
@@ -851,7 +856,7 @@ static int gyro_thread(int argc, char **argv)
 
       /* Wait for next measurement cycle */
 
-      nxsig_usleep(ODR_INTERVAL[dev->gyro.odr]);
+      nxsched_usleep(ODR_INTERVAL[dev->gyro.odr]);
     }
 
   return err;
@@ -894,7 +899,7 @@ static int accel_thread(int argc, char **argv)
 
       /* Wait for next measurement cycle */
 
-      nxsig_usleep(ODR_INTERVAL[dev->accel.odr]);
+      nxsched_usleep(ODR_INTERVAL[dev->accel.odr]);
     }
 
   return err;
@@ -1040,7 +1045,7 @@ static int gyro_selftest(FAR struct lsm6dso32_dev_s *dev)
 
   /* Wait for 100ms for stable output */
 
-  nxsig_usleep(100000);
+  nxsched_usleep(100000);
 
   /* Discard first measurement */
 
@@ -1093,7 +1098,7 @@ static int gyro_selftest(FAR struct lsm6dso32_dev_s *dev)
 
   /* Wait 100ms for stable output */
 
-  nxsig_usleep(100000);
+  nxsched_usleep(100000);
 
   /* Discard first measurement */
 
@@ -1171,7 +1176,7 @@ static int gyro_selftest(FAR struct lsm6dso32_dev_s *dev)
       goto early_restore;
     }
 
-  nxsig_usleep(100000);
+  nxsched_usleep(100000);
 
 early_restore:
 
@@ -1190,7 +1195,7 @@ early_restore:
             err);
     }
 
-  nxsig_usleep(100000);
+  nxsched_usleep(100000);
 
 early_ret:
   nxmutex_unlock(&dev->devlock);
@@ -1255,7 +1260,7 @@ static int accel_selftest(FAR struct lsm6dso32_dev_s *dev)
 
   /* Wait for 100ms for stable output */
 
-  nxsig_usleep(100000);
+  nxsched_usleep(100000);
 
   /* Discard first measurement */
 
@@ -1309,7 +1314,7 @@ static int accel_selftest(FAR struct lsm6dso32_dev_s *dev)
 
   /* Wait 100ms for stable output */
 
-  nxsig_usleep(100000);
+  nxsched_usleep(100000);
 
   /* Discard first measurement */
 
@@ -1388,7 +1393,7 @@ static int accel_selftest(FAR struct lsm6dso32_dev_s *dev)
       goto early_restore;
     }
 
-  nxsig_usleep(100000);
+  nxsched_usleep(100000);
 
 early_restore:
 
@@ -1567,79 +1572,80 @@ static int lsm6dso32_control(FAR struct sensor_lowerhalf_s *lower,
     {
       /* Read WHO_AM_I value into 8-bit unsigned integer buffer */
 
-    case SNIOC_WHO_AM_I:
-      {
-        uint8_t *id = (uint8_t *)(arg);
-        if (id == NULL)
-          {
-            err = -EINVAL;
-            break;
-          }
+      case SNIOC_WHO_AM_I:
+        {
+          uint8_t *id = (uint8_t *)(arg);
 
-        err = lsm6dso32_read_bytes(dev, WHO_AM_I, id, sizeof(uint8_t));
-      }
-      break;
+          if (id == NULL)
+            {
+              err = -EINVAL;
+              break;
+            }
 
-    case SNIOC_SETFULLSCALE:
-      {
-        /* Accelerometer FSR */
+          err = lsm6dso32_read_bytes(dev, WHO_AM_I, id, sizeof(uint8_t));
+        }
+        break;
 
-        if (lower->type == SENSOR_TYPE_ACCELEROMETER)
-          {
-            switch (arg)
-              {
-              case 4:
-                err = accel_set_fsr(dev, LSM6DSO32_FSR_XL_4G);
-                break;
-              case 8:
-                err = accel_set_fsr(dev, LSM6DSO32_FSR_XL_8G);
-                break;
-              case 16:
-                err = accel_set_fsr(dev, LSM6DSO32_FSR_XL_16G);
-                break;
-              case 32:
-                err = accel_set_fsr(dev, LSM6DSO32_FSR_XL_32G);
-                break;
-              default:
-                err = -EINVAL;
-                break;
-              }
-          }
+      case SNIOC_SETFULLSCALE:
+        {
+          /* Accelerometer FSR */
 
-        /* Gyroscope FSR */
+          if (lower->type == SENSOR_TYPE_ACCELEROMETER)
+            {
+              switch (arg)
+                {
+                  case 4:
+                    err = accel_set_fsr(dev, LSM6DSO32_FSR_XL_4G);
+                    break;
+                  case 8:
+                    err = accel_set_fsr(dev, LSM6DSO32_FSR_XL_8G);
+                    break;
+                  case 16:
+                    err = accel_set_fsr(dev, LSM6DSO32_FSR_XL_16G);
+                    break;
+                  case 32:
+                    err = accel_set_fsr(dev, LSM6DSO32_FSR_XL_32G);
+                    break;
+                  default:
+                    err = -EINVAL;
+                    break;
+                }
+            }
 
-        else if (lower->type == SENSOR_TYPE_GYROSCOPE)
-          {
-            switch (arg)
-              {
-              case 125:
-                err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_125DPS);
-                break;
-              case 250:
-                err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_250DPS);
-                break;
-              case 500:
-                err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_500DPS);
-                break;
-              case 1000:
-                err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_1000DPS);
-                break;
-              case 2000:
-                err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_2000DPS);
-                break;
-              default:
-                err = -EINVAL;
-                break;
-              }
-          }
-      }
-      break;
+          /* Gyroscope FSR */
 
-    default:
-      {
-        err = -EINVAL;
-      }
-      break;
+          else if (lower->type == SENSOR_TYPE_GYROSCOPE)
+            {
+              switch (arg)
+                {
+                  case 125:
+                    err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_125DPS);
+                    break;
+                  case 250:
+                    err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_250DPS);
+                    break;
+                  case 500:
+                    err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_500DPS);
+                    break;
+                  case 1000:
+                    err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_1000DPS);
+                    break;
+                  case 2000:
+                    err = gyro_set_fsr(dev, LSM6DSO32_FSR_GY_2000DPS);
+                    break;
+                  default:
+                    err = -EINVAL;
+                    break;
+                }
+            }
+        }
+        break;
+
+      default:
+        {
+          err = -EINVAL;
+        }
+        break;
     }
 
   nxmutex_unlock(&dev->devlock);
@@ -1880,35 +1886,21 @@ int lsm6dso32_register(FAR struct i2c_master_s *i2c, uint8_t addr,
 
   /* Create mutex */
 
-  err = nxmutex_init(&priv->devlock);
-  if (err < 0)
-    {
-      snerr("Failed to initialize mutex: %d\n", err);
-      goto free_mem;
-    }
+  nxmutex_init(&priv->devlock);
 
   /* Create gyro semaphore */
 
-  err = nxsem_init(&priv->gyro.run, 0, 0);
-  if (err < 0)
-    {
-      snerr("Failed to initialize gyro semaphore: %d\n", err);
-      goto del_mutex;
-    }
+  nxsem_init(&priv->gyro.run, 0, 0);
 
   /* Create accel semaphore */
 
-  err = nxsem_init(&priv->accel.run, 0, 0);
-  if (err < 0)
-    {
-      snerr("Failed to initialize accel semaphore: %d\n", err);
-      goto del_gyro_sem;
-    }
+  nxsem_init(&priv->accel.run, 0, 0);
 
   /* Create gyro lower half */
 
   priv->gyro.lower.type = SENSOR_TYPE_GYROSCOPE;
   priv->gyro.lower.ops = &g_sensor_ops;
+  priv->gyro.lower.nbuffer = CONFIG_SENSORS_LSM6DSO32_GYRO_ORB_BUFSIZE;
   priv->gyro.enabled = false;
   priv->gyro.odr = ODR_OFF;                 /* Default off */
   priv->gyro.fsr = LSM6DSO32_FSR_GY_125DPS; /* Default 125dps */
@@ -1927,6 +1919,7 @@ int lsm6dso32_register(FAR struct i2c_master_s *i2c, uint8_t addr,
 
   priv->accel.lower.type = SENSOR_TYPE_ACCELEROMETER;
   priv->accel.lower.ops = &g_sensor_ops;
+  priv->accel.lower.nbuffer = CONFIG_SENSORS_LSM6DSO32_ACCEL_ORB_BUFSIZE;
   priv->accel.enabled = false;
   priv->accel.odr = ODR_OFF;             /* Default off */
   priv->accel.fsr = LSM6DSO32_FSR_XL_4G; /* Default 4g */
@@ -2031,23 +2024,20 @@ int lsm6dso32_register(FAR struct i2c_master_s *i2c, uint8_t addr,
 
   if (err < 0)
     {
-    unreg_gyro_handler:
+unreg_gyro_handler:
       if (config->xl_attach != NULL)
         {
           kthread_delete(gyro_pid);
         }
 
-    unreg_accel:
+unreg_accel:
       sensor_unregister(&priv->accel.lower, devno);
-    unreg_gyro:
+unreg_gyro:
       sensor_unregister(&priv->gyro.lower, devno);
-    del_accel_sem:
+del_accel_sem:
       nxsem_destroy(&priv->accel.run);
-    del_gyro_sem:
       nxsem_destroy(&priv->gyro.run);
-    del_mutex:
       nxmutex_destroy(&priv->devlock);
-    free_mem:
       kmm_free(priv);
       snerr("ERROR: Failed to register LSM6DSO32 driver: %d\n", err);
     }

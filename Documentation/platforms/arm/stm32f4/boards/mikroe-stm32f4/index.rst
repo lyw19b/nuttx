@@ -2,6 +2,8 @@
 mikroe-stm32f4
 ==============
 
+.. tags:: chip:stm32, chip:stm32f4, chip:stm32f407
+
 This page discusses issues unique to NuttX configurations for the
 MikroElektronika Mikromedia for STM32F4 development board.  This is
 another board support by NuttX that uses the same STM32F407VGT6 MCU
@@ -346,7 +348,6 @@ NOTES:
        CONFIG_USBDEV_TRACE=y                   : Enable USB trace feature
        CONFIG_USBDEV_TRACE_NRECORDS=128        : Buffer 128 records in memory
        CONFIG_NSH_USBDEV_TRACE=n               : No builtin tracing from NSH
-       CONFIG_NSH_ARCHINIT=y                   : Automatically start the USB monitor
        CONFIG_USBMONITOR=y              : Enable the USB monitor daemon
        CONFIG_USBMONITOR_STACKSIZE=2048 : USB monitor daemon stack size
        CONFIG_USBMONITOR_PRIORITY=50    : USB monitor daemon priority

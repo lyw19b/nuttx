@@ -94,19 +94,6 @@
 #  define CONFIG_ARCH_INTERRUPTSTACK 0
 #endif
 
-/* The initial stack point is aligned at 16 bytes boundaries. If
- * necessary frame_size must be rounded up to the next boundary to retain
- * this alignment.
- */
-
-#define STACK_ALIGNMENT     16
-
-/* Stack alignment macros */
-
-#define STACK_ALIGN_MASK    (STACK_ALIGNMENT - 1)
-#define STACK_ALIGN_DOWN(a) ((a) & ~STACK_ALIGN_MASK)
-#define STACK_ALIGN_UP(a)   (((a) + STACK_ALIGN_MASK) & ~STACK_ALIGN_MASK)
-
 /* This is the value used to mark the stack for subsequent stack monitoring
  * logic.
  */
@@ -158,12 +145,11 @@ typedef void (*up_vector_t)(void);
 
 #ifndef __ASSEMBLY__
 
-/* This is the beginning of heap as provided from up_head.S. This is the
- * first address in DRAM after the loaded program+bss+idle stack.  The
- * end of the heap is CONFIG_RAM_END
+/* Top of the CPU0 idle stack.  The remaining CPU idle stacks are
+ * contiguous.
  */
 
-extern const uintptr_t g_idle_topstack[];
+extern const uintptr_t g_idle_topstack;
 
 /* Address of the saved user stack pointer */
 
@@ -192,6 +178,22 @@ extern uint8_t _etbss[];           /* End+1 of .tbss */
 /****************************************************************************
  * Inline Functions
  ****************************************************************************/
+
+static inline uintptr_t x86_64_idle_topstack(int cpu)
+{
+  return g_idle_topstack +
+         (uintptr_t)cpu * CONFIG_IDLETHREAD_STACKSIZE;
+}
+
+static inline void x86_64_cpuid(uint32_t leaf, uint32_t subleaf,
+                                uint32_t *eax, uint32_t *ebx,
+                                uint32_t *ecx, uint32_t *edx)
+{
+  __asm__ volatile("cpuid"
+                   : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
+                   : "a" (leaf), "c" (subleaf)
+                   : "memory");
+}
 
 #ifdef CONFIG_ARCH_KERNEL_STACK
 static inline_function uint64_t *x86_64_get_ktopstk(void)
@@ -251,7 +253,7 @@ uint64_t *x86_64_syscall(uint64_t *regs);
 
 #ifdef CONFIG_ARCH_MULTIBOOT2
 void x86_64_mb2_fbinitialize(struct multiboot_tag_framebuffer *tag);
-void fb_putc(char ch);
+void fb_putc(int ch);
 #endif
 
 /* Defined in up_allocateheap.c */

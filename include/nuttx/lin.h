@@ -40,35 +40,40 @@
 #define LIN_ID_MASK               ((1 << LIN_ID_BITS) - 1)
 #define LIN_ID_MAX                LIN_ID_MASK
 
-#define LIN_CTRL_FLAG             CAN_EFF_FLAG  /* Describe control information(such as wirte et.) */
-#define LIN_RTR_FLAG              CAN_RTR_FLAG  /* Describe the direction of sending and receiving */
-#define LIN_ERR_FLAG              CAN_ERR_FLAG  /* The flag indicate  this is LIN err_frame */
+/* Describe control information (such as write etc.) */
 
-/* Bit flags on can_frame.types
- *
- * Use can_frame.types to identify other special frame.
- *
- * LIN_TCF_FLAG : TxConfirmation message frame. Lower_half use this flag to
- *                confirm frame-transmit
- *
- * LIN_EVT_FLAG : Event message frame. Lower_half use this flag to report
- *                state switch event
- *
- * LIN_CACHE_RESP_FLAG: When slave response to master, slave node should send
- *                      frame immediately which already be cached in last
- *                      transmission in case of response interval over time.
- *
- * LIN_CHKSUM_EXT_FLAG: LIN checksum have two types, default type will be
- *                      classic checksum
- *
- * LIN_SINGLE_RESP_FLAG: Cache LIN frame only work once, then will be cleared
+#define LIN_CTRL_FLAG             CAN_EFF_FLAG
+
+/* Describe the direction of sending and receiving */
+
+#define LIN_RTR_FLAG              CAN_RTR_FLAG
+
+/* The flag indicate  this is LIN err_frame */
+
+#define LIN_ERR_FLAG              CAN_ERR_FLAG
+
+/* Lower_half report state switch event frame */
+
+#define LIN_EVT_FLAG              CAN_EVT_FLAG
+
+/* When slave response to master, slave node should send frame immediately
+ * which already be cached in last transmission in case of response interval
+ * over time
  */
 
-#define LIN_TCF_FLAG              CAN_TCF_FLAG
-#define LIN_EVT_FLAG              CAN_EVT_FLAG
-#define LIN_CACHE_RESP_FLAG       (1 << (CANFD_FLAGS_BITS + 2))
-#define LIN_CHKSUM_EXT_FLAG       (1 << (CANFD_FLAGS_BITS + 3))
-#define LIN_SINGLE_RESP_FLAG      (1 << (CANFD_FLAGS_BITS + 4))
+#define LIN_CACHE_RESPONSE        (1 << (LIN_ID_BITS))
+
+/* LIN checksum have two types, default type will be classic checksum */
+
+#define LIN_CHECKSUM_EXTENDED     (1 << (LIN_ID_BITS + 1))
+
+/* Cache LIN frame only work once. then will be clear */
+
+#define LIN_SINGLE_RESPONSE       (1 << (LIN_ID_BITS + 2))
+
+/* TxConfirmation frame. Lower_half use the flag to confirm frame-transmit */
+
+#define LIN_TCF_FLAG              (1 << (LIN_ID_BITS + 3))
 
 /* LIN Error Indications ****************************************************/
 
@@ -76,13 +81,14 @@
  * The error frame consists of err_flag（LIN_ERR_FLAG)、err_class
  * (defined in data[0]) and err_reason(defined in data[1] to data[4]).
  * The error frame is described using the following structure:
- * begin_packed_struct struct can_frame {
+ * struct can_frame {
  *    canid_t can_id;
  *    uint8_t can_dlc;
- *    uint16_t flags;
+ *    uint8_t __pad;
+ *    uint8_t __res0;
  *    uint8_t __res1;
  *    uint8_t data[CAN_MAX_DLEN] __attribute__((aligned(8)));
- *  } end_packed_struct;
+ *  };
  *
  * Error frame description format：
  *
@@ -95,8 +101,8 @@
  *              define in bit 29 of can_id(CAN_ERR_FLAG) in can_frame.
  * ERR_CLASS  : Indicate at what stage or where the error occurred,
  *              define in data[0] in can_frame.
- * ERR_REASON ：Indicate the error reson(timeout,error in the frame, etc.),
- *              define in data[0] ~ data[4] in can_frame.
+ * ERR_REASON ：Indicate the error reason (timeout, error in the frame,
+ *              etc.), define in data[0] ~ data[4] in can_frame.
  */
 
 /* ERR_CLASS in  data[0] */
@@ -143,6 +149,7 @@
 #define LIN_ERR_CRTL_UNSPEC       0x00     /* Unspecified error */
 #define LIN_ERR_CRTL_RXOVERFLOW   (1 << 0) /* Hardware controller receive overflow */
 #define LIN_ERR_CTRL_FRAMEERROR   (1 << 1) /* Hardware controller frame error */
+#define LIN_ERR_CTRL_NOISE        (1 << 2) /* Hardware controller noise error */
 
 /* LIN States Indications ***************************************************/
 
@@ -150,7 +157,7 @@
 
 #define LIN_EVT_UNSPEC           0x00     /* Unspecified state event */
 #define LIN_EVT_WAKEUP           (1 << 0) /* Already send a wake-up command to lin_bus */
-#define LIN_EVT_WAKEUP_PASSIVE   (1 << 1) /* Wake up when detecte low level signal of bus a for a period of time(such as 250us-5ms) */
+#define LIN_EVT_WAKEUP_PASSIVE   (1 << 1) /* Wake up when detected low level signal of bus a for a period of time (such as 250us-5ms) */
 #define LIN_EVT_SLEEP            (1 << 2) /* Send a sleep command(0x3c) to the bus, only Master */
 #define LIN_EVT_SLEEP_PASSIVE    (1 << 3) /* Receive a sleep command from bus */
 #define LIN_EVT_SLEEP_IDLE       (1 << 4) /* Go to sleep when bus keep in the inactive for a period of time(such as 4s) */

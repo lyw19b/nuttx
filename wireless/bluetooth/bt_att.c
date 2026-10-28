@@ -45,7 +45,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/net/bluetooth.h>
 #include <nuttx/wireless/bluetooth/bt_hci.h>
@@ -870,15 +870,15 @@ static bool uuid_create(FAR struct bt_uuid_s *uuid,
 
   switch (data->len)
     {
-    case 2:
-      uuid->type  = BT_UUID_16;
-      uuid->u.u16 = bt_buf_get_le16(data);
-      return true;
+      case 2:
+        uuid->type  = BT_UUID_16;
+        uuid->u.u16 = bt_buf_get_le16(data);
+        return true;
 
-    case 16:
-      uuid->type = BT_UUID_128;
-      memcpy(uuid->u.u128, data->data, data->len);
-      return true;
+      case 16:
+        uuid->type = BT_UUID_128;
+        memcpy(uuid->u.u128, data->data, data->len);
+        return true;
     }
 
   return false;
@@ -1022,14 +1022,14 @@ static uint8_t err_to_att(int err)
 
   switch (err)
     {
-    case -EINVAL:
-      return BT_ATT_ERR_INVALID_OFFSET;
+      case -EINVAL:
+        return BT_ATT_ERR_INVALID_OFFSET;
 
-    case -EFBIG:
-      return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+      case -EFBIG:
+        return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 
-    default:
-      return BT_ATT_ERR_UNLIKELY;
+      default:
+        return BT_ATT_ERR_UNLIKELY;
     }
 }
 
@@ -1037,22 +1037,31 @@ static uint8_t check_perm(FAR struct bt_conn_s *conn,
                           FAR const struct bt_gatt_attr_s *attr,
                           uint8_t mask)
 {
-  if ((mask & BT_GATT_PERM_READ) && !(attr->perm & BT_GATT_PERM_READ))
+  if ((mask & BT_GATT_PERM_READ) &&
+      (!(attr->perm & BT_GATT_PERM_READ_MASK) || !attr->read))
     {
       return BT_ATT_ERR_READ_NOT_PERMITTED;
     }
 
-  if ((mask & BT_GATT_PERM_WRITE) && !(attr->perm & BT_GATT_PERM_WRITE))
+  if ((mask & BT_GATT_PERM_WRITE) &&
+      (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !attr->write))
     {
-      return BT_ATT_ERR_READ_NOT_PERMITTED;
+      return BT_ATT_ERR_WRITE_NOT_PERMITTED;
     }
 
   mask &= attr->perm;
   if (mask & BT_GATT_PERM_AUTHEN_MASK)
     {
-      /* TODO: Check conn authentication */
+      if (!conn->encrypt || conn->sec_level < BT_SECURITY_HIGH)
+        {
+          wlerr("Auth Fail - encrypt=%d, level=%d (need >= %d)\n",
+                conn->encrypt, conn->sec_level, BT_SECURITY_HIGH);
+          return BT_ATT_ERR_AUTHENTICATION;
+        }
 
-      return BT_ATT_ERR_AUTHENTICATION;
+      wlinfo("Auth OK - encrypt=%d, level=%d\n",
+          conn->encrypt, conn->sec_level);
+      mask &= ~BT_GATT_PERM_AUTHEN_MASK;
     }
 
   if ((mask & BT_GATT_PERM_ENCRYPT_MASK) && !conn->encrypt)
@@ -1861,6 +1870,16 @@ FAR struct bt_buf_s *bt_att_create_pdu(FAR struct bt_conn_s *conn,
   FAR struct bt_att_hdr_s *hdr;
   FAR struct bt_buf_s *buf;
   FAR struct bt_att_s *att = conn->att;
+
+  /* There is no ATT context until the connection is established, and it
+   * is released again on disconnect.
+   */
+
+  if (att == NULL)
+    {
+      wlwarn("No ATT context for handle %u\n", conn->handle);
+      return NULL;
+    }
 
   if (len + sizeof(op) > att->mtu)
     {

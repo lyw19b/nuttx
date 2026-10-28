@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include "mpfs_ihc.h"
@@ -52,7 +52,7 @@ int mpfs_board_ihc_init(void)
 {
   int ret = 0;
 
-  /* With OpenSBI, initilization comes via mpfs_opensbi.c, not here */
+  /* With OpenSBI, initialization comes via mpfs_opensbi.c, not here */
 
 #ifndef CONFIG_MPFS_OPENSBI
 

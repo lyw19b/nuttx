@@ -32,7 +32,7 @@
 #include <nuttx/nuttx.h>
 
 #include <string.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 /****************************************************************************
  * Private Types
@@ -181,7 +181,7 @@ static int uart_gdbstub_panic_callback(FAR struct notifier_block *nb,
   uart_gdbstub_attach(uart_gdbstub, true);
 #endif
 
-  _alert("Enter panic gdbstub mode, plase use gdb connect to debug\n");
+  _alert("Enter panic gdbstub mode, please use gdb connect to debug\n");
   _alert("Please use gdb of the corresponding architecture to "
          "connect to nuttx");
   _alert("such as: arm-none-eabi-gdb nuttx -ex \"set "

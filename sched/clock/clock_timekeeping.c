@@ -32,10 +32,11 @@
 #include <stdint.h>
 #include <time.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
+#include <nuttx/clock_notifier.h>
 
 #include "clock/clock.h"
 
@@ -133,6 +134,7 @@ int clock_timekeeping_set_wall_time(FAR const struct timespec *ts)
     }
 
   memcpy(&g_clock_wall_time, ts, sizeof(struct timespec));
+  clock_notifier_call_chain(CLOCK_REALTIME, ts);
 
   g_clock_adjust       = 0;
   g_clock_last_counter = counter;
@@ -245,13 +247,22 @@ void clock_update_wall_time(void)
 
   if (g_clock_adjust != 0 && sec > 0)
     {
-      long adjust = NTP_MAX_ADJUST * (long)sec;
-      if (g_clock_adjust < adjust && g_clock_adjust > -adjust)
+      long limit = NTP_MAX_ADJUST * (long)sec;
+      long adjust = g_clock_adjust;
+
+      /* Limit the adjustment while preserving its direction. */
+
+      if (adjust > limit)
         {
-          adjust = g_clock_adjust;
+          adjust = limit;
+        }
+      else if (adjust < -limit)
+        {
+          adjust = -limit;
         }
 
       nsec += adjust * NSEC_PER_USEC;
+      g_clock_adjust -= adjust;
 
       while (nsec < 0)
         {
@@ -295,6 +306,7 @@ void clock_inittimekeeping(FAR const struct timespec *tp)
       clock_basetime(&g_clock_wall_time);
     }
 
+  clock_notifier_call_chain(CLOCK_REALTIME, &g_clock_wall_time);
   up_timer_gettick(&g_clock_last_counter);
   spin_unlock_irqrestore(&g_clock_lock, flags);
 }

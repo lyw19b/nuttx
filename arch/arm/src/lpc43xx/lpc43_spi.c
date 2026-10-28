@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <arch/board/board.h>
 #include <nuttx/arch.h>
@@ -206,7 +206,7 @@ static uint32_t spi_setfrequency(struct spi_dev_s *dev,
   uint32_t divisor;
   uint32_t actual;
 
-  /* Check if the requested frequence is the same as the frequency
+  /* Check if the requested frequency is the same as the frequency
    * selection.
    */
 

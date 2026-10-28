@@ -2,6 +2,8 @@
 Nordic Thingy:91
 =================
 
+.. tags:: chip:nrf91, chip:nrf52, chip:nrf9160, chip:nrf52840
+
 The `Thingy:91 (PCA0035) <https://www.nordicsemi.com/Products/Development-hardware/Nordic-Thingy-91>`_
 is a development board based on the nRF9160 and nRF52840 from Nordic.
 
@@ -17,14 +19,14 @@ GPS                                No
 Buttons                            Yes
 LEDs                               No
 COEX                               No
-PMIC                               No
+PMIC (ADP5360)                     No      I2C 0x46
 Battery monitoring                 No
 Buzzer                             No
-EEPROM (24CW160)                   No
-Low power accelerometer (ADXL362)  No
-Hi G accelerometer (ADXL372)       No
-Air quality sensor (HBME680)       No
-Color sensor (BH1749NUC)           No
+EEPROM (24CW160)                   No      I2C 0x50
+Low power accelerometer (ADXL362)  No      SPI
+Hi G accelerometer (ADXL372)       No      SPI
+Air quality sensor (BME680)        No      I2C 0x76
+Color sensor (BH1749NUC)           No      I2C 0x38
 ================================== ======= =============
 
 Serial Console
@@ -37,7 +39,11 @@ Serial Console
 Configurations
 ==============
 
-TODO
+thingy91_rtt
+------------
+
+Configuration with a console over RTT, enabling available peripherals
+on the board (WIP).
 
 Flash & Debug
 =============

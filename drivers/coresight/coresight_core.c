@@ -25,7 +25,7 @@
  ****************************************************************************/
 
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdbool.h>
 #include <nuttx/kmalloc.h>
 #include <nuttx/irq.h>
@@ -619,7 +619,7 @@ static int coresight_enable_path(FAR struct list_node *path)
             ret = coresight_enable_sink(node->csdev);
             if (ret < 0)
               {
-                cserr("enalbe sink: %s failed ret: %d\n",
+                cserr("enable sink: %s failed ret: %d\n",
                       node->csdev->name, ret);
                 return ret;
               }
@@ -635,7 +635,7 @@ static int coresight_enable_path(FAR struct list_node *path)
                                           next->csdev);
               if (ret < 0)
                 {
-                  cserr("enalbe link: %s failed ret: %d\n",
+                  cserr("enable link: %s failed ret: %d\n",
                         node->csdev->name, ret);
                   goto err;
                 }

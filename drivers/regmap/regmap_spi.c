@@ -29,7 +29,7 @@
 #include <nuttx/kmalloc.h>
 #include <nuttx/spi/spi.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include "internal.h"
 
@@ -191,7 +191,7 @@ regmap_init_spi(FAR struct spi_dev_s *spi, uint32_t freq,
   dev->base.read      = regmap_spi_read;
 
   dev->trans.deselect = true;        /* De-select after transfer. */
-  dev->seq.dev        = devid;       /* SPI controler hard cs index. */
+  dev->seq.dev        = devid;       /* SPI controller hard cs index. */
   dev->seq.mode       = mode;        /* See enum spi_mode_e. */
   dev->seq.nbits      = 8;           /* Number of bits, Only supports 8bit. */
   dev->seq.ntrans     = 1;           /* Number of transactions. */

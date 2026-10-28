@@ -34,7 +34,6 @@
 #include <nuttx/board.h>
 #include <arch/board/board.h>
 #include <sched/sched.h>
-#include <signal/signal.h>
 
 #include "arm_internal.h"
 #include "exc_return.h"
@@ -87,12 +86,15 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
 
       irq_dispatch(irq, regs);
 #endif
-      if ((tcb->flags & TCB_FLAG_SIGDELIVER) != 0)
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
+      if (tcb->sigdeliver)
         {
           /* Pendsv able to access running tcb with no critical section */
 
           up_schedule_sigaction(tcb);
         }
+
+#endif
 
       up_irq_save();
     }
@@ -103,10 +105,13 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
 
   tcb = this_task();
 
-  /* Update scheduler parameters */
+  /* Update scheduler parameters.
+   * The arm-m architecture svc call will trigger an interrupt,
+   * and the actual context switch is executed after doirq is completed,
+   * so only the scheduling information needs to be updated in doirq.
+   */
 
-  nxsched_suspend_scheduler(*running_task);
-  nxsched_resume_scheduler(tcb);
+  nxsched_switch_context(*running_task, tcb);
 
   /* Record the new "running" task when context switch occurred.
    * g_running_tasks[] is only used by assertion logic for reporting

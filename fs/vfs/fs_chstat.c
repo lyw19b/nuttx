@@ -32,6 +32,7 @@
 #include <errno.h>
 
 #include <nuttx/fs/fs.h>
+#include <nuttx/sched.h>
 
 #include "inode/inode.h"
 
@@ -69,6 +70,13 @@ static int chstat_recursive(FAR const char *path,
 
   inode = desc.node;
   DEBUGASSERT(inode != NULL);
+
+  ret = inode_checkpathperm(inode, 0, 0);
+  if (ret < 0)
+    {
+      inode_release(inode);
+      goto errout_with_search;
+    }
 
   /* The way we handle the chstat depends on the type of inode that we
    * are dealing with.
@@ -410,9 +418,14 @@ int lutimens(FAR const char *path, const struct timespec times[2])
 int inode_chstat(FAR struct inode *inode,
                  FAR const struct stat *buf, int flags, int resolve)
 {
+#ifdef CONFIG_SCHED_USER_IDENTITY
+  FAR struct tcb_s *rtcb;
+  uid_t euid;
+#endif
+
   DEBUGASSERT(inode != NULL && buf != NULL);
 
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
+#ifdef CONFIG_FS_LINKS
   /* Handle softlinks differently.  Just call chstat() recursively on the
    * target of the softlink.
    */
@@ -440,6 +453,38 @@ int inode_chstat(FAR struct inode *inode,
 
           return chstat_recursive(inode->u.i_link, buf, flags, ++resolve);
         }
+    }
+
+  else if (INODE_IS_HARDLINK(inode))
+    {
+      /* The inode is a hard link.  The actual inode is referenced
+       * by the i_private field.
+       */
+
+      DEBUGASSERT(inode->i_private != NULL);
+      inode = inode->i_private;
+    }
+#endif
+
+#ifdef CONFIG_SCHED_USER_IDENTITY
+  rtcb = nxsched_self();
+  if ((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL &&
+      rtcb->group != NULL)
+    {
+      euid = rtcb->group->tg_euid;
+
+      if ((flags & (CH_STAT_UID | CH_STAT_GID)) != 0 && euid != 0)
+        {
+          return -EPERM;
+        }
+
+#ifdef CONFIG_PSEUDOFS_ATTRIBUTES
+      if ((flags & CH_STAT_MODE) != 0 &&
+          euid != 0 && euid != inode->i_owner)
+        {
+          return -EPERM;
+        }
+#endif
     }
 #endif
 

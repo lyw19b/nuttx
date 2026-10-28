@@ -132,6 +132,10 @@ if(CONFIG_NRF52_SAADC)
   list(APPEND SRCS nrf52_adc.c)
 endif()
 
+if(CONFIG_NRF52_QDEC)
+  list(APPEND SRCS nrf52_qdec.c)
+endif()
+
 if(CONFIG_PM)
   list(APPEND SRCS nrf52_pminitialize.c)
 endif()
@@ -158,7 +162,7 @@ if(CONFIG_NRF52_SOFTDEVICE_CONTROLLER)
           SOURCE_DIR
           ${CMAKE_CURRENT_LIST_DIR}/sdk-nrfxlib
           BINARY_DIR
-          ${CMAKE_BINARY_DIR}/arch/sdk-nrfxlib
+          ${NUTTX_BINARY_DIR}/arch/sdk-nrfxlib
           CONFIGURE_COMMAND
           ""
           BUILD_COMMAND

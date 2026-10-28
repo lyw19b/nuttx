@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/cache.h>
 #include <nuttx/init.h>
@@ -83,6 +83,7 @@ const uintptr_t g_idle_topstack = IDLE_STACK;
  *
  ****************************************************************************/
 
+osentry_function
 void __start(void)
 {
   register const uint32_t *src;

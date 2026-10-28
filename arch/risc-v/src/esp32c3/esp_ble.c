@@ -33,7 +33,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/nuttx.h>
 #include <nuttx/kmalloc.h>
@@ -106,7 +106,7 @@ static esp_vhci_host_callback_t vhci_host_cb =
  * Name: esp_ble_send_ready
  *
  * Description:
- *   If the controller could send HCI comand will callback this function.
+ *   If the controller could send HCI command will callback this function.
  *
  * Input Parameters:
  *   None

@@ -127,11 +127,11 @@
 #define REG_LR              REG_R14
 #define REG_PC              REG_R15
 
-/* The PIC register is usually R10. It can be R9 is stack checking is enabled
- * or if the user changes it with -mpic-register on the GCC command line.
+/* The PIC base register is R9, the AAPCS platform register.  See PIC_REG
+ * in arch/arm/include/arch.h; every PIC binary format uses the same one.
  */
 
-#define REG_PIC             REG_R10
+#define REG_PIC             REG_R9
 
 /****************************************************************************
  * Public Types
@@ -160,12 +160,13 @@
 #ifndef __ASSEMBLY__
 struct xcptcontext
 {
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
   /* These are saved register array pointer used during
    * signal processing.
    */
 
   uint32_t *saved_regs;
-
+#endif /* CONFIG_ENABLE_ALL_SIGNALS */
   /* Register save area */
 
   uint32_t *regs;

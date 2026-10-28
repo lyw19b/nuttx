@@ -31,7 +31,6 @@
 #include <nuttx/compiler.h>
 #include <nuttx/semaphore.h>
 #include <nuttx/sched.h>
-#include <nuttx/atomic.h>
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -39,8 +38,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-#define NXSEM_COUNT(s) ((FAR atomic_t *)&(s)->semcount)
 
 /****************************************************************************
  * Public Function Prototypes
@@ -105,9 +102,6 @@ void nxsem_release_all(FAR struct tcb_s *stcb);
 #ifdef CONFIG_PRIORITY_PROTECT
 int nxsem_protect_wait(FAR sem_t *sem);
 void nxsem_protect_post(FAR sem_t *sem);
-#else
-#  define nxsem_protect_wait(sem)  0
-#  define nxsem_protect_post(sem)
 #endif
 
 #undef EXTERN

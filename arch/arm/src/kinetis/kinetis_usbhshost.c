@@ -31,8 +31,8 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/kmalloc.h>
@@ -1788,7 +1788,7 @@ kinetis_qh_s *kinetis_qh_create(struct kinetis_rhport_s *rhport,
    * FIELD    DESCRIPTION                     VALUE/SOURCE
    * -------- ------------------------------- --------------------
    * DEVADDR  Device address                  Endpoint structure
-   * I        Inactivate on Next Transaction  0
+   * I        Deactivate on Next Transaction  0
    * ENDPT    Endpoint number                 Endpoint structure
    * EPS      Endpoint speed                  Endpoint structure
    * DTC      Data toggle control             1
@@ -3696,7 +3696,7 @@ static int kinetis_rh_enumerate(struct usbhost_connection_s *conn,
    * reset for 50Msec, not wait 50Msec before resetting.
    */
 
-  nxsig_usleep(100 * 1000);
+  nxsched_usleep(100 * 1000);
 
   /* Paragraph 2.3.9:
    *
@@ -3800,7 +3800,7 @@ static int kinetis_rh_enumerate(struct usbhost_connection_s *conn,
    */
 
   while ((kinetis_getreg(regaddr) & EHCI_PORTSC_RESET) != 0);
-  nxsig_usleep(200 * 1000);
+  nxsched_usleep(200 * 1000);
 
   /* EHCI Paragraph 4.2.2:
    *
@@ -4068,7 +4068,7 @@ static int kinetis_epalloc(struct usbhost_driver_s *drvr,
  * Input Parameters:
  *   drvr - The USB host driver instance obtained as a parameter from the
  *           call to the class create() method.
- *   ep   - The endpint to be freed.
+ *   ep   - The endpoint to be freed.
  *
  * Returned Value:
  *   On success, zero (OK) is returned. On a failure, a negated errno value
@@ -4641,7 +4641,7 @@ static int kinetis_cancel(struct usbhost_driver_s *drvr, usbhost_ep_t ep)
 
   /* We must have exclusive access to the EHCI hardware and data structures.
    * This will prevent servicing any transfer completion events while we
-   * perform the the cancellation, but will not prevent DMA-related race
+   * perform the cancellation, but will not prevent DMA-related race
    * conditions.
    *
    * REVISIT: This won't work.  This function must be callable from the

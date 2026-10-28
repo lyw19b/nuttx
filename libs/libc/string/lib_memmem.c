@@ -57,7 +57,7 @@
  *
  ****************************************************************************/
 
-#undef memmem /* See mm/README.txt */
+#undef memmem
 FAR void *memmem(FAR const void *haystack, size_t haystacklen,
                  FAR const void *needle, size_t needlelen)
 {
@@ -87,7 +87,7 @@ FAR void *memmem(FAR const void *haystack, size_t haystacklen,
           break;
     }
 
-  /* start searching through haystack only from the first occurence of
+  /* start searching through haystack only from the first occurrence of
     * the first character of needle.
     */
 

@@ -52,7 +52,7 @@
 
 /* Register Addresses *******************************************************/
 
-#if STM32H5_NLPUART > 0
+#if STM32_NLPUART > 0
 #  define STM32_LPUART1_CR1        (STM32_LPUART1_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_LPUART1_CR2        (STM32_LPUART1_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_LPUART1_CR3        (STM32_LPUART1_BASE + STM32_USART_CR3_OFFSET)
@@ -67,7 +67,7 @@
 #  define STM32_LPUART1_PRESC      (STM32_LPUART1_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUSART > 0
+#if STM32_NUSART > 0
 #  define STM32_USART1_CR1        (STM32_USART1_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_USART1_CR2        (STM32_USART1_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_USART1_CR3        (STM32_USART1_BASE + STM32_USART_CR3_OFFSET)
@@ -82,7 +82,7 @@
 #  define STM32_USART1_PRESC      (STM32_USART1_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUSART > 1
+#if STM32_NUSART > 1
 #  define STM32_USART2_CR1        (STM32_USART2_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_USART2_CR2        (STM32_USART2_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_USART2_CR3        (STM32_USART2_BASE + STM32_USART_CR3_OFFSET)
@@ -97,7 +97,7 @@
 #  define STM32_USART2_PRESC      (STM32_USART2_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUSART > 2
+#if STM32_NUSART > 2
 #  define STM32_USART3_CR1        (STM32_USART3_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_USART3_CR2        (STM32_USART3_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_USART3_CR3        (STM32_USART3_BASE + STM32_USART_CR3_OFFSET)
@@ -112,7 +112,7 @@
 #  define STM32_USART3_PRESC      (STM32_USART3_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUSART > 4
+#if STM32_NUSART > 4
 #  define STM32_USART6_CR1        (STM32_USART6_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_USART6_CR2        (STM32_USART6_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_USART6_CR3        (STM32_USART6_BASE + STM32_USART_CR3_OFFSET)
@@ -127,7 +127,7 @@
 #  define STM32_USART6_PRESC      (STM32_USART6_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUSART > 5
+#if STM32_NUSART > 5
 #  define STM32_USART10_CR1        (STM32_USART10_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_USART10_CR2        (STM32_USART10_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_USART10_CR3        (STM32_USART10_BASE + STM32_USART_CR3_OFFSET)
@@ -142,7 +142,7 @@
 #  define STM32_USART10_PRESC      (STM32_USART10_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUSART > 6
+#if STM32_NUSART > 6
 #  define STM32_USART11_CR1        (STM32_USART11_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_USART11_CR2        (STM32_USART11_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_USART11_CR3        (STM32_USART11_BASE + STM32_USART_CR3_OFFSET)
@@ -157,7 +157,7 @@
 #  define STM32_USART11_PRESC      (STM32_USART11_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUART > 0
+#if STM32_NUART > 0
 #  define STM32_UART4_CR1         (STM32_UART4_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_UART4_CR2         (STM32_UART4_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_UART4_CR3         (STM32_UART4_BASE + STM32_USART_CR3_OFFSET)
@@ -172,7 +172,7 @@
 #  define STM32_UART4_PRESC       (STM32_UART4_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUART > 1
+#if STM32_NUART > 1
 #  define STM32_UART5_CR1         (STM32_UART5_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_UART5_CR2         (STM32_UART5_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_UART5_CR3         (STM32_UART5_BASE + STM32_USART_CR3_OFFSET)
@@ -187,7 +187,7 @@
 #  define STM32_UART5_PRESC       (STM32_UART5_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUART > 2
+#if STM32_NUART > 2
 #  define STM32_UART7_CR1         (STM32_UART7_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_UART7_CR2         (STM32_UART7_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_UART7_CR3         (STM32_UART7_BASE + STM32_USART_CR3_OFFSET)
@@ -202,7 +202,7 @@
 #  define STM32_UART7_PRESC       (STM32_UART7_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUART > 3
+#if STM32_NUART > 3
 #  define STM32_UART8_CR1         (STM32_UART8_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_UART8_CR2         (STM32_UART8_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_UART8_CR3         (STM32_UART8_BASE + STM32_USART_CR3_OFFSET)
@@ -217,7 +217,7 @@
 #  define STM32_UART8_PRESC       (STM32_UART8_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUART > 4
+#if STM32_NUART > 4
 #  define STM32_UART9_CR1         (STM32_UART9_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_UART9_CR2         (STM32_UART9_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_UART9_CR3         (STM32_UART9_BASE + STM32_USART_CR3_OFFSET)
@@ -232,7 +232,7 @@
 #  define STM32_UART9_PRESC       (STM32_UART9_BASE + STM32_USART_PRESC_OFFSET)
 #endif
 
-#if STM32H5_NUART > 5
+#if STM32_NUART > 5
 #  define STM32_UART12_CR1         (STM32_UART12_BASE + STM32_USART_CR1_OFFSET)
 #  define STM32_UART12_CR2         (STM32_UART12_BASE + STM32_USART_CR2_OFFSET)
 #  define STM32_UART12_CR3         (STM32_UART12_BASE + STM32_USART_CR3_OFFSET)
@@ -277,14 +277,19 @@
 #define USART_CR1_RTOIE           (1 << 26) /* Bit 26: Receiver timeout interrupt enable */
 #define USART_CR1_EOBIE           (1 << 27) /* Bit 27: End of block interrupt enable */
 #define USART_CR1_M1              (1 << 28) /* Bit 28: Word length */
+#define USART_CR1_FIFOEN          (1 << 29) /* Bit 29: FIFO EN */
+#define USART_CR1_TXFEIE          (1 << 30) /* Bit 30: TX FIFO empty interrupt enable */
+#define USART_CR1_RXFFIE          (1 << 31) /* Bit 31: RX FIFO full interrupt enable */
 
 #define USART_CR1_ALLINTS         (USART_CR1_IDLEIE|USART_CR1_RXNEIE| \
                                    USART_CR1_TCIE|USART_CR1_TXEIE| \
                                    USART_CR1_PEIE|USART_CR1_CMIE| \
-                                   USART_CR1_RTOIE|USART_CR1_EOBIE)
+                                   USART_CR1_RTOIE|USART_CR1_EOBIE| \
+                                   USART_CR1_TXFEIE|USART_CR1_RXFFIE)
 #define LPUART_CR1_ALLINTS \
                                   (USART_CR1_IDLEIE | USART_CR1_RXNEIE | USART_CR1_TCIE | \
                                    USART_CR1_TXEIE | USART_CR1_PEIE | USART_CR1_CMIE | \
+                                   USART_CR1_TXFEIE | USART_CR1_RXFFIE | \
                                    USART_CR1_TXFEIE | USART_CR1_RXFFIE)
 
 /* Control register 2 */
@@ -350,6 +355,27 @@
 #define USART_CR3_WUS_START       (2 << USART_CR3_WUS_SHIFT) /* 10: WUF active on Start bit detection */
 #define USART_CR3_WUS_RXNE        (3 << USART_CR3_WUS_SHIFT) /* 11: WUF active on RXNE */
 #define USART_CR3_WUFIE           (1 << 22)                  /* Bit 22: Wakeup from Stop mode interrupt enable */
+#define USART_CR3_TXFTIE          (1 << 23)                  /* Bit 23: TXFIFO threshold interrupt enable */
+#define USART_CR3_TCBGTIE         (1 << 24)                  /* Bit 24: Transmission Complete before guard time, interrupt enable */
+#define USART_CR3_RXFTCFG_SHIFT   (25)                       /* Bits 25-27: Receive FIFO threshold configuration */
+#define USART_CR3_RXFTCFG_MASK    (7 << USART_CR3_RXFTCFG_SHIFT)
+#define USART_CR3_RXFTIE          (1 << 28)                  /* Bit 28: RXFIFO threshold interrupt enable */
+#define USART_CR3_TXFTCFG_SHIFT   (29)                       /* Bits 29-31: Transmit FIFO threshold configuration */
+#define USART_CR3_TXFTCFG_MASK    (7 << USART_CR3_TXFTCFG_SHIFT)
+
+#define USART_CR3_TXFTCFG_0       (0)                        /* TX FIFO reaches 1/8 depth */
+#define USART_CR3_TXFTCFG_1       (1)                        /* TX FIFO reaches 1/4 depth */
+#define USART_CR3_TXFTCFG_2       (2)                        /* TX FIFO reaches 1/2 depth */
+#define USART_CR3_TXFTCFG_3       (3)                        /* TX FIFO reaches 3/4 depth */
+#define USART_CR3_TXFTCFG_4       (4)                        /* TX FIFO reaches 7/8 depth */
+#define USART_CR3_TXFTCFG_5       (5)                        /* TX FIFO reaches full depth */
+
+#define USART_CR3_RXFTCFG_0       (0)                        /* RX FIFO reaches 1/8 depth */
+#define USART_CR3_RXFTCFG_1       (1)                        /* RX FIFO reaches 1/4 depth */
+#define USART_CR3_RXFTCFG_2       (2)                        /* RX FIFO reaches 1/2 depth */
+#define USART_CR3_RXFTCFG_3       (3)                        /* RX FIFO reaches 3/4 depth */
+#define USART_CR3_RXFTCFG_4       (4)                        /* RX FIFO reaches 7/8 depth */
+#define USART_CR3_RXFTCFG_5       (5)                        /* RX FIFO reaches full depth */
 
 /* Baud Rate Register */
 
@@ -396,6 +422,11 @@
 #define USART_ISR_WUF             (1 << 20) /* Bit 20: Wakeup from Stop mode Flag */
 #define USART_ISR_TEACK           (1 << 21) /* Bit 21: Transmit enable acknowledge Flag */
 #define USART_ISR_REACK           (1 << 22) /* Bit 22: Receive enable acknowledge Flag */
+#define USART_ISR_TXFE            (1 << 23) /* Bit 23: TXFIFO empty */
+#define USART_ISR_RXFF            (1 << 24) /* Bit 24: RXFIFO full */
+#define USART_ISR_TCBGT           (1 << 25) /* Bit 25: Transmission complete before guard time flag */
+#define USART_ISR_RXFT            (1 << 26) /* Bit 26: RXFIFO threshold reached */
+#define USART_ISR_TXFT            (1 << 27) /* Bit 27: TXFIFO threshold reached */
 
 /* ICR */
 

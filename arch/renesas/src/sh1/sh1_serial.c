@@ -33,8 +33,8 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/serial/serial.h>
@@ -820,7 +820,7 @@ static bool up_txready(struct uart_dev_s *dev)
  * Description:
  *   Performs the low level SCI initialization early in
  *   debug so that the serial console will be available
- *   during bootup.  This must be called before renesas_consoleinit.
+ *   during boot up.  This must be called before renesas_consoleinit.
  *
  ****************************************************************************/
 

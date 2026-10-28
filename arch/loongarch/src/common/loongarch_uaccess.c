@@ -368,8 +368,6 @@ static int prepare_call(struct loongarch_uaccess_s *call,
   switch (number)
     {
       case SYS__exit:
-      case SYS_getpid:
-      case SYS_gettid:
       case SYS_sched_getcpu:
       case SYS_sched_yield:
       case SYS_sched_getscheduler:
@@ -638,18 +636,6 @@ static int error_convention(unsigned int number)
       case SYS_pthread_cancel:
 #endif
 #if !defined(CONFIG_DISABLE_PTHREAD)
-      case SYS_pthread_cond_broadcast:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD)
-      case SYS_pthread_cond_clockwait:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD)
-      case SYS_pthread_cond_signal:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD)
-      case SYS_pthread_cond_wait:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD)
       case SYS_pthread_detach:
 #endif
 #if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SMP)
@@ -660,24 +646,6 @@ static int error_convention(unsigned int number)
 #endif
 #if !defined(CONFIG_DISABLE_PTHREAD)
       case SYS_pthread_join:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
-      case SYS_pthread_mutex_consistent:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD)
-      case SYS_pthread_mutex_destroy:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD)
-      case SYS_pthread_mutex_init:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD)
-      case SYS_pthread_mutex_timedlock:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD)
-      case SYS_pthread_mutex_trylock:
-#endif
-#if !defined(CONFIG_DISABLE_PTHREAD)
-      case SYS_pthread_mutex_unlock:
 #endif
 #if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SMP)
       case SYS_pthread_setaffinity_np:
@@ -694,6 +662,8 @@ static int error_convention(unsigned int number)
         return 1;
 
       case SYS_nxsched_get_stackinfo:
+      case SYS_nxsem_tickwait:
+      case SYS_nxsem_reset:
       case SYS_nxsem_clockwait:
 #if defined(CONFIG_FS_NAMED_SEMAPHORES)
       case SYS_nxsem_close:
@@ -705,7 +675,7 @@ static int error_convention(unsigned int number)
 #if defined(CONFIG_FS_NAMED_SEMAPHORES)
       case SYS_nxsem_open:
 #endif
-      case SYS_nxsem_post:
+      case SYS_nxsem_post_slow:
 #if defined(CONFIG_PRIORITY_INHERITANCE)
       case SYS_nxsem_set_protocol:
 #endif
@@ -713,11 +683,11 @@ static int error_convention(unsigned int number)
       case SYS_nxsem_setprioceiling:
 #endif
       case SYS_nxsem_timedwait:
-      case SYS_nxsem_trywait:
+      case SYS_nxsem_trywait_slow:
 #if defined(CONFIG_FS_NAMED_SEMAPHORES)
       case SYS_nxsem_unlink:
 #endif
-      case SYS_nxsem_wait:
+      case SYS_nxsem_wait_slow:
         return -1;
 
       default:
@@ -789,7 +759,12 @@ static int user_semaphore(unsigned int number, uintptr_t addr)
       return ret;
     }
 
-  if (flags & ~SEM_TYPE_MUTEX)
+  /* In 13.1, mutex values encode holder IDs rather than counters. The
+   * libc fast path handles uncontended mutexes; never reinterpret a slow
+   * mutex operation as a counting semaphore or follow its user queue.
+   */
+
+  if (flags != SEM_PRIO_NONE)
     {
       return -ENOSYS;
     }
@@ -813,7 +788,7 @@ static int user_semaphore(unsigned int number, uintptr_t addr)
           return OK;
         }
 
-      if (number == SYS_nxsem_post)
+      if (number == SYS_nxsem_post_slow)
         {
           if (expected == SEM_VALUE_MAX)
             {
@@ -826,7 +801,7 @@ static int user_semaphore(unsigned int number, uintptr_t addr)
         {
           if (expected == 0)
             {
-              return number == SYS_nxsem_trywait ? -EAGAIN : -ENOSYS;
+              return number == SYS_nxsem_trywait_slow ? -EAGAIN : -ENOSYS;
             }
 
           desired = expected - 1;
@@ -895,8 +870,8 @@ uintptr_t loongarch_user_syscall(unsigned int number, const uintptr_t *args)
    * implementation: their embedded queue links are user-writable.
    */
 
-  if (number == SYS_nxsem_wait || number == SYS_nxsem_trywait ||
-      number == SYS_nxsem_post || number == SYS_nxsem_destroy)
+  if (number == SYS_nxsem_wait_slow || number == SYS_nxsem_trywait_slow ||
+      number == SYS_nxsem_post_slow || number == SYS_nxsem_destroy)
     {
       return user_semaphore(number, args[0]);
     }

@@ -36,19 +36,19 @@
 #include <nuttx/fs/fs.h>
 
 #include "inode/inode.h"
-#include "fs_heap.h"
 
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
 static int _inode_compare(FAR const char *fname, FAR struct inode *inode);
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
+#ifdef CONFIG_FS_LINKS
 static int _inode_linktarget(FAR struct inode *inode,
                              FAR struct inode_search_s *desc);
 #endif
 static int _inode_search(FAR struct inode_search_s *desc);
 static FAR const char *_inode_getcwd(void);
+static int _inode_canonicalize(FAR char *path);
 
 /****************************************************************************
  * Public Data
@@ -59,6 +59,15 @@ FAR struct inode *g_root_inode = NULL;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: _inode_isdot
+ ****************************************************************************/
+
+static inline bool _inode_isdot(FAR const char *name)
+{
+  return name[0] == '.' && (name[1] == '\0' || name[1] == '/');
+}
 
 /****************************************************************************
  * Name: _inode_compare
@@ -144,7 +153,7 @@ static int _inode_compare(FAR const char *fname, FAR struct inode *inode)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
+#ifdef CONFIG_FS_LINKS
 static int _inode_linktarget(FAR struct inode *inode,
                              FAR struct inode_search_s *desc)
 {
@@ -168,7 +177,7 @@ static int _inode_linktarget(FAR struct inode *inode,
 
       /* Look up inode associated with the target of the symbolic link */
 
-      ret = _inode_search(desc);
+      ret = inode_search(desc);
       if (ret < 0)
         {
           break;
@@ -192,6 +201,162 @@ static int _inode_linktarget(FAR struct inode *inode,
   return ret;
 }
 #endif
+
+/****************************************************************************
+ * Name: _compute_path_depth
+ ****************************************************************************/
+
+static int _compute_path_depth(FAR const char *path)
+{
+  FAR const char *name = path;
+  int depth = 0;
+
+  /* After _inode_canonicalize(), path never contains ".." segments,
+   * so we only need to count path components.
+   */
+
+  while (*name != '\0')
+    {
+      depth++;
+      name = inode_nextname(name);
+    }
+
+  return depth;
+}
+
+/****************************************************************************
+ * Name: _inode_canonicalize
+ *
+ * Description:
+ *   Remove "." and ".." segments from an absolute path in-place.
+ *   The path MUST start with '/'.  Returns -EINVAL if ".." attempts
+ *   to ascend beyond the root directory, or -ENAMETOOLONG if the
+ *   canonicalized result is >= PATH_MAX bytes.
+ *
+ ****************************************************************************/
+
+static int _inode_canonicalize(FAR char *path)
+{
+  /* Skip the initial '/' -- caller guarantees absolute path */
+
+  FAR char *src = path + 1;
+  FAR char *dst = path + 1;
+
+  while (*src != '\0')
+    {
+      /* Skip duplicate slashes */
+
+      if (*src == '/')
+        {
+          src++;
+          continue;
+        }
+
+      /* Check for "." (current directory) */
+
+      if (src[0] == '.' && (src[1] == '/' || src[1] == '\0'))
+        {
+          src += (src[1] == '/') ? 2 : 1;
+          continue;
+        }
+
+      /* Check for ".." (parent directory) */
+
+      if (src[0] == '.' && src[1] == '.' &&
+          (src[2] == '/' || src[2] == '\0'))
+        {
+          /* Cannot go above root */
+
+          if (dst <= path + 1)
+            {
+              return -EINVAL;
+            }
+
+          /* Remove trailing slash first */
+
+          dst--;
+
+          /* Scan backward to find the previous '/' */
+
+          while (dst > path + 1 && *(dst - 1) != '/')
+            {
+              dst--;
+            }
+
+          src += (src[2] == '/') ? 3 : 2;
+          continue;
+        }
+
+      /* Regular path component: copy until end of segment (including '/') */
+
+      do
+        {
+          if (dst != src)
+            {
+              *dst = *src;
+            }
+
+          dst++;
+          src++;
+        }
+      while (*src != '\0' && *(src - 1) != '/');
+    }
+
+  /* Remove trailing slash (unless root "/") */
+
+  if (dst > path + 1 && *(dst - 1) == '/')
+    {
+      dst--;
+    }
+
+  *dst = '\0';
+
+  /* After canonicalization, check if the resolved path exceeds PATH_MAX */
+
+  if ((dst - path) >= PATH_MAX)
+    {
+      return -ENAMETOOLONG;
+    }
+
+  return 0;
+}
+
+/****************************************************************************
+ * Name: _inode_checkpath
+ ****************************************************************************/
+
+static int _inode_checkpath(const char *path)
+{
+  int namelen = 0;
+  int pathlen = 0;
+
+  if (*path == '\0')
+    {
+      return -ENOENT;
+    }
+
+  /* Check each segment of the path */
+
+  while (*path != '\0' && pathlen < PATH_MAX)
+    {
+      if (*path == '/')
+        {
+          namelen = 0;
+        }
+      else
+        {
+          if (++namelen > NAME_MAX)
+            {
+              return -ENAMETOOLONG;
+            }
+        }
+
+      path++;
+      pathlen++;
+    }
+
+  return pathlen >= PATH_MAX ? -ENAMETOOLONG : OK;
+}
 
 /****************************************************************************
  * Name: _inode_search
@@ -221,19 +386,80 @@ static int _inode_search(FAR struct inode_search_s *desc)
   FAR struct inode *left    = NULL;
   FAR struct inode *above   = NULL;
   FAR const char   *relpath = NULL;
-  int ret = -ENOENT;
+  int ret;
 
-  /* Get the search path, skipping over the leading '/'.  The leading '/' is
-   * mandatory because only absolute paths are expected in this context.
+  ret = _inode_checkpath(desc->path);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  /* Ensure we have a writable buffer for path manipulation */
+
+  if (desc->buffer == NULL)
+    {
+      FAR const char *cwd = NULL;
+      size_t buflen;
+
+      /* For a relative path the absolute form is "<cwd>/<path>".  That
+       * concatenation can exceed PATH_MAX even when the relative path
+       * itself is within PATH_MAX: a relative path of PATH_MAX-1 bytes
+       * is legal per pathconf(_PC_PATH_MAX), but the prefix added by the
+       * cwd pushes the uncanonicalized form past the limit.  Size the
+       * buffer to hold the full absolute form so that ".." segments are
+       * collapsed against the correct suffix; truncating first could
+       * drop the trailing component and let ".." collapse the path onto
+       * a directory (yielding the wrong errno, e.g. EISDIR, instead of
+       * resolving the file).  _inode_canonicalize() still rejects any
+       * result whose canonicalized length reaches PATH_MAX.
+       */
+
+      if (*desc->path != '/')
+        {
+          cwd = _inode_getcwd();
+          buflen = strlen(cwd) + 1 + strlen(desc->path) + 1;
+        }
+      else
+        {
+          buflen = strlen(desc->path) + 1;
+        }
+
+      if (buflen < PATH_MAX)
+        {
+          buflen = PATH_MAX;
+        }
+
+      desc->buffer = lib_get_tempbuffer(buflen);
+      if (desc->buffer == NULL)
+        {
+          return -ENOMEM;
+        }
+
+      if (cwd != NULL)
+        {
+          snprintf(desc->buffer, buflen, "%s/%s", cwd, desc->path);
+        }
+      else
+        {
+          strlcpy(desc->buffer, desc->path, buflen);
+        }
+
+      desc->path = desc->buffer;
+    }
+
+  /* Canonicalize the path to remove "." and ".." segments.  This ensures
+   * that mountpoint relpath never contains ".." which most filesystems
+   * (tmpfs, romfs, etc.) cannot resolve.
    */
 
-  DEBUGASSERT(desc != NULL && desc->path != NULL);
-  name  = desc->path;
-
-  if (*name != '/')
+  ret = _inode_canonicalize(desc->buffer);
+  if (ret < 0)
     {
-      return -EINVAL;
+      return ret;
     }
+
+  name = desc->path;
+  ret = -ENOENT;
 
   /* Traverse the pseudo file system node tree until either (1) all nodes
    * have been examined without finding the matching node, or (2) the
@@ -281,7 +507,8 @@ static int _inode_search(FAR struct inode_search_s *desc)
            */
 
           name = inode_nextname(name);
-          if (*name == '\0' || INODE_IS_MOUNTPT(inode))
+          if (*name == '\0' ||
+              (INODE_IS_MOUNTPT(inode) && _compute_path_depth(name) > 0))
             {
               /* Either (1) we are at the end of the path, so this must be
                * the node we are looking for or else (2) this node is a
@@ -297,7 +524,7 @@ static int _inode_search(FAR struct inode_search_s *desc)
             {
               /* More nodes to be examined in the path "below" this one. */
 
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
+#ifdef CONFIG_FS_LINKS
               /* Was the node a soft link?  If so, then we need need to
                * continue below the target of the link, not the link itself.
                */
@@ -351,19 +578,19 @@ static int _inode_search(FAR struct inode_search_s *desc)
                                 {
                                   FAR char *buffer = NULL;
 
-                                  ret = fs_heap_asprintf(&buffer, "%s/%s",
-                                                         desc->relpath,
-                                                         name);
-                                  if (ret > 0)
+                                  buffer = lib_get_tempbuffer(PATH_MAX);
+                                  if (buffer == NULL)
                                     {
-                                      fs_heap_free(desc->buffer);
-                                      desc->buffer = buffer;
-                                      relpath = buffer;
-                                      ret = OK;
+                                      ret = -ENOMEM;
                                     }
                                   else
                                     {
-                                      ret = -ENOMEM;
+                                      snprintf(buffer, PATH_MAX, "%s/%s",
+                                               desc->relpath, name);
+                                      lib_put_tempbuffer(desc->buffer);
+                                      desc->buffer = buffer;
+                                      relpath = buffer;
+                                      ret = OK;
                                     }
                                 }
                               else
@@ -387,6 +614,13 @@ static int _inode_search(FAR struct inode_search_s *desc)
               above = inode;
               left  = NULL;
               inode = inode->i_child;
+              if (!INODE_IS_PSEUDODIR(above))
+                {
+                  /* The prefix of the path is not a directory */
+
+                  ret = -ENOTDIR;
+                  break;
+                }
             }
         }
     }
@@ -477,23 +711,9 @@ int inode_search(FAR struct inode_search_s *desc)
 
   DEBUGASSERT(desc != NULL && desc->path != NULL);
 
-  /* Convert the relative path to the absolute path */
-
-  if (*desc->path != '/')
-    {
-      ret = fs_heap_asprintf(&desc->buffer, "%s/%s",
-                             _inode_getcwd(), desc->path);
-      if (ret < 0)
-        {
-          return -ENOMEM;
-        }
-
-      desc->path = desc->buffer;
-    }
-
   ret = _inode_search(desc);
 
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
+#ifdef CONFIG_FS_LINKS
   if (ret >= 0)
     {
       FAR struct inode *inode;
@@ -522,6 +742,15 @@ int inode_search(FAR struct inode_search_s *desc)
 
               return ret;
             }
+        }
+      else if (!desc->nofollow && INODE_IS_HARDLINK(inode))
+        {
+          /* The terminating inode is a valid hard link */
+
+          inode = inode->i_private;
+          DEBUGASSERT(inode != NULL);
+
+          desc->node = inode;
         }
     }
 #endif
@@ -558,15 +787,32 @@ FAR const char *inode_nextname(FAR const char *name)
       name++;
     }
 
-  /* Skip single '.' path segment, but not '..' */
+  /* Skip single '.' path segment, but not '..'. This includes a lone
+   * trailing '.' as the final path component (e.g. "/foo/."), which
+   * refers to "foo" itself the same way "/foo/./" would -- without this,
+   * a trailing '.' is instead treated as a literal child name to look up
+   * under "foo" and fails to resolve, since no real node is ever named
+   * ".", rather than resolving to the node the search already reached.
+   */
 
-  if (*name == '.' && *(name + 1) == '/')
+  if (_inode_isdot(name))
     {
-      /* If there is a '/' after '.',
-       * continue searching from the next character
-       */
+      if (*(name + 1) == '/')
+        {
+          /* If there is a '/' after '.',
+           * continue searching from the next character
+           */
 
-      name = inode_nextname(name);
+          name = inode_nextname(name);
+        }
+      else
+        {
+          /* Lone trailing '.': point past it, at the terminating NUL,
+           * the same as if the path had ended one character earlier.
+           */
+
+          name++;
+        }
     }
 
   return name;

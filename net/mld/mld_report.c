@@ -27,7 +27,7 @@
 #include <nuttx/config.h>
 
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/wdog.h>
 #include <nuttx/net/netstats.h>
@@ -57,7 +57,7 @@ int mld_report(FAR struct net_driver_s *dev,
   FAR struct mld_group_s *group;
 
   /* Reports are send to the group multicast address.  Hence, the IPv6
-   * destipaddr idenfies the group.
+   * destipaddr identifies the group.
    */
 
   mldinfo("grpaddr: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n",

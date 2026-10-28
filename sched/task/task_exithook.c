@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/sched.h>
@@ -315,6 +315,7 @@ static inline void nxtask_signalparent(FAR struct tcb_s *ctcb, int status)
 static inline void nxtask_exitwakeup(FAR struct tcb_s *tcb, int status)
 {
   FAR struct task_group_s *group = tcb->group;
+  int semvalue;
 
   /* Have we already left the group? */
 
@@ -360,11 +361,13 @@ static inline void nxtask_exitwakeup(FAR struct tcb_s *tcb, int status)
           group->tg_statloc   = NULL;
           group->tg_waitflags = 0;
 
-          while (group->tg_exitsem.semcount < 0)
+          nxsem_get_value(&group->tg_exitsem, &semvalue);
+          while (semvalue < 0)
             {
               /* Wake up the thread */
 
               nxsem_post(&group->tg_exitsem);
+              nxsem_get_value(&group->tg_exitsem, &semvalue);
             }
         }
     }
@@ -452,7 +455,9 @@ void nxtask_exithook(FAR struct tcb_s *tcb, int status)
 
   /* Deallocate anything left in the TCB's queues */
 
+#ifndef CONFIG_DISABLE_ALL_SIGNALS
   nxsig_cleanup(tcb); /* Deallocate Signal lists */
+#endif
 
 #ifdef CONFIG_SCHED_DUMP_LEAK
   if ((tcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_KERNEL)

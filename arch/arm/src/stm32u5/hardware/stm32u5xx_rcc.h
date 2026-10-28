@@ -29,10 +29,10 @@
 
 #include <nuttx/config.h>
 
-#if defined(CONFIG_STM32U5_STM32U535XX) || defined(CONFIG_STM32U5_STM32U545XX) || \
-    defined(CONFIG_STM32U5_STM32U575XX) || defined(CONFIG_STM32U5_STM32U585XX) || \
-    defined(CONFIG_STM32U5_STM32U59XX) || defined(CONFIG_STM32U5_STM32U59AXX)  || \
-    defined(CONFIG_STM32U5_STM32U5A5XX) || defined(CONFIG_STM32U5_STM32U5A9XX)
+#if defined(CONFIG_STM32_STM32U535XX) || defined(CONFIG_STM32_STM32U545XX) || \
+    defined(CONFIG_STM32_STM32U575XX) || defined(CONFIG_STM32_STM32U585XX) || \
+    defined(CONFIG_STM32_STM32U59XX) || defined(CONFIG_STM32_STM32U59AXX)  || \
+    defined(CONFIG_STM32_STM32U5A5XX) || defined(CONFIG_STM32_STM32U5A9XX)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -343,7 +343,7 @@
 #define RCC_PLL1CFGR_PLL1RGE_SHIFT        (2)                               /* Bits 2-3: PLL1 input frequency range */
 #define RCC_PLL1CFGR_PLL1RGE_MASK         (3 << RCC_PLL1CFGR_PLL1RGE_SHIFT)
 #define RCC_PLL1CFGR_PLL1RGE_4_TO_8MHZ    (0 << RCC_PLL1CFGR_PLL1RGE_SHIFT) /* 00-01-10: PLL1 input (ref1_ck) clock range frequency between 4 and 8 MHz */
-#define RCC_PLL1CFGR_PLL1RGE_8_TO_16MHZ   (3 << RCC_PLL1CFGR_PLL1RGE_SHIFT) /* 11: PLL1 input (ref1_ck) clock range frequeny between 8 and 16 MHz */
+#define RCC_PLL1CFGR_PLL1RGE_8_TO_16MHZ   (3 << RCC_PLL1CFGR_PLL1RGE_SHIFT) /* 11: PLL1 input (ref1_ck) clock range frequency between 8 and 16 MHz */
 #define RCC_PLL1CFGR_PLL1FRACEN           (1 << 4)                          /* Bit 4: PLL1 fractional latch enable */
 #define RCC_PLL1CFGR_PLL1M_SHIFT          (8)                               /* Bits 8-11: Prescaler for PLL1 */
 #define RCC_PLL1CFGR_PLL1M_MASK           (0xf << RCC_PLL1CFGR_PLL1M_SHIFT)
@@ -1254,5 +1254,5 @@
 #  define RCC_CCIPR2_OSPISEL_MSI         (1 << RCC_CCIPR2_OSPISEL_SHIFT)
 #  define RCC_CCIPR2_OSPISEL_PLL48M1CLK  (2 << RCC_CCIPR2_OSPISEL_SHIFT)
 
-#endif /* CONFIG_STM32U5_STM32U5XX */
+#endif /* CONFIG_STM32_STM32U5XX */
 #endif /* __ARCH_ARM_SRC_STM32U5_HARDWARE_STM32U5XX_RCC_H */

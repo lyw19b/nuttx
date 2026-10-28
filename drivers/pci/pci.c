@@ -26,7 +26,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <sys/pciio.h>
 #include <sys/endian.h>
 
@@ -289,7 +289,7 @@ static int pci_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           ret = pci_bus_read_config(ctrl->bus, devfn, io->pi_reg,
                                     io->pi_width, &io->pi_data);
           break;
-         }
+        }
 
       case PCIOCWRITE:
         {
@@ -396,7 +396,7 @@ static int pci_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
  * Name: pci_change_master
  *
  * Description:
- *   Enables/Disbale bus-mastering for device dev
+ *   Enable/Disable bus-mastering for device dev
  *
  * Input Parameters:
  *   dev    - The PCI device to cchange
@@ -423,6 +423,60 @@ static void pci_change_master(FAR struct pci_device_s *dev, bool enable)
     {
       pci_write_config_word(dev, PCI_COMMAND, cmd);
     }
+}
+
+/****************************************************************************
+ * Name: pci_enable_parent_bridges
+ *
+ * Description:
+ *   Enable memory forwarding and bus mastering on all bridges between a PCI
+ *   device and the root bus.
+ *
+ ****************************************************************************/
+
+static int pci_enable_parent_bridges(FAR struct pci_device_s *dev)
+{
+  FAR struct pci_device_s *bridge;
+  FAR struct pci_device_s *candidate;
+  FAR struct pci_bus_s *bus = dev->bus;
+  uint16_t command;
+  int ret;
+
+  while (bus != NULL && bus->parent_bus != NULL)
+    {
+      bridge = NULL;
+      list_for_every_entry(&bus->parent_bus->devices, candidate,
+                           struct pci_device_s, bus_list)
+        {
+          if (candidate->subordinate == bus)
+            {
+              bridge = candidate;
+              break;
+            }
+        }
+
+      if (bridge == NULL)
+        {
+          return -ENODEV;
+        }
+
+      ret = pci_read_config_word(bridge, PCI_COMMAND, &command);
+      if (ret < 0)
+        {
+          return ret;
+        }
+
+      command |= PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
+      ret = pci_write_config_word(bridge, PCI_COMMAND, command);
+      if (ret < 0)
+        {
+          return ret;
+        }
+
+      bus = bus->parent_bus;
+    }
+
+  return OK;
 }
 
 /****************************************************************************
@@ -456,17 +510,17 @@ static uint8_t pci_bus_find_start_cap(FAR struct pci_bus_s *bus,
   /* Ignore MF bit */
 
   switch (hdr_type & 0x7f)
-  {
-    case PCI_HEADER_TYPE_NORMAL:
-    case PCI_HEADER_TYPE_BRIDGE:
-      return PCI_CAPABILITY_LIST;
+    {
+      case PCI_HEADER_TYPE_NORMAL:
+      case PCI_HEADER_TYPE_BRIDGE:
+        return PCI_CAPABILITY_LIST;
 
-    case PCI_HEADER_TYPE_CARDBUS:
-      return PCI_CB_CAPABILITY_LIST;
+      case PCI_HEADER_TYPE_CARDBUS:
+        return PCI_CB_CAPABILITY_LIST;
 
-    default:
-      return 0;
-  }
+      default:
+        return 0;
+    }
 }
 
 /****************************************************************************
@@ -602,7 +656,7 @@ static FAR struct pci_device_s *pci_alloc_device(void)
  * Name: pci_register_bus_devices
  *
  * Description:
- *   Register all devices scanned and all buses scanned to responsing list.
+ *   Register all devices scanned and all buses scanned to responding list.
  *
  * Input Parameters:
  *   bus - The boot bus
@@ -687,7 +741,8 @@ static void pci_setup_device(FAR struct pci_device_s *dev, int max_bar,
                              FAR struct pci_resource_s *mem_pref)
 {
   int bar;
-  uint32_t orig;
+  uint32_t orig0;
+  uint32_t orig1;
   uint32_t mask;
   uint64_t orig64;
   uint64_t size64;
@@ -711,10 +766,9 @@ static void pci_setup_device(FAR struct pci_device_s *dev, int max_bar,
       FAR struct pci_resource_s *res;
       unsigned int flags;
 
-      pci_read_config_dword(dev, base_address_0, &orig);
-      pci_write_config_dword(dev, base_address_0, 0xfffffffe);
+      pci_read_config_dword(dev, base_address_0, &orig0);
+      pci_write_config_dword(dev, base_address_0, 0xffffffff);
       pci_read_config_dword(dev, base_address_0, &mask);
-      pci_write_config_dword(dev, base_address_0, orig);
 
       if (mask == 0 || mask == 0xffffffff)
         {
@@ -770,21 +824,22 @@ static void pci_setup_device(FAR struct pci_device_s *dev, int max_bar,
           res    = mem;
         }
 
-      orig64 = orig;
+      orig64 = orig0;
       maxbase = mask;
       if (mask & PCI_BASE_ADDRESS_MEM_TYPE_64)
         {
           uint32_t masktmp;
 
-          pci_read_config_dword(dev, base_address_1, &orig);
+          pci_read_config_dword(dev, base_address_1, &orig1);
           pci_write_config_dword(dev, base_address_1, 0xffffffff);
           pci_read_config_dword(dev, base_address_1, &masktmp);
-          pci_write_config_dword(dev, base_address_1, orig);
+          pci_write_config_dword(dev, base_address_1, orig1);
           mask64 |= (uint64_t)masktmp << 32;
-          orig64 |= (uint64_t)orig << 32;
+          orig64 |= (uint64_t)orig1 << 32;
           maxbase |= (uint64_t)masktmp << 32;
         }
 
+      pci_write_config_dword(dev, base_address_0, orig0);
       size64 = pci_size(orig64, maxbase, mask64);
       if (size64 == 0)
         {
@@ -840,12 +895,12 @@ static void pci_setup_device(FAR struct pci_device_s *dev, int max_bar,
         }
     }
 
-  pci_read_config_dword(dev, rom_addr, &orig);
+  pci_read_config_dword(dev, rom_addr, &orig0);
   pci_write_config_dword(dev, rom_addr,
                          ~PCI_ROM_ADDRESS_ENABLE);
   pci_read_config_dword(dev, rom_addr, &mask);
-  pci_write_config_dword(dev, rom_addr, orig);
-  start = PCI_ROM_ADDR(orig);
+  pci_write_config_dword(dev, rom_addr, orig0);
+  start = PCI_ROM_ADDR(orig0);
   size64 = PCI_ROM_SIZE(mask);
   if (start != 0 && size64 != 0)
     {
@@ -1084,53 +1139,53 @@ static void pci_scan_bus(FAR struct pci_bus_s *bus)
               dev->vendor, dev->device);
 
       switch (hdr_type & 0x7f)
-      {
-        case PCI_HEADER_TYPE_NORMAL:
-          if (class == PCI_CLASS_BRIDGE_PCI)
-            {
-              goto bad;
-            }
+        {
+          case PCI_HEADER_TYPE_NORMAL:
+            if (class == PCI_CLASS_BRIDGE_PCI)
+              {
+                goto bad;
+              }
 
-          pci_setup_device(dev, 6, PCI_ROM_ADDRESS, &io, &mem, &mem_pref);
+            pci_setup_device(dev, 6, PCI_ROM_ADDRESS, &io, &mem, &mem_pref);
 
-          pci_read_config_word(dev, PCI_SUBSYSTEM_ID,
-                               &dev->subsystem_device);
-          pci_read_config_word(dev, PCI_SUBSYSTEM_VENDOR_ID,
-                               &dev->subsystem_vendor);
-          break;
+            pci_read_config_word(dev, PCI_SUBSYSTEM_ID,
+                                 &dev->subsystem_device);
+            pci_read_config_word(dev, PCI_SUBSYSTEM_VENDOR_ID,
+                                 &dev->subsystem_vendor);
+            break;
 
-        case PCI_HEADER_TYPE_BRIDGE:
-          child_bus = pci_alloc_bus();
+          case PCI_HEADER_TYPE_BRIDGE:
+            child_bus = pci_alloc_bus();
 
-          /* Inherit parent properties */
+            /* Inherit parent properties */
 
-          child_bus->ctrl = bus->ctrl;
-          child_bus->parent_bus = bus;
+            child_bus->ctrl       = bus->ctrl;
+            child_bus->parent_bus = bus;
 
 #ifdef CONFIG_PCI_ASSIGN_ALL_BUSES
-          child_bus->number = bus->ctrl->busno++;
+            child_bus->number = bus->ctrl->busno++;
 #endif
 
-          list_add_tail(&bus->children, &child_bus->node);
-          dev->subordinate = child_bus;
+            list_add_tail(&bus->children, &child_bus->node);
+            dev->subordinate = child_bus;
 
-          /* Scan pci hierarchy behind bridge */
+            /* Scan pci hierarchy behind bridge */
 
-          pci_presetup_bridge(dev);
-          pci_scan_bus(child_bus);
-          pci_postsetup_bridge(dev);
+            pci_presetup_bridge(dev);
+            pci_scan_bus(child_bus);
+            pci_postsetup_bridge(dev);
 
-          pci_setup_device(dev, 2, PCI_ROM_ADDRESS1, &io, &mem, &mem_pref);
-          break;
+            pci_setup_device(dev, 2, PCI_ROM_ADDRESS1, &io, &mem, &mem_pref);
+            break;
 
-        default:
-        bad:
-          pcierr("PCI: %02x:%02" PRIx32 " [%04x/%04x/%06" PRIx32
-                 "] has unknown header type %02x, ignoring.\n",
-                 bus->number, dev->devfn, dev->vendor,
-                 dev->device, class, hdr_type);
-          continue;
-      }
+          default:
+          bad:
+            pcierr("PCI: %02x:%02" PRIx32 " [%04x/%04x/%06" PRIx32
+                   "] has unknown header type %02x, ignoring.\n",
+                   bus->number, dev->devfn, dev->vendor, dev->device, class,
+                   hdr_type);
+            continue;
+        }
     }
 }
 
@@ -1191,7 +1246,7 @@ static int pci_enable_msi(FAR struct pci_device_s *dev, FAR int *irq,
   uint32_t  mmc   = 0;
   int       ret   = OK;
 
-  /* Suppoted messages */
+  /* Supported messages */
 
   for (mme = 0; (1 << mme) < num; mme++);
 
@@ -1214,7 +1269,7 @@ static int pci_enable_msi(FAR struct pci_device_s *dev, FAR int *irq,
       return ret;
     }
 
-  /* Write Message Address Regsiter */
+  /* Write Message Address Register */
 
   pci_write_config_dword(dev, msi + PCI_MSI_ADDRESS_LO, mar);
 
@@ -1265,7 +1320,7 @@ static void pci_disable_msi(FAR struct pci_device_s *dev, uint8_t msi)
 
   pci_read_config_word(dev, msi + PCI_MSI_FLAGS, &flags);
 
-  /* Write Message Address Regsiter */
+  /* Write Message Address Register */
 
   pci_write_config_dword(dev, msi + PCI_MSI_ADDRESS_LO, 0);
 
@@ -1496,7 +1551,7 @@ pci_find_device_from_bus(FAR struct pci_bus_s *bus, uint8_t busno,
  *   val   - The data buffer
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 
@@ -1526,7 +1581,7 @@ int pci_bus_read_config(FAR struct pci_bus_s *bus,
  *   val   - The data
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 
@@ -1555,7 +1610,7 @@ int pci_bus_write_config(FAR struct pci_bus_s *bus,
  *   val   - The data buffer
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 
@@ -1583,7 +1638,7 @@ int pci_bus_read_io(FAR struct pci_bus_s *bus, uintptr_t addr,
  *   val   - The data
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 
@@ -1641,13 +1696,20 @@ void pci_clear_master(FAR struct pci_device_s *dev)
  *   dev - PCI device to be enabled
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 
 int pci_enable_device(FAR struct pci_device_s *dev)
 {
   uint32_t cmd;
+  int ret;
+
+  ret = pci_enable_parent_bridges(dev);
+  if (ret < 0)
+    {
+      return ret;
+    }
 
   pci_read_config_dword(dev, PCI_COMMAND, &cmd);
   return pci_write_config_dword(dev, PCI_COMMAND,
@@ -1665,7 +1727,7 @@ int pci_enable_device(FAR struct pci_device_s *dev)
  *   dev - PCI device to be disable
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 
@@ -1918,7 +1980,7 @@ int pci_get_irq(FAR struct pci_device_s *dev)
  *   num - number of vectors
  *
  * Return value:
- *   Return the number of allocated vectors on succes or negative errno
+ *   Return the number of allocated vectors on success or negative errno
  *   on failure.
  *
  ****************************************************************************/
@@ -2014,7 +2076,7 @@ int pci_connect_irq(FAR struct pci_device_s *dev, FAR int *irq, int num)
 #ifdef CONFIG_PCI_MSIX
   if (msix != 0)
     {
-      /* Disalbe MSI */
+      /* Disable MSI */
 
       if (msi != 0)
         {
@@ -2032,6 +2094,52 @@ int pci_connect_irq(FAR struct pci_device_s *dev, FAR int *irq, int num)
 
       return pci_enable_msi(dev, irq, num, msi);
     }
+}
+
+/****************************************************************************
+ * Name: pci_enable_irq
+ *
+ * Description:
+ *   Enable legacy irq if available.
+ *
+ * Input Parameters:
+ *   dev - PCI device
+ *   irq - allocated vectors
+ *
+ ****************************************************************************/
+
+void pci_enable_irq(FAR struct pci_device_s *dev, int irq)
+{
+  uint16_t command;
+  uint8_t line;
+
+  pci_read_config_byte(dev, PCI_INTERRUPT_LINE, &line);
+  pci_read_config_word(dev, PCI_COMMAND, &command);
+  command &= ~PCI_COMMAND_INTX_DISABLE;
+  pci_write_config_word(dev, PCI_COMMAND, command);
+  if (line == 0)
+    {
+      pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
+    }
+}
+
+/****************************************************************************
+ * Name: pci_disable_irq
+ *
+ * Description:
+ *   Disable legacy irq.
+ *
+ * Input Parameters:
+ *   dev - PCI device
+ *
+ ****************************************************************************/
+
+void pci_disable_irq(FAR struct pci_device_s *dev)
+{
+  uint16_t command;
+  pci_read_config_word(dev, PCI_COMMAND, &command);
+  command |= PCI_COMMAND_INTX_DISABLE;
+  pci_write_config_word(dev, PCI_COMMAND, command);
 }
 
 /****************************************************************************
@@ -2307,7 +2415,7 @@ uint8_t pci_bus_find_capability(FAR struct pci_bus_s *bus,
 
 int pci_dev_register(void)
 {
-  return register_driver("/dev/pci", &g_pci_fops, 0666, NULL);
+  return register_driver("/dev/pci", &g_pci_fops, 0600, NULL);
 }
 
 /****************************************************************************
@@ -2323,7 +2431,7 @@ int pci_dev_register(void)
  *   val   - The data buf
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 
@@ -2344,7 +2452,7 @@ PCI_BUS_READ_CONFIG(dword, uint32_t, 4)
  *   val   - The data
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 
@@ -2364,7 +2472,7 @@ PCI_BUS_WRITE_CONFIG(dword, uint32_t, 4)
  *   val   - The data buffer
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 
@@ -2384,7 +2492,7 @@ PCI_BUS_READ_IO(dword, uint32_t, 4)
  *   val   - The data
  *
  * Returned Value:
- *   Zero if success, otherwise nagative
+ *   Zero if success, otherwise negative
  *
  ****************************************************************************/
 

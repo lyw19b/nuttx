@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <string.h>
 
 #include <arch/irq.h>
@@ -154,7 +154,7 @@ static int nrf53_gpiote_isr(int irq, void *context, void *arg)
   int      j      = 0;
 #endif
 
-  /* Get GPIOTE instnace */
+  /* Get GPIOTE instance */
 
 #ifdef CONFIG_NRF53_HAVE_GPIOTE1
   inst = (irq == NRF53_IRQ_GPIOTE0) ? 0 : 1;
@@ -182,6 +182,7 @@ static int nrf53_gpiote_isr(int irq, void *context, void *arg)
 
               xcpt_t callback = g_gpiote_ch_callbacks[off].callback;
               void *cbarg = g_gpiote_ch_callbacks[off].arg;
+
               ret = callback(irq, context, cbarg);
 
               /* Clear event */
@@ -210,10 +211,11 @@ static int nrf53_gpiote_isr(int irq, void *context, void *arg)
             {
               case 0:
                 addr = NRF53_GPIO_P0_BASE + NRF53_GPIO_LATCH_OFFSET;
-              break;
+                break;
+
               case 1:
                 addr = NRF53_GPIO_P1_BASE + NRF53_GPIO_LATCH_OFFSET;
-              break;
+                break;
             }
 
           /* Retrieve LATCH register */
@@ -256,7 +258,7 @@ static int nrf53_gpiote_isr(int irq, void *context, void *arg)
               ret = callback(irq, context, cbarg);
             }
 #endif
-       }
+        }
     }
 
   return ret;
@@ -350,7 +352,7 @@ void nrf53_gpiote_set_port_event(uint32_t pinset, xcpt_t func, void *arg)
 
       for (i = 0; i < NRF53_GPIO_NPORTS; i++)
         {
-          if (g_gpiote_port_callback[port].callback)
+          if (g_gpiote_port_callback[i].callback)
             {
               break;
             }
@@ -397,7 +399,7 @@ void nrf53_gpiote_set_ch_event(uint32_t pinset, int channel,
 
   DEBUGASSERT(channel < GPIOTE_CHANNELS);
 
-  /* Get GPIOTE instnace */
+  /* Get GPIOTE instance */
 
 #ifdef CONFIG_NRF53_HAVE_GPIOTE1
   inst = (channel < GPIOTE_PER_CHANNEL) ? 0 : 1;
@@ -405,7 +407,7 @@ void nrf53_gpiote_set_ch_event(uint32_t pinset, int channel,
   inst = 0;
 #endif
 
-  rchan = (inst == 1) ? channel : (channel - GPIOTE_PER_CHANNEL);
+  rchan = (inst == 1) ? (channel - GPIOTE_PER_CHANNEL) : channel;
 
   /* NOTE: GPIOTE module has priority over GPIO module
    *       so GPIO configuration will be ignored
@@ -479,7 +481,7 @@ void nrf53_gpiote_set_ch_event(uint32_t pinset, int channel,
  *
  * Description:
  *   Configures a GPIOTE channel in EVENT mode, assigns it to a given pin
- *   and sets a handler for the first availalbe GPIOTE channel
+ *   and sets a handler for the first available GPIOTE channel.
  *
  * Input Parameters:
  *  - pinset:      GPIO pin configuration
@@ -504,25 +506,41 @@ int nrf53_gpiote_set_event(uint32_t pinset,
 
   flags = enter_critical_section();
 
-  /* Get free channel or channel already used by pinset */
+  /* Get channel already used by pinset */
 
   for (i = 0; i < GPIOTE_CHANNELS; i++)
     {
-      if (g_gpiote_ch_callbacks[i].callback == NULL ||
+      if (g_gpiote_ch_callbacks[i].callback != NULL &&
           g_gpiote_ch_callbacks[i].pinset == pinset)
         {
-          g_gpiote_ch_callbacks[i].pinset = pinset;
-
-          nrf53_gpiote_set_ch_event(pinset, i,
-                                    risingedge, fallingedge,
-                                    func, arg);
-
-          /* Return the channel index */
-
-          ret = i;
-
           break;
         }
+    }
+
+  /* Otherwise get a free channel */
+
+  if (i == GPIOTE_CHANNELS && func != NULL)
+    {
+      for (i = 0; i < GPIOTE_CHANNELS; i++)
+        {
+          if (g_gpiote_ch_callbacks[i].callback == NULL)
+            {
+              break;
+            }
+        }
+    }
+
+  if (i < GPIOTE_CHANNELS)
+    {
+      g_gpiote_ch_callbacks[i].pinset = pinset;
+
+      nrf53_gpiote_set_ch_event(pinset, i,
+                                risingedge, fallingedge,
+                                func, arg);
+
+      /* Return the channel index */
+
+      ret = i;
     }
 
   leave_critical_section(flags);
@@ -531,7 +549,7 @@ int nrf53_gpiote_set_event(uint32_t pinset,
 }
 
 /****************************************************************************
- * Name: nrf53_gpio_set_task
+ * Name: nrf53_gpiote_set_task
  *
  * Description:
  *   Configure GPIO in TASK mode (to be controlled via tasks).
@@ -559,7 +577,7 @@ void nrf53_gpiote_set_task(uint32_t pinset, int channel,
   int port;
   int inst;
 
-  /* Get GPIOTE instnace */
+  /* Get GPIOTE instance */
 
 #ifdef CONFIG_NRF53_HAVE_GPIOTE1
   inst = (channel < GPIOTE_PER_CHANNEL) ? 0 : 1;
@@ -567,7 +585,7 @@ void nrf53_gpiote_set_task(uint32_t pinset, int channel,
   inst = 0;
 #endif
 
-  rchan = (inst == 1) ? channel : (channel - GPIOTE_PER_CHANNEL);
+  rchan = (inst == 1) ? (channel - GPIOTE_PER_CHANNEL) : channel;
 
   /* Select GPIOTE pin */
 
@@ -624,8 +642,8 @@ int nrf53_gpiote_init(void)
 {
   /* Clear LATCH register(s) */
 
-  putreg32(0, NRF53_GPIO_P0_BASE + NRF53_GPIO_LATCH_OFFSET);
-  putreg32(0, NRF53_GPIO_P1_BASE + NRF53_GPIO_LATCH_OFFSET);
+  putreg32(0xffffffff, NRF53_GPIO_P0_BASE + NRF53_GPIO_LATCH_OFFSET);
+  putreg32(0xffffffff, NRF53_GPIO_P1_BASE + NRF53_GPIO_LATCH_OFFSET);
 
   /* Reset GPIOTE data */
 

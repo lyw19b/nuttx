@@ -2,6 +2,8 @@
 STM32F3Discovery
 ================
 
+.. tags:: chip:stm32, chip:stm32f3, chip:stm32f303
+
 This README discusses issues unique to NuttX configurations for the
 STMicro STM32F3Discovery development board.
 
@@ -192,7 +194,6 @@ NOTES:
        CONFIG_USBDEV=y               : USB device support must be enabled
        CONFIG_CDCACM=y               : The CDC/ACM driver must be built
        CONFIG_NSH_BUILTIN_APPS=y     : NSH built-in application support must be enabled
-       CONFIG_NSH_ARCHINIT=y         : To perform USB initialization
 
    The CDC/ACM example is included as two NSH "built-in" commands.::
 
@@ -297,7 +298,6 @@ NOTES:
 
         Application Configuration -> NSH LIbrary::
           CONFIG_NSH_USBDEV_TRACE=n               : No builtin tracing from NSH
-          CONFIG_NSH_ARCHINIT=y                   : Automatically start the USB monitor
 
         Application Configuration -> System NSH Add-Ons::
           CONFIG_USBMONITOR=y              : Enable the USB monitor daemon

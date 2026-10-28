@@ -27,7 +27,7 @@
 #include <nuttx/config.h>
 
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdint.h>
 
 #include <arch/xtensa/xtensa_specregs.h>
@@ -261,7 +261,7 @@ int xtensa_swint(int irq, void *context, void *arg)
        *   A6 = ucontext
        */
 
-#ifndef CONFIG_BUILD_FLAT
+#if !defined(CONFIG_BUILD_FLAT) && defined(CONFIG_ENABLE_ALL_SIGNALS)
       case SYS_signal_handler:
         {
           struct tcb_s *rtcb  = this_task();
@@ -300,7 +300,7 @@ int xtensa_swint(int irq, void *context, void *arg)
        *   A2 = SYS_signal_handler_return
        */
 
-#ifndef CONFIG_BUILD_FLAT
+#if !defined(CONFIG_BUILD_FLAT) && defined(CONFIG_ENABLE_ALL_SIGNALS)
       case SYS_signal_handler_return:
         {
           struct tcb_s *rtcb  = this_task();
@@ -344,6 +344,18 @@ int xtensa_swint(int irq, void *context, void *arg)
 #ifndef CONFIG_BUILD_FLAT
           xtensa_saveprivilege(regs, rtcb->xcp.syscall[index].int_ctx);
 #endif
+
+          /* Remember where the caller's registers are.  The cloning
+           * primitives need them:  a system call body runs as C code after
+           * this exception has returned, and xcp.regs is NULL by then.  Only
+           * the outermost call is of interest, since that is the one the
+           * caller made.  See up_fork().
+           */
+
+          if (index == 0)
+            {
+              rtcb->xcp.sregs = regs;
+            }
 
           rtcb->xcp.nsyscalls = index + 1;
 

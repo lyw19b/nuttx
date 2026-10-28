@@ -20,7 +20,11 @@
 #
 ############################################################################
 
-CSRCS += arch_atomic.c
+ifneq ($(filter y,$(CONFIG_LIBC_ATOMIC_IRQ)$(CONFIG_LIBC_ATOMIC_HWSPINLOCK)),)
+  CSRCS += arch_atomic.c
+endif
+
+CSRCS += arch_atomic64.c
 
 ifeq ($(CONFIG_MM_KASAN),y)
   CSRCS += arch_libc.c
@@ -31,6 +35,9 @@ include $(TOPDIR)/libs/libc/machine/arm/Make.defs
 endif
 ifeq ($(CONFIG_ARCH_ARM64),y)
 include $(TOPDIR)/libs/libc/machine/arm64/Make.defs
+endif
+ifeq ($(CONFIG_ARCH_MIPS),y)
+include $(TOPDIR)/libs/libc/machine/mips/Make.defs
 endif
 ifeq ($(CONFIG_ARCH_RISCV),y)
 include $(TOPDIR)/libs/libc/machine/risc-v/Make.defs
@@ -53,8 +60,12 @@ endif
 ifeq ($(CONFIG_ARCH_SPARC),y)
 include $(TOPDIR)/libs/libc/machine/sparc/Make.defs
 endif
+ifeq ($(CONFIG_ARCH_TRICORE),y)
+include $(TOPDIR)/libs/libc/machine/tricore/Make.defs
+endif
 ifeq ($(CONFIG_ARCH_LOONGARCH),y)
 include $(TOPDIR)/libs/libc/machine/loongarch/Make.defs
 endif
 DEPPATH += --dep-path machine
 VPATH += :machine
+

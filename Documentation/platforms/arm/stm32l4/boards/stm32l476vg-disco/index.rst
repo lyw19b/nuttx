@@ -2,6 +2,8 @@
 ST STM32L476VG-DISCO
 ====================
 
+.. tags:: chip:stm32, chip:stm32l4, chip:stm32l476
+
 XXX all this needs review and update
 
 This page discusses issues unique to NuttX configurations for the ST
@@ -142,7 +144,7 @@ TTL to RS-232 converter connection:
     Nucleo CN10 STM32F4x1RE
     =========== ============
     Pin 21 PA9  USART1_RX
-    Pin 33 PA10 USART1_TX    
+    Pin 33 PA10 USART1_TX
     Pin 20 GND
     Pin 8  U5V
     =========== ============
@@ -179,7 +181,7 @@ TTL to RS-232 converter connection:
     Nucleo CN9  STM32F4x1RE
     =========== ============
     Pin 1  PA3  USART2_RX
-    Pin 2  PA2  USART2_TX    
+    Pin 2  PA2  USART2_TX
     =========== ============
 
     Warning you make need to reverse RX/TX on some RS-232 converters
@@ -334,7 +336,6 @@ There is nothing in the configuration that currently uses the joystick.
 For testing, you can add the following configuration options to enable the
 analog joystick example at apps/examples/ajoystick::
 
-    CONFIG_NSH_ARCHINIT=y
     CONFIG_EXAMPLES_AJOYSTICK=y
     CONFIG_EXAMPLES_AJOYSTICK_DEVNAME="/dev/ajoy0"
 
@@ -386,7 +387,7 @@ NOTES:
          nuttx.hex         - The pass2 Intel HEX file (selected in defconfig)
          System.map        - Symbols in the kernel-space ELF file
 
-       The J-Link programmer will except files in .hex, .mot, .srec, and .bin
+       The J-Link programmer will accept files in .hex, .mot, .srec, and .bin
        formats.
 
 2. Combining .hex files.  If you plan to use the .hex files with your
@@ -467,7 +468,7 @@ NOTES:
    not enabled in the default configuration but can be enabled with the
    following settings::
 
-         CONFIG_STM32L4_OTGFS=y
+         CONFIG_STM32_OTGFS=y
 
          CONFIG_USBDEV=y
          CONFIG_USBDEV_SELFPOWERED=y

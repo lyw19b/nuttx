@@ -273,7 +273,7 @@ Perhaps a minimum set would be those packages listed below for the
 Cygwin configuration:
 
    1. After starting the Cygwin installer, keep the recommended
-      packages that are pre-selected in the default configuration.
+      packages that are preselected in the default configuration.
 
    2. Using the installation tools, add the following packages:
 
@@ -536,7 +536,7 @@ A macOS port is available at: <https://github.com/discoteq/flock>
 
   * Xcode (the native compiler and the rest of the toolchain)
 
-  * ELF toolchain (if you want to build modules for CONFIG_LIBC_MODLIB)
+  * ELF toolchain (if you want to build modules for CONFIG_LIBC_ELF)
 
     brew install x86_64-elf-gcc
 
@@ -966,7 +966,7 @@ damage your configuration (see
 NuttX also supports kconfiglib(https://github.com/ulfalizer/Kconfiglib) by default,
 which is a Kconfig tool implemented in Python 2/3. Compared with kconfig-frontends,
 kconfiglib provides NuttX with the possibility of multi-platform support(configure
-NuttX in Winodws native/Visual Studio), and also kconfiglib has a stronger Kconfig
+NuttX in Windows native/Visual Studio), and also kconfiglib has a stronger Kconfig
 syntax check, this will help developers to avoid some Kconfig syntax errors.
 Install kconfiglib via following command:
 
@@ -1258,7 +1258,7 @@ settings, you should run the following after configuring:
 
     make olddefconfig
 
-That will restore the the missing defaulted values.
+That will restore the missing defaulted values.
 
 Using this command after configuring is generally a good practice anyway:
 Even if the `defconfig` files are not "compressed" in this fashion, the
@@ -1331,7 +1331,7 @@ damage your configuration (see
   <http://uvc.de/posts/linux-kernel-configuration-tool-kconfig-under-windows.html>
 
   The configuration steps of the most recent versions of NuttX require the
-  `kconfig-tweak` tool that is not not available in the the above.  However,
+  `kconfig-tweak` tool that is not not available in the above.  However,
   there has been an update to this `Kconfig` Windows tools that does include
   `kconfig-tweak`:  http://reclonelabs.com/more-kconfig-awesomeness-for-windows/
 
@@ -1635,7 +1635,7 @@ tools.  There are, however, complexities in doing that because those tools
 depend on the shell environment and use DLLs that are not found (at least
 not without the correct setup).
 
-Host Compiler:  I use the MingGW GCC compiler which can be downloaded from
+Host Compiler:  I use the MinGW GCC compiler which can be downloaded from
 <http://www.mingw.org/>.  If you are using GNUWin32, then it is recommended
 the you not install the optional MSYS components as there may be conflicts.
 

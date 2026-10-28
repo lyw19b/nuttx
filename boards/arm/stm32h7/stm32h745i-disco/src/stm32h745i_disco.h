@@ -44,7 +44,7 @@
 
 /* Can't support USB host or device features if USB OTG FS is not enabled */
 
-#ifndef CONFIG_STM32H7_OTGFS
+#ifndef CONFIG_STM32_OTGFS
 #  undef HAVE_USBDEV
 #  undef HAVE_USBHOST
 #endif
@@ -179,12 +179,12 @@ int stm32_bringup(void);
  * Name: stm32_usbinitialize
  *
  * Description:
- *   Called from stm32_usbinitialize very early in inialization to setup
+ *   Called from stm32_usbinitialize very early in initialization to setup
  *   USB-related GPIO pins for the STM32H745I-DISCO board.
  *
  ****************************************************************************/
 
-#ifdef CONFIG_STM32H7_OTGFS
+#ifdef CONFIG_STM32_OTGFS
 void weak_function stm32_usbinitialize(void);
 #endif
 
@@ -198,7 +198,7 @@ void weak_function stm32_usbinitialize(void);
  *
  ****************************************************************************/
 
-#if defined(CONFIG_STM32H7_OTGFS) && defined(CONFIG_USBHOST)
+#if defined(CONFIG_STM32_OTGFS) && defined(CONFIG_USBHOST)
 int stm32_usbhost_initialize(void);
 #endif
 

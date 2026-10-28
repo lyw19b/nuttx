@@ -20,7 +20,7 @@
 #
 # ##############################################################################
 
-set(SRCS qemu_rv_appinit.c)
+set(SRCS qemu_rv_boardinit.c)
 
 if(CONFIG_ARCH_LEDS)
   list(APPEND SRCS qemu_rv_autoleds.c)
@@ -45,3 +45,17 @@ if(CONFIG_ARCH_CHIP_QEMU_RV)
 endif()
 
 set_property(GLOBAL PROPERTY LD_SCRIPT "${NUTTX_BOARD_DIR}/scripts/${LDFILE}")
+
+if(CONFIG_ETC_ROMFS AND CONFIG_SYSTEM_NXINIT)
+  nuttx_add_romfs(
+    NAME
+    etc
+    MOUNTPOINT
+    etc
+    RCSRCS
+    etc/init.d/init.rc
+    PATH
+    ${CMAKE_CURRENT_BINARY_DIR}/etc)
+
+  target_link_libraries(board PRIVATE romfs_etc)
+endif()

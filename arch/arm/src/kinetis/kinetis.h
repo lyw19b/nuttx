@@ -350,8 +350,8 @@ void kinetis_clockconfig(void);
  *
  * Description:
  *   Performs the low level UART/LPUART initialization early in debug so that
- *   the serial console will be available during bootup.  This must be called
- *   before arm_serialinit.
+ *   the serial console will be available during boot up.  This must be
+ *   called before arm_serialinit.
  *
  ****************************************************************************/
 
@@ -364,7 +364,7 @@ void kinetis_earlyserialinit(void);
  *
  * Description:
  *   Performs the low level UART initialization early in debug so that the
- *   serial console will be available during bootup.  This must be called
+ *   serial console will be available during boot up.  This must be called
  *   before arm_serialinit.
  *
  ****************************************************************************/
@@ -378,7 +378,7 @@ void kinetis_uart_earlyserialinit(void);
  *
  * Description:
  *   Performs the low level LPUART initialization early in debug so that the
- *   serial console will be available during bootup.  This must be called
+ *   serial console will be available during boot up.  This must be called
  *   before arm_serialinit.
  *
  ****************************************************************************/
@@ -475,7 +475,7 @@ void kinetis_uartconfigure(uintptr_t uart_base,
                            uint32_t baud, uint32_t clock,
                            unsigned int parity, unsigned int nbits,
                            unsigned int stop2,
-                           bool iflow, bool oflow);
+                           bool iflow, bool oflow, bool rs485control);
 #endif
 
 /****************************************************************************
@@ -777,6 +777,10 @@ int kinetis_netinitialize(int intf);
  ****************************************************************************/
 #ifdef CONFIG_KINETIS_FLEXCAN
 int kinetis_caninitialize(int intf);
+#endif
+
+#if defined(CONFIG_KINETIS_DAC0) || defined (CONFIG_KINETIS_DAC1)
+struct dac_dev_s *kinetis_dac_initialize(int which);
 #endif
 
 #endif /* __ASSEMBLY__ */

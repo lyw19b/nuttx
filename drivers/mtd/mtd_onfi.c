@@ -42,7 +42,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/mtd/nand_model.h>
 #include <nuttx/mtd/onfi.h>
@@ -479,7 +479,7 @@ bool onfi_ebidetect(uintptr_t cmdaddr, uintptr_t addraddr,
       if (onfi_compatible(cmdaddr, addraddr, dataaddr))
         {
           /* Report true if it is an ONFI device that is not in device
-           * list (perhaps it is a new device that is ONFI campatible
+           * list (perhaps it is a new device that is ONFI compatible).
            */
 
           found = true;

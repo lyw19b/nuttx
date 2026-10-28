@@ -28,7 +28,8 @@
 
 #include <sched.h>
 #include <assert.h>
-#include <debug.h>
+
+#include <nuttx/debug.h>
 #include <nuttx/addrenv.h>
 #include <nuttx/arch.h>
 #include <nuttx/sched.h>
@@ -84,6 +85,8 @@ void up_switch_context(struct tcb_s *tcb, struct tcb_s *rtcb)
 
   else if (!up_saveusercontext(rtcb->xcp.regs))
     {
+      struct tcb_s **running_task;
+
       cpu = this_cpu();
 
       x86_64_restore_auxstate(tcb);
@@ -96,25 +99,31 @@ void up_switch_context(struct tcb_s *tcb, struct tcb_s *rtcb)
        */
 
       addrenv_switch(tcb);
+      tcb = this_task();
 #endif
-
-      /* Restore the cpu lock */
-
-      restore_critical_section(tcb, cpu);
 
       /* Update scheduler parameters */
 
-      nxsched_suspend_scheduler(g_running_tasks[cpu]);
-      nxsched_resume_scheduler(current_task(cpu));
+      running_task = &g_running_tasks[cpu];
+      tcb = current_task(cpu);
+      nxsched_switch_context(*running_task, tcb);
 
       /* Record the new "running" task.  g_running_tasks[] is only used by
        * assertion logic for reporting crashes.
        */
 
-      g_running_tasks[cpu] = current_task(cpu);
+      *running_task = tcb;
 
-      /* Then switch contexts */
+      /* Restore the cpu lock.  This makes the outgoing task wakeable by
+       * other CPUs while this CPU still runs on the outgoing task's
+       * stack, so it must come last and the final jump must not touch
+       * the stack (a call would push the return address onto it).
+       */
 
-      x86_64_fullcontextrestore(tcb->xcp.regs);
+      restore_critical_section(tcb, cpu);
+
+      __asm__ volatile ("jmp x86_64_fullcontextrestore"
+                        :: "D" (tcb->xcp.regs) : "memory");
+      __builtin_unreachable();
     }
 }

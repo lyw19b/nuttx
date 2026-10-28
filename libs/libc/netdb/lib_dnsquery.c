@@ -44,7 +44,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <assert.h>
 
 #include <arpa/inet.h>
@@ -140,7 +140,7 @@ static ssize_t stream_send(int fd, FAR const void *buf, size_t len)
           break;
         }
 
-      buf = (FAR const uint8_t *)buf + len;
+      buf = (FAR const uint8_t *)buf + ret;
       len -= ret;
       total += ret;
     }
@@ -186,7 +186,7 @@ static ssize_t stream_recv(int fd, FAR void *buf, size_t len)
           break;
         }
 
-      buf = (FAR uint8_t *)buf + len;
+      buf = (FAR uint8_t *)buf + ret;
       len -= ret;
       total += ret;
     }
@@ -413,8 +413,8 @@ static int dns_send_query(int sd, FAR const char *name,
   /* Convert hostname into suitable query format.
    *
    * There is space for CONFIG_NETDB_DNSCLIENT_NAMESIZE
-   * plus one pre-pended name length and NUL-terminator
-   * (other pre-pended name lengths replace dots).
+   * plus one prepended name length and NUL-terminator
+   * (other prepended name lengths replace dots).
    */
 
   src   = name - 1;
@@ -441,7 +441,7 @@ static int dns_send_query(int sd, FAR const char *name,
           len++;
         }
 
-      /* Pre-pend the name length */
+      /* Prepend the name length */
 
       *nptr = n;
       *qptr = n;
@@ -694,6 +694,19 @@ static int dns_recv_response(int sd, FAR union dns_addr_u *addr, int naddr,
           break;
         }
 
+      /* Verify that a complete answer header is available before casting
+       * to dns_answer_s.  Without this check, accessing ans->ttl and
+       * ans->type/class/len would be an OOB read if fewer than
+       * DNS_ANSWER_HEADER_SIZE bytes remain.
+       */
+
+      if (nameptr + DNS_ANSWER_HEADER_SIZE > endofbuffer)
+        {
+          ret = -EILSEQ;
+          nwarn("DNS answer header truncated\n");
+          break;
+        }
+
       ans = (FAR struct dns_answer_s *)nameptr;
 
       ninfo("Answer: type=%04x, class=%04x, ttl=%06x, length=%04x\n",
@@ -713,11 +726,11 @@ static int dns_recv_response(int sd, FAR union dns_addr_u *addr, int naddr,
       if (ans->type  == HTONS(DNS_RECTYPE_A) &&
           ans->class == HTONS(DNS_CLASS_IN) &&
           ans->len   == HTONS(4) &&
-          nameptr + 10 + 4 <= endofbuffer)
+          nameptr + DNS_ANSWER_HEADER_SIZE + 4 <= endofbuffer)
         {
           FAR struct sockaddr_in *inaddr;
 
-          nameptr += 10 + 4;
+          nameptr += DNS_ANSWER_HEADER_SIZE + 4;
 
           ninfo("IPv4 address: %u.%u.%u.%u\n",
                 ip4_addr1(ans->u.ipv4.s_addr),
@@ -742,11 +755,11 @@ static int dns_recv_response(int sd, FAR union dns_addr_u *addr, int naddr,
       if (ans->type  == HTONS(DNS_RECTYPE_AAAA) &&
           ans->class == HTONS(DNS_CLASS_IN) &&
           ans->len   == HTONS(16) &&
-          nameptr + 10 + 16 <= endofbuffer)
+          nameptr + DNS_ANSWER_HEADER_SIZE + 16 <= endofbuffer)
         {
           FAR struct sockaddr_in6 *inaddr;
 
-          nameptr += 10 + 16;
+          nameptr += DNS_ANSWER_HEADER_SIZE + 16;
 
           ninfo("IPv6 address: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n",
                 NTOHS(ans->u.ipv6.s6_addr16[0]),
@@ -772,7 +785,7 @@ static int dns_recv_response(int sd, FAR union dns_addr_u *addr, int naddr,
       else
 #endif
         {
-          nameptr = nameptr + 10 + NTOHS(ans->len);
+          nameptr = nameptr + DNS_ANSWER_HEADER_SIZE + NTOHS(ans->len);
         }
     }
 
@@ -843,7 +856,7 @@ static void dns_query_error(FAR const char *prompt, int ret,
  ****************************************************************************/
 
 static int dns_query_callback(FAR void *arg, FAR struct sockaddr *addr,
-                              FAR socklen_t addrlen)
+                              socklen_t addrlen)
 {
   FAR struct dns_query_data_s *qdata = arg;
   FAR struct dns_query_s      *query = &qdata->query;
@@ -854,12 +867,15 @@ static int dns_query_callback(FAR void *arg, FAR struct sockaddr *addr,
   bool stream = false;
 
   /* Loop while receive timeout errors occur and there are remaining
-   * retries.
+   * retries. Use progressive timeout strategy.
    */
 
   for (retries = 0; retries < CONFIG_NETDB_DNSCLIENT_RETRIES; retries++)
     {
       bool should_try_stream;
+
+      ninfo("INFO: DNS query retry %d/%d\n",
+            retries + 1, CONFIG_NETDB_DNSCLIENT_RETRIES);
 
 try_stream:
 #ifdef CONFIG_NET_IPv6
@@ -867,7 +883,7 @@ try_stream:
         {
           /* Send the IPv6 query */
 
-          sd = dns_bind(addr->sa_family, stream);
+          sd = dns_bind(addr->sa_family, stream, retries);
           if (sd < 0)
             {
               query->result = sd;
@@ -902,6 +918,7 @@ try_stream:
                 {
                   if (!stream && should_try_stream)
                     {
+                      close(sd);  /* Close current socket before trying stream mode */
                       stream = true;
                       goto try_stream; /* Don't consume retry count */
                     }
@@ -921,7 +938,7 @@ try_stream:
         {
           /* Send the IPv4 query */
 
-          sd = dns_bind(addr->sa_family, stream);
+          sd = dns_bind(addr->sa_family, stream, retries);
           if (sd < 0)
             {
               query->result = sd;
@@ -961,6 +978,7 @@ try_stream:
                 {
                   if (!stream && should_try_stream)
                     {
+                      close(sd);  /* Close current socket before trying stream mode */
                       stream = true;
                       goto try_stream; /* Don't consume retry count */
                     }

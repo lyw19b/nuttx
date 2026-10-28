@@ -33,7 +33,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/wdog.h>
@@ -2189,7 +2189,7 @@ static int cxd56_sdio_waitresponse(struct sdio_dev_s *dev, uint32_t cmd)
  *
  * Returned Value:
  *   Number of bytes sent on success; a negated errno on failure.  Here a
- *   failure means only a faiure to obtain the requested response (due to
+ *   failure means only a failure to obtain the requested response (due to
  *   transport problem -- timeout, CRC, etc.).  The implementation only
  *   assures that the response is returned intacta and does not check errors
  *   within the response itself.
@@ -3338,7 +3338,7 @@ void cxd56_sdhci_mediachange(struct sdio_dev_s *dev)
               break;
             }
 
-          nxsig_usleep(100000);
+          nxsched_usleep(100000);
           timeout -= 100000;
         }
     }

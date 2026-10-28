@@ -87,9 +87,6 @@
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
  *
- *   CONFIG_BOARD_LATE_INITIALIZE=y && CONFIG_BOARDCTL=y :
- *     Called from the NSH library via board_app_initialize()
- *
  ****************************************************************************/
 
 int esp32s2_bringup(void);
@@ -164,7 +161,8 @@ int board_i2c_init(void);
  *
  ****************************************************************************/
 
-#if defined(CONFIG_ESP32S2_I2S) && !defined(CONFIG_AUDIO_ES8311)
+#if (defined(CONFIG_ESPRESSIF_I2S) && !defined(CONFIG_AUDIO_ES8311)) || \
+    defined(CONFIG_ESPRESSIF_I2S)
 int board_i2sdev_initialize(void);
 #endif
 

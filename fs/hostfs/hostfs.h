@@ -29,15 +29,18 @@
 
 #include <nuttx/config.h>
 
+#include <limits.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#include <nuttx/mutex.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define HOSTFS_MAX_PATH     256
+#define HOSTFS_MAX_PATH     PATH_MAX
 
 /****************************************************************************
  * Public Types
@@ -64,6 +67,7 @@ struct hostfs_ofile_s
 struct hostfs_mountpt_s
 {
   FAR struct hostfs_ofile_s *fs_head;      /* A singly-linked list of open files */
+  mutex_t                    fs_lock;
   char                       fs_root[HOSTFS_MAX_PATH];
 };
 

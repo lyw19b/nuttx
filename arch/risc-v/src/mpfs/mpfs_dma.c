@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <arch/board/board.h>
@@ -421,7 +421,7 @@ int mpfs_dma_get_complete_status(unsigned int channel)
  *
  * Returned Value:
  *   0  - No Error
- *   1  - Transfer Errror
+ *   1  - Transfer Error
  *
  ****************************************************************************/
 
@@ -490,7 +490,7 @@ int mpfs_dma_clear_complete_status(unsigned int channel)
  *
  * Returned Value:
  *   0  - No Error
- *   1  - Transfer Errror
+ *   1  - Transfer Error
  *
  ****************************************************************************/
 

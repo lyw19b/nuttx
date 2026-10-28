@@ -28,7 +28,7 @@
 
 #include <arch/syscall.h>
 
-#if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
+#ifndef __KERNEL__
 
 /****************************************************************************
  * File info
@@ -68,10 +68,12 @@
  ****************************************************************************/
 
 	.text
-#ifdef __ghs__
+#ifdef CONFIG_ARM_THUMB
+#  ifdef __ghs__
 	.thumb
-#else
+#  else
 	.thumb_func
+#  endif
 #endif
 	.globl	up_signal_handler
 #ifdef __ghs__
@@ -107,4 +109,4 @@ up_signal_handler:
 	.size	up_signal_handler, .-up_signal_handler
 	.end
 
-#endif /* CONFIG_BUILD_PROTECTED && !__KERNEL__ */
+#endif /* !__KERNEL__ */

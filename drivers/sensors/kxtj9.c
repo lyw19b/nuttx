@@ -20,6 +20,19 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -29,7 +42,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/signal.h>
@@ -44,12 +57,6 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-/* Configuration ************************************************************/
-
-#ifndef CONFIG_KXTJ9_I2C_BUS_SPEED
-#  define CONFIG_KXTJ9_I2C_BUS_SPEED 400000
-#endif
 
 /* Register Definitions *****************************************************/
 
@@ -283,7 +290,7 @@ static void kxtj9_soft_reset(FAR struct kxtj9_dev_s *priv)
 
   /* Delay 10ms for the accel parts to re-initialize */
 
-  nxsig_usleep(10000);
+  nxsched_usleep(10000);
 }
 
 /****************************************************************************
@@ -628,7 +635,7 @@ int kxtj9_register(FAR const char *devpath, FAR struct i2c_master_s *i2c,
 
   /* Register the character driver */
 
-  ret = register_driver(devpath, &g_fops, 0666, priv);
+  ret = register_driver(devpath, &g_fops, 0600, priv);
   if (ret < 0)
     {
       snerr("ERROR: Failed to register driver: %d\n", ret);

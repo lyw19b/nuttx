@@ -33,7 +33,7 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 #include <endian.h>
 
@@ -61,6 +61,7 @@
 #include "chip.h"
 #include "hardware/imx9_enet.h"
 #include "imx9_enet.h"
+#include "imx9_clockconfig.h"
 
 #include "imx9_ccm.h"
 #include "imx9_iomuxc.h"
@@ -74,15 +75,22 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* If processing is not done at the interrupt level, then work queue support
- * is required.
+/* Select work queue for normal operation */
+
+#  if defined(CONFIG_IMX9_ENET_HPWORK)
+#    define ETHWORK HPWORK
+#  else
+#    define ETHWORK LPWORK
+#  endif
+
+/* LPWORK support is always required. Even if HPWORK were used for normal
+ * operation, timeouts are only handled in LPWORK since phy communication
+ * might cause delays due to polling
  */
 
-#if !defined(CONFIG_SCHED_LPWORK)
-#  error LPWORK queue support is required
-#endif
-
-#define ETHWORK LPWORK
+#  if !defined(CONFIG_SCHED_LPWORK)
+#    error LPWORK queue support is required
+#  endif
 
 /* We need at least two TX buffers for reliable operation */
 
@@ -94,7 +102,7 @@
 
 /* We need an even number of RX buffers, since RX descriptors are
  * freed for the DMA in pairs due to two descriptors always fitting
- * in one cache line (cahce line size is 64, descriptor size is 32)
+ * in one cache line (cache line size is 64, descriptor size is 32)
  */
 
 #if CONFIG_IMX9_ENET_NRXBUFFERS < 2
@@ -120,16 +128,6 @@
 /* PHY reset tim in loop counts */
 
 #define PHY_RESET_WAIT_COUNT (10)
-
-/* Estimate the MII_SPEED in order to get an MDC close to 2.5MHz,
- * based on the internal module (ENET) clock:
-
- * MII clock frequency = 133 MHz / ((26 + 1) x 2) = 2.5 MHz
- *
- * TODO: This is hard-coded for now, could be properly calculated
- */
-
-#define IMX9_MII_SPEED  26
 
 /* Interrupt groups */
 
@@ -175,6 +173,7 @@ enum phy_type_t
 struct imx9_driver_s
 {
   struct net_driver_s          dev;         /* Interface understood by the network */
+  int                          intf;        /* Interface number within the driver */
   const uint32_t               base;        /* Base address of ENET controller */
   const int                    clk_gate;    /* Enet clock gate */
   const int                    irq;         /* Enet interrupt */
@@ -277,6 +276,11 @@ static int imx9_writemii(struct imx9_driver_s *priv, uint8_t regaddr,
                          uint16_t data);
 static int imx9_readmii(struct imx9_driver_s *priv, uint8_t regaddr,
                         uint16_t *data);
+#ifdef CONFIG_IMX9_ENET1_RGMII
+static int imx9_config_rgmii_id(struct imx9_driver_s *priv);
+#else
+#  define imx9_config_rgmii_id(priv) (OK)
+#endif
 static int imx9_initphy(struct imx9_driver_s *priv, bool renogphy);
 
 static int imx9_readmmd(struct imx9_driver_s *priv, uint8_t mmd,
@@ -1277,10 +1281,13 @@ static void imx9_txtimeout_expiry(wdparm_t arg)
   priv->ints = 0;
 
   /* Schedule to perform the TX timeout processing on the worker thread,
-   * canceling any pending interrupt work.
+   * canceling any pending interrupt work. Note: this runs always in the
+   * low-priority queue instead of ETHWORK. It is too intrusive for the
+   * high-priority queue, running ifdown / ifup sequence and communicating
+   * with PHY.
    */
 
-  work_queue(ETHWORK, &priv->irqwork, imx9_txtimeout_work, priv, 0);
+  work_queue(LPWORK, &priv->irqwork, imx9_txtimeout_work, priv, 0);
 }
 
 /****************************************************************************
@@ -1425,7 +1432,14 @@ static int imx9_ifup(struct net_driver_s *dev)
 {
   /* The externally available ifup action includes resetting the phy */
 
-  return imx9_ifup_action(dev, true);
+  int ret = imx9_ifup_action(dev, true);
+
+  if (ret == OK)
+    {
+      netdev_carrier_on(dev);
+    }
+
+  return ret;
 }
 
 /****************************************************************************
@@ -1477,6 +1491,8 @@ static int imx9_ifdown(struct net_driver_s *dev)
   /* Mark the device "down" */
 
   priv->bifup = false;
+
+  netdev_carrier_off(dev);
 
   return OK;
 }
@@ -1903,12 +1919,43 @@ static int imx9_phyintenable(struct imx9_driver_s *priv)
 
 static void imx9_initmii(struct imx9_driver_s *priv)
 {
-  /* Speed is based on the peripheral (bus) clock; hold time is 2 module
-   * clock.  This hold time value may need to be increased on some platforms
+  uint32_t divider;
+  uint32_t freq = 0;
+
+  /* Wakeup_axi_clk is root clock for MII */
+
+  imx9_get_rootclock(CCM_WAKEUP_AXI_CLK_ROOT, &freq);
+  if (!freq)
+    {
+       nerr("Root clock is zero\n");
+       return;
+    }
+
+  /* MII clock frequency must be <= 2,5 MHz
+   *
+   * Divider = (root clock / (2 * 2,5MHZ)) - 1
+   *
+   */
+
+  divider = freq / 5000000;
+
+  /* round up */
+
+  if (freq % 5000000)
+    {
+      divider++;
+    }
+
+  divider--;
+
+  DEBUGASSERT(divider > 0 && divider < 64);
+
+  /* Hold time is 2 module clock.  This hold time value may need
+   * to be increased on some platforms
    */
 
   imx9_enet_putreg32(priv, ENET_MSCR_HOLDTIME_2CYCLES |
-                      IMX9_MII_SPEED << ENET_MSCR_MII_SPEED_SHIFT,
+                      divider << ENET_MSCR_MII_SPEED_SHIFT,
                       IMX9_ENET_MSCR_OFFSET);
 }
 
@@ -2062,16 +2109,16 @@ int imx9_read_phy_status(struct imx9_driver_s *priv)
 
   if (priv->cur_phy == NULL)
     {
-      /* We don't support guessing the link speed based ou our and link
+      /* We don't support guessing the link speed based on our and link
        * partner's capabilities. For now, user must manually set the
-       * speed and duplex if the phy is unknown
+       * speed and duplex if the phy is unknown.
        */
 
       nerr("Unknown PHY, can't read link speed\n");
       return ERROR;
     }
 
-  /* Special handling for rtl8211f, which needs to chage page */
+  /* Special handling for rtl8211f, which needs to change page. */
 
   if (imx9_phy_is(priv, GMII_RTL8211F_NAME))
     {
@@ -2155,6 +2202,17 @@ static int imx9_determine_phy(struct imx9_driver_s *priv)
   int retries;
   int ret;
 
+#ifdef CONFIG_IMX9_ENET_PHYINIT
+  /* Perform any necessary, one-time, board-specific PHY initialization */
+
+  ret = imx9_phy_boardinitialize(priv->intf);
+  if (ret < 0)
+    {
+      nerr("ERROR: Failed to initialize the PHY: %d\n", ret);
+      return ret;
+    }
+#endif
+
   for (i = 0; i < priv->n_phys; i++)
     {
       priv->phyaddr = (uint8_t)priv->phy_list[i].address_lo;
@@ -2167,7 +2225,7 @@ static int imx9_determine_phy(struct imx9_driver_s *priv)
           retries = 0;
           do
             {
-              nxsig_usleep(100);
+              nxsched_usleep(100);
               phydata = 0xffff;
               ret = imx9_readmii(priv, MII_PHYID1, &phydata);
               ninfo("phy %s addr %d received PHYID1 %x\n",
@@ -2181,7 +2239,7 @@ static int imx9_determine_phy(struct imx9_driver_s *priv)
             {
               do
                 {
-                  nxsig_usleep(100);
+                  nxsched_usleep(100);
                   phydata = 0xffff;
                   ret = imx9_readmii(priv, MII_PHYID2, &phydata);
                   ninfo("phy %s addr %d received PHYID2 %x\n",
@@ -2216,7 +2274,7 @@ static int imx9_determine_phy(struct imx9_driver_s *priv)
  *
  * Input Parameters:
  *   priv - Reference to the private ENET driver state structure
- *   name - a pointer to comapre to.
+ *   name - a pointer to compare to.
  *
  * Returned Value:
  *   1 on match, a 0 on no match.
@@ -2443,7 +2501,7 @@ int imx9_reset_phy(struct imx9_driver_s *priv)
   ret = -ETIMEDOUT;
   for (timeout = 0; timeout < PHY_RESET_WAIT_COUNT; timeout++)
     {
-      nxsig_usleep(100);
+      nxsched_usleep(100);
       result = imx9_readmii(priv, MII_MCR, &mcr);
       if (result < 0)
         {
@@ -2665,7 +2723,7 @@ static int imx9_phy_wait_autoneg_complete(struct imx9_driver_s *priv)
           break;
         }
 
-      nxsig_usleep(LINK_WAITUS);
+      nxsched_usleep(LINK_WAITUS);
     }
 
   if (timeout == LINK_NLOOPS)
@@ -2676,6 +2734,102 @@ static int imx9_phy_wait_autoneg_complete(struct imx9_driver_s *priv)
 
   return imx9_read_phy_status(priv);
 }
+
+/****************************************************************************
+ * Function: imx9_config_rgmii_id
+ *
+ * Description:
+ *   Configure the PHY internal delay. Currently only supported on RTL8211F.
+ *   If CONFIG_IMX9_ENET1_RGMII_ID is set, this function sets both TXDLY
+ *   and RXDLY bit on MIICR1 and MIICR2 respectively. Otherwise, it clears
+ *   the respective bits.
+ *
+ * Input Parameters:
+ *   priv     - Reference to the private ENET driver state structure
+ *
+ * Returned Value:
+ *   Zero (OK) returned on success; a negated errno value is returned on any
+ *   failure;
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_IMX9_ENET1_RGMII
+static int imx9_config_rgmii_id(struct imx9_driver_s *priv)
+{
+  int ret;
+  uint16_t prev_page;
+  uint16_t reg;
+
+  if (!imx9_phy_is(priv, GMII_RTL8211F_NAME))
+    {
+      nwarn("WARN: not configuring RGMII Internal Delay on %s phy\n",
+            priv->cur_phy->name);
+      return OK;
+    }
+
+  ret = imx9_readmii(priv, GMII_RTL8211F_PAGSR, &prev_page);
+  if (ret < 0)
+    {
+      nerr("ERROR: Getting page, imx9_readmii failed: %d\n", ret);
+      goto errout;
+    }
+
+  ret = imx9_writemii(priv, GMII_RTL8211F_PAGSR, 0xd08);
+  if (ret < 0)
+    {
+      nerr("ERROR: Selecting page, imx9_writemii failed: %d\n", ret);
+      goto errout;
+    }
+
+  ret = imx9_readmii(priv, GMII_RTL8211F_MIICR1_D08, &reg);
+  if (ret < 0)
+    {
+      nerr("ERROR: Reading MIICR1, imx9_readmii failed: %d\n", ret);
+      goto errout;
+    }
+
+#ifdef CONFIG_IMX9_ENET1_RGMII_ID
+  reg |= GMII_RTL8211F_MIICR1_TX_DELAY;
+#else
+  reg &= ~GMII_RTL8211F_MIICR1_TX_DELAY;
+#endif
+  ret = imx9_writemii(priv, GMII_RTL8211F_MIICR1_D08, reg);
+  if (ret < 0)
+    {
+      nerr("ERROR: Enabling TXDLY, imx9_writemii failed: %d\n", ret);
+      goto errout;
+    }
+
+  ret = imx9_readmii(priv, GMII_RTL8211F_MIICR2_D08, &reg);
+  if (ret < 0)
+    {
+      nerr("ERROR: Reading MIICR2, imx9_readmii failed: %d\n", ret);
+      goto errout;
+    }
+
+#ifdef CONFIG_IMX9_ENET1_RGMII_ID
+  reg |= GMII_RTL8211F_MIICR2_RX_DELAY;
+#else
+  reg &= ~GMII_RTL8211F_MIICR2_RX_DELAY;
+#endif
+  ret = imx9_writemii(priv, GMII_RTL8211F_MIICR2_D08, reg);
+  if (ret < 0)
+    {
+      nerr("ERROR: Enabling RXDLY, imx9_writemii failed: %d\n", ret);
+      goto errout;
+    }
+
+  ret = imx9_writemii(priv, GMII_RTL8211F_PAGSR, prev_page);
+  if (ret < 0)
+    {
+      nerr("ERROR: Restoring page, imx9_writemii failed: %d\n", ret);
+      goto errout;
+    }
+
+errout:
+  return ret;
+}
+#endif /* CONFIG_IMX9_ENET1_RGMII */
 
 /****************************************************************************
  * Function: imx9_initphy
@@ -2720,7 +2874,7 @@ static inline int imx9_initphy(struct imx9_driver_s *priv, bool renogphy)
       retries = 0;
       do
         {
-          nxsig_usleep(LINK_WAITUS);
+          nxsched_usleep(LINK_WAITUS);
 
           ninfo("%s: Read PHYID1, retries=%d\n", phy_name, retries + 1);
 
@@ -2897,6 +3051,17 @@ static inline int imx9_initphy(struct imx9_driver_s *priv, bool renogphy)
 
   imx9_enet_putreg32(priv, rcr, IMX9_ENET_RCR_OFFSET);
   imx9_enet_putreg32(priv, tcr, IMX9_ENET_TCR_OFFSET);
+
+  if (priv->phy_type == PHY_RGMII)
+    {
+      ret = imx9_config_rgmii_id(priv);
+      if (ret < 0)
+        {
+          nerr("ERROR: configure internal delay failed: %d\n", ret);
+          return ret;
+        }
+    }
+
   return OK;
 }
 
@@ -3032,6 +3197,7 @@ static void imx9_enet_mux_io(void)
   imx9_iomux_configure(MUX_ENET1_TX_DATA02);
   imx9_iomux_configure(MUX_ENET1_TX_DATA03);
   imx9_iomux_configure(MUX_ENET1_RXC);
+  imx9_iomux_configure(MUX_ENET1_TXC);
   imx9_iomux_configure(MUX_ENET1_TX_CTL);
   imx9_iomux_configure(MUX_ENET1_RX_CTL);
 #  else /* RMII */
@@ -3078,6 +3244,7 @@ int imx9_netinitialize(int intf)
   /* Get the interface structure associated with this interface number. */
 
   priv = &g_enet[intf];
+  priv->intf = intf;
 
   /* Disable the ENET clock */
 
@@ -3167,17 +3334,6 @@ int imx9_netinitialize(int intf)
   mac[4] = (uidl &  0x0000ff00) >> 8;
   mac[5] = (uidl &  0x000000ff);
 
-#endif
-
-#ifdef CONFIG_IMX9_ENET_PHYINIT
-  /* Perform any necessary, one-time, board-specific PHY initialization */
-
-  ret = imx9_phy_boardinitialize(intf);
-  if (ret < 0)
-    {
-      nerr("ERROR: Failed to initialize the PHY: %d\n", ret);
-      return ret;
-    }
 #endif
 
   /* Put the interface in the down state.  This usually amounts to resetting

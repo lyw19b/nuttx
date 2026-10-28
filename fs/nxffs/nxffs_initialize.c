@@ -30,7 +30,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/mtd/mtd.h>
@@ -86,7 +86,9 @@ const struct mountpt_operations g_nxffs_operations =
   NULL,              /* rmdir -- no directories */
   NULL,              /* rename -- cannot rename in place if name is longer */
   nxffs_stat,        /* stat */
-  NULL               /* chstat */
+  NULL,              /* chstat */
+  NULL,              /* syncfs */
+  nxffs_ioctldir     /* ioctldir */
 };
 
 /****************************************************************************

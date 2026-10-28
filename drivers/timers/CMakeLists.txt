@@ -30,6 +30,10 @@ if(CONFIG_TIMER)
   list(APPEND SRCS timer.c)
 endif()
 
+if(CONFIG_TIMER_WDOG)
+  list(APPEND SRCS timer_wdog.c)
+endif()
+
 if(CONFIG_TIMER_ARCH)
   list(APPEND SRCS arch_timer.c)
 endif()
@@ -48,6 +52,10 @@ endif()
 
 if(CONFIG_RTC_PCF85263)
   list(APPEND SRCS pcf85263.c)
+endif()
+
+if(CONFIG_RTC_PCF8563)
+  list(APPEND SRCS pcf8563.c)
 endif()
 
 if(CONFIG_RTC_PL031)
@@ -82,12 +90,32 @@ if(CONFIG_PWM)
   list(APPEND SRCS pwm.c)
 endif()
 
+if(CONFIG_PULSECOUNT)
+  list(APPEND SRCS pulsecount.c)
+endif()
+
+if(CONFIG_DSHOT)
+  list(APPEND SRCS dshot.c)
+endif()
+
 if(CONFIG_CAPTURE)
   list(APPEND SRCS capture.c)
+
+  if(CONFIG_FAKE_CAPTURE)
+    list(APPEND SRCS fake_capture.c)
+  endif()
 endif()
 
 if(CONFIG_GOLDFISH_TIMER)
   list(APPEND SRCS goldfish_timer.c)
+endif()
+
+if(CONFIG_PTP_CLOCK)
+  list(APPEND SRCS ptp_clock.c)
+endif()
+
+if(CONFIG_PTP_CLOCK_DUMMY)
+  list(APPEND SRCS ptp_clock_dummy.c)
 endif()
 
 target_sources(drivers PRIVATE ${SRCS})

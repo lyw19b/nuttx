@@ -33,7 +33,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <sys/param.h>
 
 #include <nuttx/fs/fs.h>
@@ -65,7 +65,7 @@
                                        * while burning fuses. */
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Types
  ****************************************************************************/
 
 /* This structure describes the state of the upper half driver */

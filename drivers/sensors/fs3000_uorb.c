@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/nuttx.h>
 #include <nuttx/kmalloc.h>
@@ -45,10 +45,16 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+/* Only float data type supported now */
+
+#ifdef CONFIG_SENSORS_USE_B16
+#  error fixed-point data type not supported yet
+#endif
+
 #define FS3000_ADDR           0x28
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Type
  ****************************************************************************/
 
 struct fs3000_dev_s
@@ -81,6 +87,7 @@ static const struct sensor_ops_s g_sensor_ops =
   NULL,               /* set_calibvalue */
   NULL,               /* calibrate */
   NULL,               /* get_info */
+  NULL,               /* set_nonwakeup */
   NULL                /* control */
 };
 
@@ -96,6 +103,7 @@ static const struct sensor_ops_s g_sensor_ops =
  *
  * Return value:
  *   Zero (OK) on success; a negated errno value on failure
+ *
  ****************************************************************************/
 
 static int fs3000_get_data(FAR struct fs3000_dev_s *priv,
@@ -136,6 +144,7 @@ static int fs3000_get_data(FAR struct fs3000_dev_s *priv,
  *
  * Return value:
  *   Zero (OK) on success; a negated errno value on failure
+ *
  ****************************************************************************/
 
 static int fs3000_get_velocity(FAR struct fs3000_dev_s *priv, uint8_t *data,
@@ -181,6 +190,7 @@ static int fs3000_get_velocity(FAR struct fs3000_dev_s *priv, uint8_t *data,
  *
  * Return value:
  *   Zero (OK) on success; a negated errno value on failure
+ *
  ****************************************************************************/
 
 static int fs3000_thread(int argc, char** argv)
@@ -213,7 +223,7 @@ static int fs3000_thread(int argc, char** argv)
                                  sizeof(struct sensor_velocity));
 
 thread_sleep:
-      nxsig_usleep(CONFIG_SENSORS_FS3000_POLL_INTERVAL);
+      nxsched_usleep(CONFIG_SENSORS_FS3000_POLL_INTERVAL);
     }
 
   return OK;
@@ -233,6 +243,7 @@ thread_sleep:
  *
  * Return value:
  *   Zero (OK) on success; a negated errno value on failure
+ *
  ****************************************************************************/
 
 int fs3000_register(FAR struct i2c_master_s *i2c)

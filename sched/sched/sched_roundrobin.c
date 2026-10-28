@@ -50,7 +50,7 @@ static struct smp_call_data_s g_call_data;
 #endif
 
 /****************************************************************************
- * Private Type Declarations
+ * Private Types
  ****************************************************************************/
 
 struct roundrobin_arg_s
@@ -81,7 +81,7 @@ static int nxsched_roundrobin_handler(FAR void *cookie)
     }
 
   if (tcb->task_state == TSTATE_TASK_RUNNING && tcb->cpu == this_cpu() &&
-      nxsched_reprioritize_rtr(tcb, tcb->sched_priority))
+      nxsched_switch_running(tcb->cpu, true))
     {
       up_switch_context(this_task(), tcb);
     }
@@ -108,8 +108,8 @@ static int nxsched_roundrobin_handler(FAR void *cookie)
  *
  * Returned Value:
  *   The number if ticks remaining until the next time slice expires.
- *   Zero is returned if there is no time slicing (i.e., the task at the
- *   head of the ready-to-run list does not support round robin
+ *   CLOCK_MAX is returned if there is no time slicing (i.e., the task at
+ *   the head of the ready-to-run list does not support round robin
  *   scheduling).
  *
  *   The value one may returned under certain circumstances that probably
@@ -124,10 +124,10 @@ static int nxsched_roundrobin_handler(FAR void *cookie)
  *
  ****************************************************************************/
 
-uint32_t nxsched_process_roundrobin(FAR struct tcb_s *tcb, uint32_t ticks,
-                                    bool noswitches)
+clock_t nxsched_process_roundrobin(FAR struct tcb_s *tcb, clock_t ticks,
+                                   bool noswitches)
 {
-  uint32_t ret;
+  clock_t ret;
   int decr;
 
   /* How much can we decrement the timeslice delay?  If 'ticks' is greater
@@ -164,7 +164,7 @@ uint32_t nxsched_process_roundrobin(FAR struct tcb_s *tcb, uint32_t ticks,
 
       if (noswitches)
         {
-          ret = 1;
+          ret = 0;
         }
       else
         {
@@ -180,36 +180,112 @@ uint32_t nxsched_process_roundrobin(FAR struct tcb_s *tcb, uint32_t ticks,
            * give that task a shot.
            */
 
+          FAR struct tcb_s *rtcb = this_task();
+
+#ifdef CONFIG_SMP
+          /* In SMP mode, the running task is in g_assignedtasks[cpu], not
+           * in the ready-to-run list.  Therefore, tcb->flink is NULL and
+           * we cannot check it to find the next task.  If the task is
+           * running on a different CPU, send an SMP call to that CPU.
+           * Otherwise, directly call nxsched_switch_running() to find the
+           * directly call nxsched_switch_running() to find the next eligible
+           * task from the ready-to-run list and switch to it.
+           */
+
+          DEBUGASSERT(tcb->task_state == TSTATE_TASK_RUNNING);
+          if (tcb->cpu != this_cpu())
+            {
+              nxsched_smp_call_init(&g_call_data,
+                                    nxsched_roundrobin_handler,
+                                    (FAR void *)(uintptr_t)tcb->pid);
+              nxsched_smp_call_single_async(tcb->cpu, &g_call_data);
+            }
+          else if (nxsched_switch_running(tcb->cpu, true))
+            {
+              up_switch_context(this_task(), rtcb);
+            }
+#else
+          /* Just resetting the task priority to its current value.
+           * This will cause the task to be rescheduled behind any
+           * other tasks at the same priority.
+           */
+
           if (tcb->flink &&
               tcb->flink->sched_priority >= tcb->sched_priority)
             {
-              FAR struct tcb_s *rtcb = this_task();
-
-              /* Just resetting the task priority to its current value.
-               * This will cause the task to be rescheduled behind any
-               * other tasks at the same priority.
-               */
-
-#ifdef CONFIG_SMP
-              if (tcb->task_state == TSTATE_TASK_RUNNING &&
-                  tcb->cpu != this_cpu())
-                {
-                  nxsched_smp_call_init(&g_call_data,
-                                        nxsched_roundrobin_handler,
-                                        (FAR void *)(uintptr_t)tcb->pid);
-                  nxsched_smp_call_single_async(tcb->cpu, &g_call_data);
-                }
-              else
-#endif
               if (nxsched_reprioritize_rtr(tcb, tcb->sched_priority))
                 {
                   up_switch_context(this_task(), rtcb);
                 }
             }
+#endif
         }
+    }
+  else if (tcb->timeslice == 0)
+    {
+      ret = CLOCK_MAX;
     }
 
   return ret;
 }
+
+#ifdef CONFIG_SCHED_TICKLESS
+
+/****************************************************************************
+ * Name:  nxsched_suspend_roundrobin
+ *
+ * Description:
+ *   Called when a task using round-robin scheduling is being switched out.
+ *   Accounts for the time consumed since the timeslice was last assessed
+ *   so that only actual CPU execution time is charged against the task.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread that is being suspended.
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumption:
+ *   This function is called from the critical section.
+ *
+ ****************************************************************************/
+
+void nxsched_suspend_roundrobin(FAR struct tcb_s *tcb)
+{
+  clock_t now     = clock_systime_ticks();
+  clock_t elapsed = now - tcb->rr_starttime;
+
+  nxsched_process_roundrobin(tcb, elapsed, true);
+}
+
+/****************************************************************************
+ * Name:  nxsched_resume_roundrobin
+ *
+ * Description:
+ *   Called when a task using round-robin scheduling is being switched in.
+ *   Restarts the scheduler timer for the task's remaining timeslice so
+ *   that the timer is always armed while an RR task is running.
+ *
+ * Input Parameters:
+ *   tcb - The TCB of the thread that is being resumed.
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumption:
+ *   This function is called from the critical section.
+ *
+ ****************************************************************************/
+
+void nxsched_resume_roundrobin(FAR struct tcb_s *tcb)
+{
+  clock_t now = clock_systime_ticks();
+
+  DEBUGASSERT(tcb->timeslice >= 0);
+  tcb->rr_starttime = now;
+  nxsched_timer_start(now, tcb->timeslice);
+}
+
+#endif /* CONFIG_SCHED_TICKLESS */
 
 #endif /* CONFIG_RR_INTERVAL > 0 */

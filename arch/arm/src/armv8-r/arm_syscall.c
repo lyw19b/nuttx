@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <syscall.h>
 
 #include <nuttx/arch.h>
@@ -181,7 +181,7 @@ uint32_t *arm_syscall(uint32_t *regs)
   cmd = regs[REG_R0];
 
   /* if cmd == SYS_restore_context (*running_task)->xcp.regs is valid
-   * should not be overwriten
+   * should not be overwritten
    */
 
   if (cmd != SYS_restore_context)
@@ -267,11 +267,16 @@ uint32_t *arm_syscall(uint32_t *regs)
 
         /* Update scheduler parameters */
 
-        nxsched_resume_scheduler(tcb);
+        nxsched_switch_context(*running_task, tcb);
 
       case SYS_restore_context:
-        nxsched_suspend_scheduler(*running_task);
+        /* No context switch occurs in SYS_restore_context, or the
+         * context switch has been completed, so there is no
+         * need to update scheduler parameters.
+         */
+
         *running_task = tcb;
+        g_running_tasks[cpu] = *running_task;
 
         /* Restore the cpu lock */
 
@@ -351,7 +356,7 @@ uint32_t *arm_syscall(uint32_t *regs)
         break;
 #endif
 
-#ifdef CONFIG_BUILD_PROTECTED
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ENABLE_ALL_SIGNALS)
       /* R0=SYS_signal_handler:  This a user signal handler callback
        *
        * void signal_handler(_sa_sigaction_t sighand, int signo,
@@ -408,7 +413,7 @@ uint32_t *arm_syscall(uint32_t *regs)
 
               /* Copy "info" into user stack */
 
-              if ((rtcb->flags & TCB_FLAG_SIGDELIVER) != 0)
+              if (rtcb->sigdeliver)
                 {
                   usp = rtcb->xcp.saved_regs[REG_SP];
                 }
@@ -433,7 +438,7 @@ uint32_t *arm_syscall(uint32_t *regs)
         break;
 #endif
 
-#ifdef CONFIG_BUILD_PROTECTED
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ENABLE_ALL_SIGNALS)
       /* R0=SYS_signal_handler_return:  This a user signal handler callback
        *
        *   void signal_handler_return(void);

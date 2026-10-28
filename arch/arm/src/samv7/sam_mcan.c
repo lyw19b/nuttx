@@ -39,7 +39,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <arch/board/board.h>
 #include <nuttx/irq.h>
@@ -55,6 +55,7 @@
 #include "sam_periphclks.h"
 #include "sam_gpio.h"
 #include "sam_mcan.h"
+#include "sam_chipid.h"
 
 #if defined(CONFIG_CAN) && defined(CONFIG_SAMV7_MCAN)
 
@@ -991,18 +992,18 @@ static const struct can_ops_s g_mcanops =
 
 #ifdef CONFIG_SAMV7_MCAN0
 
-/* MCAN0 message RAM allocation. The RAM is initalized to zeroes to ensure
+/* MCAN0 message RAM allocation. The RAM is initialized to zeroes to ensure
  * valid parity/ECC checksums. This should avoid possible BEC or BEU
  * interrupts according to MCAN manual.
  *
  * The message RAM is also located in .mcan section that should be placed
- * at the begining of .data section in linker script. The CAN controller
+ * at the beginning of .data section in linker script. The CAN controller
  * seems to incorrectly handle lower 16 bits address overflow. For example
  * message RAM starting at 0x2040fc20 would not work for buffers that
  * go beyond 0x20410000. The same issue would occur even if TX buffers
  * would start directly at 0x20410000. The upper 16 bits would still have
  * 0x2040 value because of RX buffers located in 0x2040ffff range. The
- * section ensures the RAM starts at the begining of the data section and
+ * section ensures the RAM starts at the beginning of the data section and
  * thus overflow should not occur.
  */
 
@@ -1106,18 +1107,18 @@ static struct can_dev_s g_mcan0dev =
 
 #ifdef CONFIG_SAMV7_MCAN1
 
-/* MCAN1 message RAM allocation. The RAM is initalized to zeroes to ensure
+/* MCAN1 message RAM allocation. The RAM is initialized to zeroes to ensure
  * valid parity/ECC checksums. This should avoid possible BEC or BEU
  * interrupts according to MCAN manual.
  *
  * The message RAM is also located in .mcan section that should be placed
- * at the begining of .data section in linker script. The CAN controller
+ * at the beginning of .data section in linker script. The CAN controller
  * seems to incorrectly handle lower 16 bits address overflow. For example
  * message RAM starting at 0x2040fc20 would not work for buffers that
  * go beyond 0x20410000. The same issue would occur even if TX buffers
  * would start directly at 0x20410000. The upper 16 bits would still have
  * 0x2040 value because of RX buffers located in 0x2040ffff range. The
- * section ensures the RAM starts at the begining of the data section and
+ * section ensures the RAM starts at the beginning of the data section and
  * thus overflow should not occur.
  */
 
@@ -1295,6 +1296,7 @@ static uint32_t mcan_getreg(struct sam_mcan_s *priv, int offset)
 static uint32_t mcan_getreg(struct sam_mcan_s *priv, int offset)
 {
   const struct sam_config_s *config = priv->config;
+
   return getreg32(config->base + offset);
 }
 
@@ -1890,12 +1892,12 @@ static int mcan_add_extfilter(struct sam_mcan_s *priv,
               regval |= (MCAN_CCCR_INIT | MCAN_CCCR_CCE);
               mcan_putreg(priv, SAM_MCAN_CCCR_OFFSET, regval);
 
-             /* Update the Global Filter Configuration so that received
-              * messages are rejected if they do not match the acceptance
-              * filter.
-              *
-              *   ANFE=2: Discard all rejected frames
-              */
+              /* Update the Global Filter Configuration so that received
+               * messages are rejected if they do not match the acceptance
+               * filter.
+               *
+               *   ANFE=2: Discard all rejected frames
+               */
 
               regval  = mcan_getreg(priv, SAM_MCAN_GFC_OFFSET);
               regval &= ~MCAN_GFC_ANFE_MASK;
@@ -2157,12 +2159,12 @@ static int mcan_add_stdfilter(struct sam_mcan_s *priv,
               regval |= (MCAN_CCCR_INIT | MCAN_CCCR_CCE);
               mcan_putreg(priv, SAM_MCAN_CCCR_OFFSET, regval);
 
-             /* Update the Global Filter Configuration so that received
-              * messages are rejected if they do not match the acceptance
-              * filter.
-              *
-              *   ANFS=2: Discard all rejected frames
-              */
+              /* Update the Global Filter Configuration so that received
+               * messages are rejected if they do not match the acceptance
+               * filter.
+               *
+               *   ANFS=2: Discard all rejected frames
+               */
 
               regval  = mcan_getreg(priv, SAM_MCAN_GFC_OFFSET);
               regval &= ~MCAN_GFC_ANFS_MASK;
@@ -2788,7 +2790,8 @@ static int mcan_ioctl(struct can_dev_s *dev, int cmd, unsigned long arg)
           uint8_t state;
 
           DEBUGASSERT(bt != NULL);
-          DEBUGASSERT(bt->bt_baud < SAMV7_MCANCLK_FREQUENCY);
+          DEBUGASSERT(bt->bt_baud > 0  &&
+            bt->bt_baud < SAMV7_MCANCLK_FREQUENCY);
           DEBUGASSERT(bt->bt_sjw > 0 && bt->bt_sjw <= 16);
           DEBUGASSERT(bt->bt_tseg1 > 1 && bt->bt_tseg1 <= 64);
           DEBUGASSERT(bt->bt_tseg2 > 0 && bt->bt_tseg2 <= 16);
@@ -3220,12 +3223,21 @@ static bool mcan_txready(struct can_dev_s *dev)
 
 #ifdef CONFIG_DEBUG_FEATURES
   /* As a sanity check, the txfsem should also track the number of elements
-   * the TX FIFO/queue.  Make sure that they are consistent.
+   * the TX FIFO/queue. Check only if the value doesn't exceed number of
+   * FIFO queue members. Sanity check comparing semaphore value with notfull
+   * flag may not always work, because SAM_MCAN_TXFQS register may signalize
+   * not full queue before we process the interrupt and increment the
+   * semaphore. The sanity checks should not be necessary because
+   * mcan_buffer_reserve function will take care of fixing the semaphore
+   * value if it doesn't match with the FIFO.
+   *
+   * REVISIT: The entire semaphore logic is a bit weird and probably not
+   * necessary. All we need to do is to check SAM_MCAN_TXFQS register
+   * if there is at least one free slot in the queue.
    */
 
   nxsem_get_value(&priv->txfsem, &sval);
-  DEBUGASSERT(((notfull && sval > 0) || (!notfull && sval <= 0)) &&
-              (sval <= priv->config->ntxfifoq));
+  DEBUGASSERT((sval <= priv->config->ntxfifoq));
 #endif
 
   nxmutex_unlock(&priv->lock);
@@ -3777,14 +3789,14 @@ static int mcan_interrupt(int irq, void *context, void *arg)
 
           if ((priv->rev == 0) && ((ie & MCAN_INT_ACKE) == 0))
             {
-                ie |= MCAN_INT_ACKE;
-                mcan_putreg(priv, SAM_MCAN_IE_OFFSET, ie);
+              ie |= MCAN_INT_ACKE;
+              mcan_putreg(priv, SAM_MCAN_IE_OFFSET, ie);
             }
           else if ((priv->rev == 1) &&
                    ((ie & (MCAN_INT_PEA | MCAN_INT_PED)) == 0))
             {
-                ie |= MCAN_INT_PEA | MCAN_INT_PED;
-                mcan_putreg(priv, SAM_MCAN_IE_OFFSET, ie);
+              ie |= MCAN_INT_PEA | MCAN_INT_PED;
+              mcan_putreg(priv, SAM_MCAN_IE_OFFSET, ie);
             }
 
           /* Clear the pending TX completion interrupt (and all
@@ -4235,10 +4247,10 @@ static int mcan_hw_initialize(struct sam_mcan_s *priv)
 
   if (config->loopback)
     {
-     /* MCAN_CCCR_TEST  - Test mode enable
-      * MCAN_CCCR_MON   - Bus monitoring mode (for internal loopback)
-      * MCAN_TEST_LBCK  - Loopback mode
-      */
+      /* MCAN_CCCR_TEST  - Test mode enable
+       * MCAN_CCCR_MON   - Bus monitoring mode (for internal loopback)
+       * MCAN_TEST_LBCK  - Loopback mode
+       */
 
       regval = mcan_getreg(priv, SAM_MCAN_CCCR_OFFSET);
       regval |= (MCAN_CCCR_TEST | MCAN_CCCR_MON);
@@ -4380,8 +4392,7 @@ struct can_dev_s *sam_mcan_initialize(int port)
 
       /* Get the revision of the chip (A or B) */
 
-      regval = getreg32(SAM_CHIPID_CIDR);
-      priv->rev = regval & CHIPID_CIDR_VERSION_MASK;
+      priv->rev = sam_has_revb_periphs();
 
       /* Set the initial bit timing.  This might change subsequently
        * due to IOCTL command processing.
@@ -4394,17 +4405,12 @@ struct can_dev_s *sam_mcan_initialize(int port)
           priv->btp  = priv->config->btp;
           priv->fbtp = priv->config->fbtp;
         }
-      else if (priv->rev == 1)
+      else
         {
           /* Revision B */
 
           priv->btp  = priv->config->nbtp;
           priv->fbtp = priv->config->dbtp;
-        }
-      else
-        {
-          canerr("ERROR: Incorrect chip revision: %d\n", priv->rev);
-          return NULL;
         }
 
       /* And put the hardware in the initial state */

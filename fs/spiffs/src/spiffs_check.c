@@ -64,7 +64,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include "spiffs.h"
 #include "spiffs_core.h"
@@ -1141,7 +1141,7 @@ static int spiffs_lucheck_callback(FAR struct spiffs_s *fs, int16_t objid,
  *
  * Returned Value:
  *   The index associated with the objid is returned on success.  -ENOENT
- *   is resutled if the objid was not found.
+ *   is resulted if the objid was not found.
  *
  ****************************************************************************/
 

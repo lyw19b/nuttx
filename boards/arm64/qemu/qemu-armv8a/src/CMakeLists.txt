@@ -22,7 +22,7 @@
 set(SRCS qemu_boardinit.c qemu_bringup.c)
 
 if(CONFIG_BOARDCTL)
-  list(APPEND SRCS qemu_appinit.c qemu_power.c)
+  list(APPEND SRCS qemu_power.c)
 endif()
 
 if(CONFIG_LIBC_FDT)
@@ -31,3 +31,17 @@ if(CONFIG_LIBC_FDT)
 endif()
 
 target_sources(board PRIVATE ${SRCS})
+
+if(CONFIG_ETC_ROMFS AND CONFIG_SYSTEM_NXINIT)
+  nuttx_add_romfs(
+    NAME
+    etc
+    MOUNTPOINT
+    etc
+    RCSRCS
+    etc/init.d/init.rc
+    PATH
+    ${CMAKE_CURRENT_BINARY_DIR}/etc)
+
+  target_link_libraries(board PRIVATE romfs_etc)
+endif()

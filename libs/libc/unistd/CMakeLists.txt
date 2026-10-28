@@ -43,8 +43,6 @@ set(SRCS
     lib_statvfs.c
     lib_sleep.c
     lib_nice.c
-    lib_setreuid.c
-    lib_setregid.c
     lib_getrusage.c
     lib_utime.c
     lib_utimes.c
@@ -64,11 +62,20 @@ set(SRCS
     lib_usleep.c
     lib_getpgrp.c
     lib_getpgid.c
+    lib_getsid.c
+    lib_setpgid.c
+    lib_setsid.c
     lib_lockf.c
     lib_flock.c
     lib_getpass.c
     lib_chdir.c
-    lib_fchdir.c)
+    lib_fchdir.c
+    lib_confstr.c
+    lib_ulimit.c)
+
+if(CONFIG_SCHED_WAITPID)
+  list(APPEND SRCS lib_wait4.c)
+endif()
 
 if(NOT CONFIG_SCHED_USER_IDENTITY)
   list(
@@ -81,7 +88,18 @@ if(NOT CONFIG_SCHED_USER_IDENTITY)
     lib_seteuid.c
     lib_setegid.c
     lib_geteuid.c
-    lib_getegid.c)
+    lib_getegid.c
+    lib_setreuid.c
+    lib_setregid.c
+    lib_getresuid.c
+    lib_getresgid.c
+    lib_setresuid.c
+    lib_setresgid.c
+    lib_issetugid.c
+    lib_getgroups.c
+    lib_setgroups.c)
+elseif(NOT CONFIG_SCHED_NGROUPS)
+  list(APPEND SRCS lib_getgroups.c lib_setgroups.c)
 endif()
 
 if(NOT CONFIG_DISABLE_ENVIRON)
@@ -96,12 +114,16 @@ if(NOT CONFIG_DISABLE_MOUNTPOINTS)
   list(APPEND SRCS lib_truncate.c lib_posix_fallocate.c)
 endif()
 
-if(CONFIG_ARCH_HAVE_FORK)
+if(CONFIG_ARCH_HAVE_VFORK OR CONFIG_ARCH_HAVE_FORK)
   list(APPEND SRCS lib_fork.c)
 endif()
 
 if(CONFIG_CRYPTO)
   list(APPEND SRCS lib_crypt.c lib_crypt_r.c)
+endif()
+
+if(CONFIG_PIPES)
+  list(APPEND SRCS lib_pipe.c)
 endif()
 
 target_sources(c PRIVATE ${SRCS})

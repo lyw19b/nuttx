@@ -2,6 +2,8 @@
 OMNIBUSF4
 =========
 
+.. tags:: chip:stm32, chip:stm32f4, chip:stm32f405
+
 "OmnibusF4" is not a product name per se, but rather a design spec
 that many product vendors within the drone flight management unit
 (FMU) community adhere to. The spec defines the major components, and
@@ -77,6 +79,6 @@ package as flexible as, say, an STM32F4 Discovery board.
 Build Instructions
 ==================
 
-The boards/arm/stm32/omnibusf4/nsh/defconfig file creates a basic setup, and
+The boards/arm/stm32f4/omnibusf4/nsh/defconfig file creates a basic setup, and
 includes drivers for all supported onboard chips. The console and
 command prompt are sent to USART3.

@@ -389,7 +389,7 @@ Here are a few tips before you start that effort:
    on the command line.
 
 Startup files will probably cause you some headaches.  The NuttX startup file
-is arch/arm/src/stm32/stm32_vectors.S.  With RIDE, I have to build NuttX
+is arch/arm/src/stm32f4/gnu/stm32_vectors.S.  With RIDE, I have to build NuttX
 one time from the Cygwin command line in order to obtain the pre-built
 startup object needed by RIDE.
 
@@ -470,7 +470,7 @@ Protected Mode Build
          nuttx.hex         - The pass2 Intel HEX file (selected in defconfig)
          System.map        - Symbols in the kernel-space ELF file
 
-       The J-Link programmer will except files in .hex, .mot, .srec, and .bin
+       The J-Link programmer will accept files in .hex, .mot, .srec, and .bin
        formats.
 
 3. Combining .hex files.  If you plan to use the .hex files with your

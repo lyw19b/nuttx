@@ -67,7 +67,7 @@
 #define REG_EPC_NDX         2
 #define REG_STATUS_NDX      3
 
-/* General pupose registers */
+/* General purpose registers */
 
 /* $0: Zero register does not need to be saved */
 
@@ -323,6 +323,7 @@ struct xcpt_syscall_s
 
 struct xcptcontext
 {
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
   /* These additional register save locations are used to implement the
    * signal delivery trampoline.
    *
@@ -334,6 +335,7 @@ struct xcptcontext
 
   uint32_t saved_epc;    /* Trampoline PC */
   uint32_t saved_status; /* Status with interrupts disabled. */
+#endif /* CONFIG_ENABLE_ALL_SIGNALS */
 
 #ifdef CONFIG_BUILD_KERNEL
   /* This is the saved address to use when returning from a user-space

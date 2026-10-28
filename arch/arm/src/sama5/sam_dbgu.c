@@ -33,8 +33,8 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/fs/ioctl.h>
@@ -559,7 +559,7 @@ static bool dbgu_txempty(struct uart_dev_s *dev)
  *
  * Description:
  *   Performs the low level DBGU initialization early in debug so that the
- *   DBGU console will be available during bootup.  This must be called
+ *   DBGU console will be available during boot up.  This must be called
  *   before getreg32it.
  *
  ****************************************************************************/
@@ -611,7 +611,7 @@ void sam_dbgu_register(void)
  *
  * Description:
  *   Performs the low level DBGU initialization early in debug so that the
- *   DBGU console will be available during bootup.  This must be called
+ *   DBGU console will be available during boot up.  This must be called
  *   before getreg32it.
  *
  ****************************************************************************/

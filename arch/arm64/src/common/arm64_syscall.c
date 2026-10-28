@@ -30,14 +30,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <syscall.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/sched.h>
 #include <nuttx/addrenv.h>
 
-#include "addrenv.h"
 #include "arch/irq.h"
 #include "arm64_internal.h"
 #include "arm64_fatal.h"
@@ -96,7 +95,7 @@ static void  arm64_dump_syscall(const char *tag, uint64_t cmd,
 uintptr_t dispatch_syscall(unsigned int nbr, uintptr_t parm1,
                            uintptr_t parm2, uintptr_t parm3,
                            uintptr_t parm4, uintptr_t parm5,
-                           uintptr_t parm6)
+                           uintptr_t parm6, void *context)
 {
   struct tcb_s *rtcb         = this_task();
   register long x0 asm("x0") = (long)(nbr);
@@ -117,6 +116,10 @@ uintptr_t dispatch_syscall(unsigned int nbr, uintptr_t parm1,
 
       return -ENOSYS;
     }
+
+  /* Set the user register context to TCB */
+
+  rtcb->xcp.sregs = context;
 
   /* Indicate that we are in a syscall handler */
 
@@ -160,9 +163,14 @@ uint64_t *arm64_syscall(uint64_t *regs)
   struct tcb_s **running_task = &g_running_tasks[cpu];
   struct tcb_s *tcb = this_task();
   uint64_t cmd;
-#ifdef CONFIG_BUILD_KERNEL
+#if (defined(CONFIG_BUILD_KERNEL) || defined(CONFIG_BUILD_PROTECTED)) \
+    && defined(CONFIG_ENABLE_ALL_SIGNALS)
   uint64_t             spsr;
 #endif
+
+  /* Set irq flag */
+
+  write_sysreg((uintptr_t)tcb | 1, tpidr_el1);
 
   /* Nested interrupts are not supported */
 
@@ -173,7 +181,7 @@ uint64_t *arm64_syscall(uint64_t *regs)
   cmd = regs[REG_X0];
 
   /* if cmd == SYS_restore_context (*running_task)->xcp.regs is valid
-   * should not be overwriten
+   * should not be overwritten
    */
 
   if (cmd != SYS_restore_context)
@@ -187,35 +195,35 @@ uint64_t *arm64_syscall(uint64_t *regs)
     {
       case SYS_restore_context:
 
-        /* Update scheduler parameters */
-
-        nxsched_resume_scheduler(tcb);
-
         /* Restore the cpu lock */
 
         restore_critical_section(tcb, cpu);
 #ifdef CONFIG_ARCH_ADDRENV
         addrenv_switch(tcb);
+        tcb = this_task();
+        *running_task = tcb;
 #endif
         break;
 
       case SYS_switch_context:
 
+#ifdef CONFIG_ARCH_ADDRENV
+        addrenv_switch(tcb);
+        tcb = this_task();
+#endif
+
         /* Update scheduler parameters */
 
-        nxsched_suspend_scheduler(*running_task);
-        nxsched_resume_scheduler(tcb);
+        nxsched_switch_context(*running_task, tcb);
         *running_task = tcb;
 
         /* Restore the cpu lock */
 
         restore_critical_section(tcb, cpu);
-#ifdef CONFIG_ARCH_ADDRENV
-        addrenv_switch(tcb);
-#endif
         break;
 
-#ifdef CONFIG_BUILD_KERNEL
+#if (defined(CONFIG_BUILD_KERNEL) || defined(CONFIG_BUILD_PROTECTED)) \
+    && defined(CONFIG_ENABLE_ALL_SIGNALS)
       /* R0=SYS_signal_handler:  This a user signal handler callback
        *
        * void signal_handler(_sa_sigaction_t sighand, int signo,
@@ -243,7 +251,12 @@ uint64_t *arm64_syscall(uint64_t *regs)
            * unprivileged mode.
            */
 
+#if defined(CONFIG_BUILD_KERNEL)
           regs[REG_ELR]  = (uint64_t)ARCH_DATA_RESERVE->ar_sigtramp;
+#elif defined(CONFIG_BUILD_PROTECTED)
+          regs[REG_ELR]  = (uint64_t)(USERSPACE->signal_handler);
+#endif
+
           spsr           = regs[REG_SPSR] & ~SPSR_MODE_MASK;
           regs[REG_SPSR] = spsr | SPSR_MODE_EL0T;
 
@@ -270,21 +283,19 @@ uint64_t *arm64_syscall(uint64_t *regs)
 
               /* Create a frame for info and copy the kernel info */
 
-              rtcb->xcp.ustkptr = (uintptr_t *)read_sysreg(sp_el0);
+              rtcb->xcp.ustkptr = (uintptr_t *)regs[REG_SP_EL0];
               usp = (uintptr_t)rtcb->xcp.ustkptr - sizeof(siginfo_t);
               memcpy((void *)usp, (void *)regs[REG_X2], sizeof(siginfo_t));
 
               /* Now set the updated SP and user copy of "info" to R2 */
 
-              write_sysreg(usp, sp_el0);
+              regs[REG_SP_EL0] = usp;
               regs[REG_X2] = usp;
             }
 #endif
         }
         break;
-#endif
 
-#ifdef CONFIG_BUILD_KERNEL
       /* R0=SYS_signal_handler_return:  This a user signal handler callback
        *
        *   void signal_handler_return(void);
@@ -314,11 +325,15 @@ uint64_t *arm64_syscall(uint64_t *regs)
 #endif
         }
         break;
-#endif
+#endif /* CONFIG_BUILD_KERNEL && CONFIG_ENABLE_ALL_SIGNALS */
 
       default:
         {
           svcerr("ERROR: Bad SYS call: 0x%" PRIx64 "\n", cmd);
+
+          /* Clear irq flag */
+
+          write_sysreg((uintptr_t)tcb & ~1ul, tpidr_el1);
           return 0;
         }
         break;
@@ -331,5 +346,9 @@ uint64_t *arm64_syscall(uint64_t *regs)
    */
 
   (*running_task)->xcp.regs = NULL;
+
+  /* Clear irq flag */
+
+  write_sysreg((uintptr_t)tcb & ~1ul, tpidr_el1);
   return regs;
 }

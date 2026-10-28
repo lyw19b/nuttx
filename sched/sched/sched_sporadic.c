@@ -31,7 +31,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/sched.h>
@@ -731,6 +731,7 @@ FAR struct replenishment_s *
       for (i = 0; i < sporadic->max_repl; i++)
         {
           FAR struct replenishment_s *tmp = &sporadic->replenishments[i];
+
           if ((tmp->flags & SPORADIC_FLAG_ALLOCED) == 0)
             {
               repl        = tmp;
@@ -753,6 +754,71 @@ FAR struct replenishment_s *
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: nxsched_validate_sporadic
+ *
+ * Description:
+ *   Validate sporadic scheduling parameters and convert the replenishment
+ *   period and initial budget to system clock ticks.
+ *
+ * Input Parameters:
+ *   param        - Sporadic scheduling parameters to validate.
+ *   repl_ticks   - Location to return the replenishment period in ticks.
+ *   budget_ticks - Location to return the initial budget in ticks.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success.  A negated errno value is returned
+ *   on failure.
+ *
+ ****************************************************************************/
+
+int nxsched_validate_sporadic(FAR const struct sched_param *param,
+                              FAR clock_t *repl_ticks,
+                              FAR clock_t *budget_ticks)
+{
+  clock_t repl;
+  clock_t budget;
+
+  if (param->sched_ss_low_priority < SCHED_PRIORITY_MIN ||
+      param->sched_ss_low_priority > SCHED_PRIORITY_MAX ||
+      param->sched_ss_max_repl < 1 ||
+      param->sched_ss_max_repl > CONFIG_SCHED_SPORADIC_MAXREPL)
+    {
+      return -EINVAL;
+    }
+
+  /* Convert timespec values to system clock ticks */
+
+  repl = clock_time2ticks(&param->sched_ss_repl_period);
+  budget = clock_time2ticks(&param->sched_ss_init_budget);
+
+  /* Avoid zero/negative times */
+
+  if (repl < 1)
+    {
+      repl = 1;
+    }
+
+  if (budget < 1)
+    {
+      budget = 1;
+    }
+
+  /* REVISIT: In the current implementation, the budget cannot exceed
+   * half the replenishment period.  Use division instead of doubling the
+   * budget to avoid signed overflow.
+   */
+
+  if (budget > repl / 2)
+    {
+      return -EINVAL;
+    }
+
+  *repl_ticks = repl;
+  *budget_ticks = budget;
+  return OK;
+}
 
 /****************************************************************************
  * Name: nxsched_initialize_sporadic
@@ -889,6 +955,12 @@ int nxsched_stop_sporadic(FAR struct tcb_s *tcb)
 
   kmm_free(tcb->sporadic);
   tcb->sporadic = NULL;
+
+  /* The policy flag must not outlive the freed sporadic state: the final
+   * context switch on thread exit would dereference it.
+   */
+
+  tcb->flags &= ~TCB_FLAG_POLICY_MASK;
   return OK;
 }
 
@@ -1172,7 +1244,7 @@ int nxsched_suspend_sporadic(FAR struct tcb_s *tcb)
  *
  * Returned Value:
  *   The number if ticks remaining until the budget interval expires.
- *   Zero is returned if we are in the low-priority phase of the
+ *   CLOCK_MAX is returned if we are in the low-priority phase of the
  *   replenishment interval.
  *
  * Assumptions:
@@ -1181,8 +1253,8 @@ int nxsched_suspend_sporadic(FAR struct tcb_s *tcb)
  *
  ****************************************************************************/
 
-uint32_t nxsched_process_sporadic(FAR struct tcb_s *tcb, uint32_t ticks,
-                                bool noswitches)
+clock_t nxsched_process_sporadic(FAR struct tcb_s *tcb, clock_t ticks,
+                                 bool noswitches)
 {
   FAR struct sporadic_s *sporadic;
 
@@ -1198,7 +1270,7 @@ uint32_t nxsched_process_sporadic(FAR struct tcb_s *tcb, uint32_t ticks,
 
   if (tcb->timeslice == 0)
     {
-      return 0;
+      return CLOCK_MAX;
     }
 
   /* Check if the budget interval has elapse  If 'ticks' is greater
@@ -1230,12 +1302,12 @@ uint32_t nxsched_process_sporadic(FAR struct tcb_s *tcb, uint32_t ticks,
 
           sporadic_timer_cancel(tcb);
           tcb->timeslice    = -1;
-          return 0;
+          return CLOCK_MAX;
         }
 
       /* We will also suppress context switches if we were called via one of
        * the unusual cases handled by nxsched_reassess_timer(). In that case,
-       * we will return a value of one so that the timer will expire as soon
+       * we will return a value of zero so that the timer will expire as soon
        * as possible and we can perform this action in the normal timer
        * expiration context.
        *
@@ -1246,8 +1318,8 @@ uint32_t nxsched_process_sporadic(FAR struct tcb_s *tcb, uint32_t ticks,
 
       if (noswitches)
         {
-          tcb->timeslice = 1;
-          return 1;
+          tcb->timeslice = 0;
+          return 0;
         }
 
       /* Another possibility is the budget interval is equal to the
@@ -1265,7 +1337,7 @@ uint32_t nxsched_process_sporadic(FAR struct tcb_s *tcb, uint32_t ticks,
        * Let the timers handle the priority changes.
        */
 
-      return 0;
+      return CLOCK_MAX;
     }
 
   /* No.. then just decrement the time remaining in the budget interval

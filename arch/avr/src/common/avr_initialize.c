@@ -30,6 +30,10 @@
 
 #include "avr_internal.h"
 
+#ifdef CONFIG_ARCH_CHIP_AVRDX
+#  include "avrdx.h"
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -63,6 +67,15 @@
 #  define USE_SERIALDRIVER 1
 #endif
 
+/* For AVR DA/DB devices, the decision making is altered - serial driver
+ * is compiled in based on its actual use, not based on if the /dev/console
+ * is enabled.
+ */
+#if !defined(USE_SERIALDRIVER) && \
+     (defined(CONFIG_ARCH_CHIP_AVRDX) && defined(CONFIG_MCU_SERIAL))
+#  define USE_SERIALDRIVER 1
+#endif
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -71,36 +84,6 @@
 volatile uint32_t *g_current_regs;
 #else
 volatile uint8_t *g_current_regs;
-#endif
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: up_color_intstack
- *
- * Description:
- *   Set the interrupt stack to a value so that later we can determine how
- *   much stack space was used by interrupt handling logic
- *
- ****************************************************************************/
-
-#if defined(CONFIG_STACK_COLORATION) && CONFIG_ARCH_INTERRUPTSTACK > 3
-static inline void up_color_intstack(void)
-{
-  uint8_t *ptr = g_intstackalloc;
-  ssize_t size;
-
-  for (size = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
-       size > 0;
-       size -= sizeof(uint8_t))
-    {
-      *ptr++ = INTSTACK_COLOR;
-    }
-}
-#else
-#  define up_color_intstack()
 #endif
 
 /****************************************************************************
@@ -126,10 +109,6 @@ static inline void up_color_intstack(void)
 
 void up_initialize(void)
 {
-  /* Colorize the interrupt stack */
-
-  up_color_intstack();
-
   /* Add any extra memory fragments to the memory manager */
 
   avr_addregion();
@@ -142,6 +121,10 @@ void up_initialize(void)
    */
 
   up_pminitialize();
+#endif
+
+#ifdef CONFIG_ARCH_CHIP_AVRDX
+  avrdx_up_initialize();
 #endif
 
 #ifdef CONFIG_ARCH_DMA

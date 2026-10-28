@@ -32,7 +32,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/irq.h>
@@ -631,7 +631,7 @@ static void pwm_set_comparison(struct pwm_lowerhalf_s *dev)
 
       if (pwm_getreg(priv, SAMV7_PWM_CMPMX + COMP_OFFSET * i) & CMPM_CEN)
         {
-          /* Use update register if comparision unit is used */
+          /* Use update register if comparison unit is used */
 
           pwm_putreg(priv, SAMV7_PWM_CMPVUPDX + COMP_OFFSET * i, width);
           pwm_putreg(priv, SAMV7_PWM_CMPMUPDX + COMP_OFFSET * i, CMPM_CEN);
@@ -697,9 +697,9 @@ static void pwm_set_deadtime(struct pwm_lowerhalf_s *dev, uint8_t channel,
    * and not 16 as duty cycle or period counter. Therefore a 12 bits recount
    * is necessary to set the dead time value corresponding to selected
    * frequency. This expects the dead time value selected in the application
-   * is moved left by 12 and devided by 100. For example:
+   * is moved left by 12 and divided by 100. For example:
    *      dead_time_a = (selected_dead_time_duty << 12) / 100
-   * This aproach is the same as with duty cycle setup in the application
+   * This approach is the same as with duty cycle setup in the application
    * but with 12 bits.
    *
    * Also note that it might not be possible to get correct delay on lower
@@ -963,7 +963,6 @@ static int pwm_start(struct pwm_lowerhalf_s *dev,
                      const struct pwm_info_s *info)
 {
   struct sam_pwm_s *priv = (struct sam_pwm_s *)dev;
-#ifdef CONFIG_PWM_MULTICHAN
   uint32_t regval;
 
   for (int i = 0; i < PWM_NCHANNELS; i++)
@@ -1036,18 +1035,6 @@ static int pwm_start(struct pwm_lowerhalf_s *dev,
       pwm_putreg(priv, SAMV7_PWM_ENA, CHID_SEL(1));
       pwm_putreg(priv, SAMV7_PWM_SCUC, regval);
     }
-#else
-  /* Set the frequency and enable PWM output just for first channel */
-
-  pwm_set_freq(dev, priv->channels[0].channel, info->frequency);
-#ifdef CONFIG_PWM_DEADTIME
-  pwm_set_deadtime(dev, priv->channels[0].channel,
-                    info->dead_time_a, info->dead_time_b);
-#endif
-  pwm_set_polarity(dev, priv->channels[0].channel,
-                    info->cpol, info->dcpol);
-  pwm_set_output(dev, priv->channels[0].channel, info->duty);
-#endif
 
   pwm_set_comparison(dev);
 
@@ -1078,7 +1065,6 @@ static int pwm_stop(struct pwm_lowerhalf_s *dev)
   struct sam_pwm_s *priv = (struct sam_pwm_s *)dev;
   uint32_t regval;
 
-#ifdef CONFIG_PWM_MULTICHAN
   for (int i = 0; i < priv->channels_num; i++)
     {
       regval = CHID_SEL(1 << priv->channels[i].channel);
@@ -1091,10 +1077,6 @@ static int pwm_stop(struct pwm_lowerhalf_s *dev)
   regval &= ~(CHID_SEL(1 << 0) | CHID_SEL(1 << 1) |
               CHID_SEL(1 << 2) | CHID_SEL(1 << 3));
   pwm_putreg(priv, SAMV7_PWM_SCM, regval);
-#else
-  regval = CHID_SEL(1 << priv->channels[0].channel);
-  pwm_putreg(priv, SAMV7_PWM_DIS, regval);
-#endif /* CONFIG_PWM_MULTICHAN */
 
   return OK;
 }

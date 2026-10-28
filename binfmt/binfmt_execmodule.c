@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sched.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/addrenv.h>
@@ -45,6 +45,7 @@
 #include <nuttx/binfmt/binfmt.h>
 
 #include "binfmt.h"
+#include "environ/environ.h"
 
 #ifndef CONFIG_BINFMT_DISABLE
 
@@ -52,54 +53,9 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* If C++ constructors are used, then CONFIG_SCHED_STARTHOOK must also be
- * selected be the start hook is used to schedule execution of the
- * constructors.
- */
-
-#if defined(CONFIG_BINFMT_CONSTRUCTORS) && !defined(CONFIG_SCHED_STARTHOOK)
-#  error "CONFIG_SCHED_STARTHOOK must be defined to use constructors"
-#endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: exec_ctors
- *
- * Description:
- *   Execute C++ static constructors.  This function is registered as a
- *   start hook and runs on the thread of the newly created task before
- *   the new task's main function is called.
- *
- * Input Parameters:
- *   arg - Argument is instance of load state info structure cast to void *.
- *
- * Returned Value:
- *   0 (OK) is returned on success and a negated errno is returned on
- *   failure.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
-static void exec_ctors(FAR void *arg)
-{
-  FAR const struct binary_s *binp = (FAR const struct binary_s *)arg;
-  binfmt_ctor_t *ctor = (CODE binfmt_ctor_t *)binp->mod.initarr;
-  int i;
-
-  /* Execute each constructor */
-
-  for (i = 0; i < binp->mod.ninit; i++)
-    {
-      binfo("Calling ctor %d at %p\n", i, ctor);
-
-      (*ctor)();
-      ctor++;
-    }
-}
-#endif
 
 /****************************************************************************
  * Name: exec_swap
@@ -201,7 +157,7 @@ int exec_module(FAR struct binary_s *binp,
                 FAR const posix_spawnattr_t *attr,
                 bool spawn)
 {
-  FAR struct task_tcb_s *tcb;
+  FAR struct tcb_s *tcb;
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
   FAR struct arch_addrenv_s *addrenv = &binp->addrenv->addrenv;
   FAR void *vheap;
@@ -224,7 +180,7 @@ int exec_module(FAR struct binary_s *binp,
 
   /* Allocate a TCB for the new task. */
 
-  tcb = kmm_zalloc(sizeof(struct task_tcb_s));
+  tcb = kmm_zalloc(sizeof(struct tcb_s));
   if (!tcb)
     {
       return -ENOMEM;
@@ -285,22 +241,11 @@ int exec_module(FAR struct binary_s *binp,
   umm_initialize(vheap, up_addrenv_heapsize(addrenv));
 #endif
 
-#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_ARCH_KERNEL_STACK)
-  /* Allocate the kernel stack */
+  /* Note that tcb->flags are not modified.  0=normal task */
 
-  ret = up_addrenv_kstackalloc(&tcb->cmn);
-  if (ret < 0)
-    {
-      berr("ERROR: up_addrenv_kstackalloc() failed: %d\n", ret);
-      goto errout_with_addrenv;
-    }
-#endif
+  /* tcb->flags |= TCB_FLAG_TTYPE_TASK; */
 
-  /* Note that tcb->cmn.flags are not modified.  0=normal task */
-
-  /* tcb->cmn.flags |= TCB_FLAG_TTYPE_TASK; */
-
-  tcb->cmn.flags |= TCB_FLAG_FREE_TCB;
+  tcb->flags |= TCB_FLAG_FREE_TCB;
 
   /* Initialize the task */
 
@@ -338,17 +283,17 @@ int exec_module(FAR struct binary_s *binp,
    * must be the first allocated address space.
    */
 
-  tcb->cmn.dspace = binp->picbase;
+  tcb->dspace = binp->picbase;
 
   /* Re-initialize the task's initial state to account for the new PIC base */
 
-  up_initial_state(&tcb->cmn);
+  up_initial_state(tcb);
 #endif
 
 #ifdef CONFIG_ARCH_ADDRENV
   /* Attach the address environment to the new task */
 
-  ret = addrenv_attach((FAR struct tcb_s *)tcb, binp->addrenv);
+  ret = addrenv_attach(tcb, binp->addrenv);
   if (ret < 0)
     {
       berr("ERROR: addrenv_attach() failed: %d\n", ret);
@@ -356,38 +301,41 @@ int exec_module(FAR struct binary_s *binp,
     }
 #endif
 
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
-  /* Setup a start hook that will execute all of the C++ static constructors
-   * on the newly created thread.  The struct binary_s must persist at least
-   * until the new task has been started.
-   */
-
-  if (binp->mod.ninit > 0)
-    {
-      nxtask_starthook(tcb, exec_ctors, binp);
-    }
-#endif
-
 #ifdef CONFIG_SCHED_USER_IDENTITY
-  if (binp->mode & S_ISUID)
-    {
-      tcb->cmn.group->tg_euid = binp->uid;
-    }
+  /* Apply set-user-ID / set-group-ID credentials for the new image. */
 
-  if (binp->mode & S_ISGID)
+  if ((binp->mode & (S_ISUID | S_ISGID)) != 0)
     {
-      tcb->cmn.group->tg_egid = binp->gid;
+      FAR struct task_group_s *group = tcb->group;
+
+      if ((binp->mode & S_ISUID) != 0)
+        {
+          group->tg_euid = binp->uid;
+          group->tg_suid = binp->uid;
+        }
+
+      if ((binp->mode & S_ISGID) != 0)
+        {
+          group->tg_egid = binp->gid;
+          group->tg_sgid = binp->gid;
+        }
+
+      group->tg_flags |= GROUP_FLAG_SECURE_EXEC;
+      group->tg_flags &= ~(GROUP_FLAG_FD_BACKTRACE | GROUP_FLAG_DUMPABLE);
+#ifndef CONFIG_DISABLE_ENVIRON
+      env_sanitize_secure(group);
+#endif
     }
 #endif
 
   if (!spawn)
     {
-      exec_swap(this_task(), (FAR struct tcb_s *)tcb);
+      exec_swap(this_task(), tcb);
     }
 
   /* Get the assigned pid before we start the task */
 
-  pid = tcb->cmn.pid;
+  pid = tcb->pid;
 
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
   /* Restore the address environment of the caller */
@@ -411,9 +359,13 @@ int exec_module(FAR struct binary_s *binp,
         }
     }
 
+#ifdef CONFIG_BINFMT_LOADABLE
+  tcb->group->tg_bininfo = binp;
+#endif
+
   /* Then activate the task at the provided priority */
 
-  nxtask_activate((FAR struct tcb_s *)tcb);
+  nxtask_activate(tcb);
 
   return pid;
 
@@ -421,12 +373,11 @@ errout_with_tcbinit:
 #ifndef CONFIG_BUILD_KERNEL
   if (binp->stackaddr != NULL)
     {
-      tcb->cmn.stack_alloc_ptr = NULL;
+      tcb->stack_alloc_ptr = NULL;
     }
 #endif
 
   nxtask_uninit(tcb);
-  return ret;
 
 errout_with_addrenv:
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)

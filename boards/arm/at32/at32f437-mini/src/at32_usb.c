@@ -32,7 +32,7 @@
 #include <sched.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kthread.h>
 #include <nuttx/usb/usbdev.h>
@@ -122,7 +122,7 @@ static int usbhost_waiter(int argc, char *argv[])
  * Name: at32_usbinitialize
  *
  * Description:
- *   Called from at32_usbinitialize very early in inialization to setup
+ *   Called from at32_usbinitialize very early in initialization to setup
  *   USB-related GPIO pins for the AT32F407_MINIvery board.
  *
  ****************************************************************************/

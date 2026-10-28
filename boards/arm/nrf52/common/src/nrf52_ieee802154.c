@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/wireless/ieee802154/ieee802154_mac.h>
@@ -75,7 +75,7 @@ int nrf52_ieee802154_initialize(void)
 
 #ifdef CONFIG_IEEE802154_NETDEV
   /* Use the IEEE802.15.4 MAC interface instance to create a 6LoWPAN
-   * network interface by wrapping the MAC intrface instance in a
+   * network interface by wrapping the MAC interface instance in a
    * network device driver via mac802154dev_register().
    */
 

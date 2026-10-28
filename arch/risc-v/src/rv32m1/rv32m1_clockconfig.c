@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <arch/board/board.h>
@@ -386,7 +386,7 @@ void rv32m1_clockconfig(void)
  * Name: rv32m1_clockfreq
  *
  * Description:
- *   Query the frequecy of a given clock source.
+ *   Query the frequency of a given clock source.
  *
  ****************************************************************************/
 

@@ -26,10 +26,6 @@ if(CONFIG_BOARD_LATE_INITIALIZE)
   list(APPEND SRCS sim_boot.c)
 endif()
 
-if(CONFIG_BOARDCTL)
-  list(APPEND SRCS sim_appinit.c)
-endif()
-
 if(CONFIG_BOARD_LATE_INITIALIZE)
   list(APPEND SRCS sim_bringup.c)
   if(CONFIG_LIBC_ZONEINFO_ROMFS)
@@ -67,17 +63,19 @@ target_sources(board PRIVATE ${SRCS})
 set_property(GLOBAL PROPERTY LD_SCRIPT "${NUTTX_BOARD_DIR}/scripts/gnu-elf.ld")
 
 if(CONFIG_ETC_ROMFS)
+  if(CONFIG_SYSTEM_NXINIT)
+    set(ETC_RCSRCS etc/init.d/init.rc)
+  endif()
+
   nuttx_add_romfs(
     NAME
     etc
     MOUNTPOINT
     etc
     RCSRCS
-    etc/init.d/rcS
-    etc/init.d/rc.sysinit
+    ${ETC_RCSRCS}
     RCRAWS
     etc/group
-    etc/passwd
     PATH
     ${CMAKE_CURRENT_BINARY_DIR}/etc)
 

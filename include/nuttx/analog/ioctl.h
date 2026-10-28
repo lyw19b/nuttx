@@ -65,9 +65,29 @@
                                                  * IN: None
                                                  * OUT: Number of samples
                                                  * waiting to be read */
+#define ANIOC_DAC_DMABUFF_INIT  _ANIOC(0x0007)  /* Copy full buffer to DAC DMA
+                                                 * IN: uint16_t * (buffer to copy)
+                                                 * Caller must provide buffer of
+                                                 * CONFIG_STM32_DACxCHy_DMA_BUFFER_SIZE
+                                                 * OUT: None */
+#define ANIOC_DAC_DMA_START     _ANIOC(0x0008)  /* Start DAC DMA transfer
+                                                 * IN: struct dac_dma_start_s *
+                                                 * OUT: None */
+#define ANIOC_DAC_DMA_STOP      _ANIOC(0x0009)  /* Stop DAC DMA transfer
+                                                 * IN: None
+                                                 * OUT: None */
+#define ANIOC_DAC_DMA_GET_EVENT _ANIOC(0x000a)  /* Wait for half-transfer DMA event
+                                                 * IN: None
+                                                 * OUT: struct dac_dma_event_s * */
+#define ANIOC_DAC_DMAHBUF_WRITE _ANIOC(0x000b)  /* Write half-buffer to DMA
+                                                 * IN: struct dac_dma_event_s *
+                                                 * OUT: None */
+#define ANIOC_DAC_INFO          _ANIOC(0x000c)  /* Get DAC info
+                                                 * IN: None
+                                                 * OUT: struct dac_info_s * */
 
 #define AN_FIRST          0x0001          /* First common command */
-#define AN_NCMDS          6               /* Number of common commands */
+#define AN_NCMDS          12              /* Number of common commands */
 
 /* User defined ioctl commands are also supported. These will be forwarded
  * by the upper-half driver to the lower-half driver via the ioctl()
@@ -93,12 +113,12 @@
 
 /* See arch/arm/src/stm32l4/stm32l4_adc.h */
 
-#define AN_STM32L4_FIRST (AN_ADS7828_FIRST + AN_ADS7828_NCMDS)
-#define AN_STM32L4_NCMDS 2
+#define AN_STM32_FIRST (AN_ADS7828_FIRST + AN_ADS7828_NCMDS)
+#define AN_STM32_NCMDS 2
 
 /* See include/nuttx/analog/max1161x.h */
 
-#define AN_MAX1161X_FIRST (AN_STM32L4_FIRST + AN_STM32L4_NCMDS)
+#define AN_MAX1161X_FIRST (AN_STM32_FIRST + AN_STM32_NCMDS)
 #define AN_MAX1161X_NCMDS 8
 
 /* See include/nuttx/analog/mcp48xx.h */
@@ -115,6 +135,31 @@
 
 #define AN_MCP3008_FIRST (AN_SAMV7_AFEC_FIRST + AN_SAMV7_AFEC_NCMDS)
 #define AN_MCP3008_NCMDS 1
+
+/* See include/nuttx/analog/ads1115.h */
+
+#define AN_ADS1115_FIRST (AN_MCP3008_FIRST + AN_MCP3008_NCMDS)
+#define AN_ADS1115_NCMDS 10
+
+/* See include/nuttx/analog/mcp47x6.h */
+
+#define AN_MCP47X6_FIRST (AN_ADS1115_FIRST + AN_ADS1115_NCMDS)
+#define AN_MCP47X6_NCMDS 3
+
+/* See include/nuttx/analog/ads7046.h */
+
+#define AN_ADS7046_FIRST  (AN_MCP47X6_FIRST + AN_MCP47X6_NCMDS)
+#define AN_ADS7046_NCMDS  3
+
+/* See include/nuttx/analog/pot.h */
+
+#define AN_POT_FIRST      (AN_ADS7046_FIRST + AN_ADS7046_NCMDS)
+#define AN_POT_NCMDS      16
+
+/* See include/nuttx/analog/mcp445x.h */
+
+#define AN_MCP445X_FIRST  (AN_POT_FIRST + AN_POT_NCMDS)
+#define AN_MCP445X_NCMDS  2
 
 /****************************************************************************
  * Public Function Prototypes

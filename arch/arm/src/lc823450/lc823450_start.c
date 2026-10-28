@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -136,6 +136,7 @@ extern uint32_t _svect;
  *
  ****************************************************************************/
 
+osentry_function
 void __start(void)
 {
   const uint32_t *src;

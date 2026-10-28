@@ -24,7 +24,7 @@
  * Included Files
  ****************************************************************************/
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 #include <stdio.h>
 
@@ -165,7 +165,7 @@ static int virtio_rpmb_transact(FAR struct virtio_rpmb_priv_s *priv,
   virtqueue_kick(vq);
   spin_unlock_irqrestore(&priv->lock, flags);
 
-  /* Wait fot completion */
+  /* Wait for completion */
 
   nxsem_wait_uninterruptible(&cookie.sem);
   return cookie.len;
@@ -261,7 +261,7 @@ static int virtio_rpmb_probe(FAR struct virtio_device *vdev)
       goto err_with_priv;
     }
 
-  ret = register_driver(VIRTIO_RPMB_DEVNAME, &g_virtio_rpmb_ops, 0666,
+  ret = register_driver(VIRTIO_RPMB_DEVNAME, &g_virtio_rpmb_ops, 0600,
                         priv);
   if (ret < 0)
     {

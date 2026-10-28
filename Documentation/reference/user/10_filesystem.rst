@@ -227,7 +227,7 @@ UNIX Standard Operations (``unistd.h``)
   int     rmdir(FAR const char *pathname);
   int     unlink(FAR const char *pathname);
 
-  #ifdef CONFIG_PSEUDOFS_SOFTLINKS
+  #ifdef CONFIG_FS_LINKS
   int     link(FAR const char *path1, FAR const char *path2);
   ssize_t readlink(FAR const char *path, FAR char *buf, size_t bufsize);
   #endif
@@ -446,7 +446,7 @@ Pipes and FIFOs
 -------------------------------------
 
 NuttX operates in a flat open address space and is focused on MCUs that
-do support Memory Management Units (MMUs). Therefore, NuttX generally
+do not support Memory Management Units (MMUs). Therefore, NuttX generally
 does not require ``mmap()`` functionality and the MCUs generally cannot
 support true memory-mapped files.
 

@@ -34,7 +34,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdlib.h>
 
 #include <nuttx/arch.h>
@@ -448,7 +448,7 @@ void lc823450_dmarequest(DMA_HANDLE handle, uint8_t dmarequest)
         val |= DMACCFG_FLOWCTRL_M2P_DMA;
         break;
       default:
-        dmaerr("ERROR: Not implemetned\n");
+        dmaerr("ERROR: Not implemented\n");
         DEBUGPANIC();
     }
 

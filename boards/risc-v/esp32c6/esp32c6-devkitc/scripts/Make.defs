@@ -43,7 +43,6 @@ else
   ARCHSCRIPT += $(call FINDSCRIPT,$(CHIP_SERIES)_legacy_sections.ld)
 endif
 
-ARCHPICFLAGS = -fpic
 
 CFLAGS := $(ARCHCFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) -Werror=return-type
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
@@ -57,12 +56,16 @@ AFLAGS := $(CFLAGS) -D__ASSEMBLY__
 CMODULEFLAGS = $(CFLAGS)
 
 LDMODULEFLAGS = -melf32lriscv -r -e module_initialize
-LDMODULEFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/modlib/gnu-elf.ld)
+LDMODULEFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/elf/gnu-elf.ld)
 
 # ELF module definitions
 
 CELFFLAGS = $(CFLAGS)
 CXXELFFLAGS = $(CXXFLAGS)
 
+# __dso_handle comes from crtbegin, which a module does not link
+
+CXXELFFLAGS += -fno-use-cxa-atexit
+
 LDELFFLAGS = -melf32lriscv -r -e main
-LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/binfmt/libelf/gnu-elf.ld)
+LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/binfmt/elf/gnu-elf.ld)

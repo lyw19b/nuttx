@@ -93,9 +93,6 @@
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
  *
- *   CONFIG_BOARD_LATE_INITIALIZE=y && CONFIG_BOARDCTL=y :
- *     Called from the NSH library
- *
  ****************************************************************************/
 
 int stm32_bringup(void);
@@ -108,7 +105,7 @@ int stm32_bringup(void);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_STM32H7_SDMMC
+#ifdef CONFIG_STM32_SDMMC
 int stm32_sdio_initialize(void);
 #endif
 
@@ -116,12 +113,12 @@ int stm32_sdio_initialize(void);
  * Name: stm32_usbinitialize
  *
  * Description:
- *   Called from stm32_usbinitialize very early in inialization to setup
+ *   Called from stm32_usbinitialize very early in initialization to setup
  *   USB-related GPIO pins for the board.
  *
  ****************************************************************************/
 
-#ifdef CONFIG_STM32H7_OTGFS
+#ifdef CONFIG_STM32_OTGFS
 void weak_function stm32_usbinitialize(void);
 #endif
 

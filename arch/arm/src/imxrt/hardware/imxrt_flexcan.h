@@ -263,7 +263,7 @@
 #define CAN_ESR1_TWRNINT           (1 << 17) /* Bit 17: Tx Warning Interrupt Flag */
 #define CAN_ESR1_SYNCH             (1 << 18) /* Bit 18: CAN Synchronization Status */
 #define CAN_ESR1_BOFFDONEINT       (1 << 19) /* Bit 19: Bus Off Done Interrupt */
-#define CAN_ESR1_ERRINTFAST        (1 << 20) /* Bit 20: Error Iterrupt for Errors Detected in Data Phase of CAN FD frames */
+#define CAN_ESR1_ERRINTFAST        (1 << 20) /* Bit 20: Error Interrupt for Errors Detected in Data Phase of CAN FD frames */
 #define CAN_ESR1_ERROVR            (1 << 21) /* Bit 21: Error Overrun */
                                              /* Bits 21-25: Reserved */
 #define CAN_ESR1_STFERRFAST        (1 << 26) /* Bit 26: Stuffing Error in the Data Phase of CAN FD frames */
@@ -375,7 +375,7 @@
 #define CAN_CBT_ERJW_SHIFT         (16)      /* Bits 16-20: Extended Resync Jump Width */
 #define CAN_CBT_ERJW_MASK          (0x1f << CAN_CBT_ERJW_SHIFT)
 #define CAN_CBT_ERJW(x)            (((uint32_t)(((uint32_t)(x)) << CAN_CBT_ERJW_SHIFT)) & CAN_CBT_ERJW_MASK)
-#define CAN_CBT_EPRESDIV_SHIFT     (21)      /* Bits 21-30: Extendet Prescaler Division Factor */
+#define CAN_CBT_EPRESDIV_SHIFT     (21)      /* Bits 21-30: Extended Prescaler Division Factor */
 #define CAN_CBT_EPRESDIV_MASK      (0x3ff << CAN_CBT_EPRESDIV_SHIFT)
 #define CAN_CBT_EPRESDIV(x)        (((uint32_t)(((uint32_t)(x)) << CAN_CBT_EPRESDIV_SHIFT)) & CAN_CBT_EPRESDIV_MASK)
 #define CAN_CBT_BTF                (1 << 31) /* Bit 31: Bit Timing Format Enable */
@@ -434,6 +434,13 @@
 #define CAN_FDCRC_FD_MBCRC_MASK    (0x7f << CAN_FDCRC_FD_MBCRC_SHIFT)
 #define CAN_FDCRC_FD_MBCRC(x)      (((uint32_t)(((uint32_t)(x)) << CAN_FDCRC_FD_MBCRC_SHIFT)) & CAN_FDCRC_FD_MBCRC_MASK)
                                             /* Bit 31: Reserved */
+
+/* CAN MB RX codes */
+
+#define CAN_RXMB_INACTIVE          0x0        /* MB is not active. */
+#define CAN_RXMB_FULL              0x2        /* MB is full. */
+#define CAN_RXMB_EMPTY             0x4        /* MB is empty. */
+#define CAN_RXMB_OVERRUN           0x6        /* MB is overwritten into a full buffer. */
 
 /* CAN MB TX codes */
 #define CAN_TXMB_INACTIVE          0x8        /* MB is not active. */

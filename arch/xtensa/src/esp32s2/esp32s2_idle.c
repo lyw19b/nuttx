@@ -23,11 +23,16 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/power/pm.h>
+#include <nuttx/spinlock.h>
 
 #include "xtensa.h"
+#ifdef CONFIG_PM
+#include "espressif/esp_pm.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -81,10 +86,26 @@ static spinlock_t g_esp32s2_idle_lock = SP_UNLOCKED;
 #ifdef CONFIG_PM
 static void up_idlepm(void)
 {
+  irqstate_t flags;
   static enum pm_state_e oldstate = PM_NORMAL;
   enum pm_state_e newstate;
-  irqstate_t flags;
   int ret;
+  int count;
+
+  count = pm_staycount(PM_IDLE_DOMAIN, PM_NORMAL);
+  if (oldstate != PM_NORMAL && count == 0)
+    {
+      pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
+
+      /* Keep working in normal stage */
+
+      pm_changestate(PM_IDLE_DOMAIN, PM_NORMAL);
+
+      /* Release the stay above: it only forces this one state change. */
+
+      pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
+      newstate = PM_NORMAL;
+    }
 
   /* Decide, which power saving level can be obtained */
 
@@ -122,43 +143,35 @@ static void up_idlepm(void)
 
       switch (newstate)
         {
-        case PM_NORMAL:
-          break;
+          case PM_NORMAL:
+            break;
 
-        case PM_IDLE:
-          break;
+          case PM_IDLE:
+            break;
 
-        case PM_STANDBY:
-          {
-            /* Enter Force-sleep mode */
+          case PM_STANDBY:
+            {
+              /* Enter Force-sleep mode */
 
-            esp32s2_pmstandby(CONFIG_PM_ALARM_SEC * 1000000 +
-                                  CONFIG_PM_ALARM_NSEC / 1000);
-          }
-          break;
+              esp_pmstandby(CONFIG_PM_ALARM_SEC * 1000000 +
+                            CONFIG_PM_ALARM_NSEC / 1000);
+            }
+            break;
 
-        case PM_SLEEP:
-          {
-            /* Enter Deep-sleep mode */
+          case PM_SLEEP:
+            {
+              /* Enter Deep-sleep mode */
 
-            esp32s2_pmsleep(CONFIG_PM_SLEEP_WAKEUP_SEC * 1000000 +
-                                CONFIG_PM_SLEEP_WAKEUP_NSEC / 1000);
-          }
-          break;
+              esp_pmsleep(CONFIG_PM_SLEEP_WAKEUP_SEC * 1000000 +
+                          CONFIG_PM_SLEEP_WAKEUP_NSEC / 1000);
+            }
 
-        default:
-          break;
+          default:
+            break;
         }
     }
   else
     {
-      if (oldstate == PM_NORMAL)
-        {
-          /* Relax normal operation */
-
-          pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
-        }
-
 #ifdef CONFIG_WATCHDOG
       /* Announce the power management state change to feed watchdog */
 

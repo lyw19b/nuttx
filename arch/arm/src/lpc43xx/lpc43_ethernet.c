@@ -33,7 +33,7 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <arpa/inet.h>
@@ -1660,7 +1660,7 @@ static void lpc43_receive(struct lpc43_ethmac_s *priv)
         }
 
       /* We are finished with the RX buffer.  NOTE:  If the buffer is
-       * re-used for transmission, the dev->d_buf field will have been
+       * reused for transmission, the dev->d_buf field will have been
        * nullified.
        */
 
@@ -1891,7 +1891,7 @@ static void lpc43_interrupt_work(void *arg)
       lpc43_putreg(ETH_DMAINT_NIS, LPC43_ETH_DMASTAT);
     }
 
-  /* Handle error interrupt only if CONFIG_DEBUG_NET is eanbled */
+  /* Handle error interrupt only if CONFIG_DEBUG_NET is enabled */
 
 #ifdef CONFIG_DEBUG_NET
   /* Check if there are pending "abnormal" interrupts */
@@ -2097,6 +2097,9 @@ static int lpc43_ifup(struct net_driver_s *dev)
   up_enable_irq(LPC43M4_IRQ_ETHERNET);
 
   lpc43_checksetup();
+
+  netdev_carrier_on(dev);
+
   return OK;
 }
 
@@ -2144,6 +2147,9 @@ static int lpc43_ifdown(struct net_driver_s *dev)
 
   priv->ifup = false;
   leave_critical_section(flags);
+
+  netdev_carrier_off(dev);
+
   return OK;
 }
 

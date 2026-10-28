@@ -147,7 +147,7 @@ machine_trap:
  *  Description:
  *    Allocate separate stack(s) for machine mode interrupts, only if kernel
  *    runs in S-mode. Separate stacks are needed as M-mode interrupts can
- *    pre-empt S-mode interrupts.
+ *    preempt S-mode interrupts.
  *
  ****************************************************************************/
 
@@ -160,7 +160,7 @@ machine_trap:
   .type   g_mintstackalloc, object
   .type   g_mintstacktop, object
 g_mintstackalloc:
-  .skip  STACK_ALIGN_UP(STACK_ALLOC_SIZE)
+  .skip  STACKFRAME_ALIGN_UP(STACK_ALLOC_SIZE)
 g_mintstacktop:
   .size  g_mintstacktop, 0
-  .size  g_mintstackalloc, STACK_ALIGN_DOWN(STACK_ALLOC_SIZE)
+  .size  g_mintstackalloc, STACKFRAME_ALIGN_DOWN(STACK_ALLOC_SIZE)

@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/board.h>
 #include <arch/board/board.h>
@@ -50,3 +50,19 @@ void ls2k0300_boardinitialize(void)
   board_autoled_initialize();
 #endif
 }
+
+#ifdef CONFIG_BOARD_LATE_INITIALIZE
+/****************************************************************************
+ * Name: board_late_initialize
+ *
+ * Description:
+ *   Register devices after the scheduler and kernel heaps are available.
+ *   The application initialization hook skips this work in late-init builds.
+ *
+ ****************************************************************************/
+
+void board_late_initialize(void)
+{
+  ls2k0300_bringup();
+}
+#endif

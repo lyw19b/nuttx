@@ -77,7 +77,7 @@ config FDSAN
 config FDCHECK
 	bool "Enable fdcheck"
 	default n
-	depends on SCHED_HAVE_PARENT
+	depends on LIBC_OPEN_MAX <= 256
 	---help---
 		Enable the fdcheck support
 
@@ -93,7 +93,7 @@ config LIBC_UNAME_DISABLE_TIMESTAMP
 	---help---
 		Currently uname command will print the timestamp
 		when the binary was built, and it generates an issue
-		because two identical built binaries will have differents
+		because two identical built binaries will have different
 		hashes/CRC.
 
 choice
@@ -164,3 +164,11 @@ config LIBC_MUTEX_BACKTRACE
 	---help---
 		Config the depth of backtrace, dumping the backtrace of thread which
 		last acquired the mutex. Disable mutex backtrace by 0.
+
+config LIBC_MUTEX_BACKTRACE_SKIP
+	int "Number of initial addresses to skip in mutex backtrace"
+	depends on LIBC_MUTEX_BACKTRACE > 0
+	default 2
+	---help---
+		Configure how many initial addresses to skip when dumping mutex backtraces.
+		When generating a backtrace, the first skip addresses will be skipped.

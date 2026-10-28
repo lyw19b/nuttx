@@ -55,7 +55,7 @@
  *           pkt/ipv[4|6]_input()/...
  *                     |
  *                     |
- *     NICs io vector receive(Orignal flat buffer)
+ *     NICs io vector receive(Original flat buffer)
  *
  * Input Parameters:
  *   NULL
@@ -79,6 +79,13 @@ int netdev_input(FAR struct net_driver_s *dev,
     {
       return ret;
     }
+
+#if defined(CONFIG_NET_TIMESTAMP)
+  if ((dev->d_features & NETDEV_RX_STAMP) != 0)
+    {
+      dev->d_iob->io_time = dev->d_rxtime;
+    }
+#endif
 
   /* Copy data to iob entry */
 

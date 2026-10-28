@@ -25,7 +25,8 @@
  ****************************************************************************/
 
 #include <errno.h>
-#include <debug.h>
+
+#include <nuttx/debug.h>
 #include <nuttx/bits.h>
 #include <nuttx/kmalloc.h>
 
@@ -44,7 +45,7 @@
 
 static enum tmc_mem_intf_width_e tmc_etf_get_memwidth(uint32_t devid)
 {
-  /* Indicate the minimum alignemnt for RRR/RURP/RWP/DBA etc registers. */
+  /* Indicate the minimum alignment for RRR/RURP/RWP/DBA etc registers. */
 
   switch (BMVAL(devid, 8, 10))
   {
@@ -69,7 +70,7 @@ static enum tmc_mem_intf_width_e tmc_etr_get_memwidth(uint32_t devid)
 {
   uint32_t val = (BMVAL(devid, 14, 15) << 3) | BMVAL(devid, 8, 10);
 
-  /* Indicate the minimum alignemnt for RRR/RURP/RWP/DBA etc registers. */
+  /* Indicate the minimum alignment for RRR/RURP/RWP/DBA etc registers. */
 
   switch (val)
   {

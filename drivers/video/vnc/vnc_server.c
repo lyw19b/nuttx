@@ -47,7 +47,7 @@
 #  define CONFIG_DEBUG_GRAPHICS_WARN  1
 #  define CONFIG_DEBUG_GRAPHICS_INFO  1
 #endif
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -78,7 +78,7 @@ FAR struct vnc_session_s *g_vnc_sessions[RFB_MAX_DISPLAYS];
  * Description:
  *  Conclude the current VNC session.  This function re-initializes the
  *  session structure; it does not free either the session structure nor
- *  the framebuffer so that they may be re-used.
+ *  the framebuffer so that they may be reused.
  *
  * Input Parameters:
  *   session - An instance of the session structure.
@@ -207,7 +207,7 @@ errout_with_listener:
 }
 
 /****************************************************************************
- * Pubic Functions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************

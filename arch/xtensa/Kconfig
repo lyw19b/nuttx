@@ -14,6 +14,7 @@ config ARCH_CHIP_ESP32
 	select ARCH_FAMILY_LX6
 	select XTENSA_HAVE_INTERRUPTS
 	select ARCH_HAVE_BOOTLOADER
+	select ARCH_HAVE_DEBUG
 	select ARCH_HAVE_FPU
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_MULTICPU
@@ -21,6 +22,7 @@ config ARCH_CHIP_ESP32
 	select ARCH_HAVE_TESTSET
 	select ARCH_HAVE_TEXT_HEAP
 	select ARCH_VECNOTIRQ
+	select ARCH_MINIMAL_VECTORTABLE
 	select LIBC_PREVENT_STRING_KERNEL
 	select LIBC_ARCH_MEMCPY if BUILD_FLAT
 	select LIBC_ARCH_MEMCHR if BUILD_FLAT
@@ -51,9 +53,11 @@ config ARCH_CHIP_ESP32S2
 	select ARCH_FAMILY_LX7
 	select XTENSA_HAVE_INTERRUPTS
 	select ARCH_HAVE_BOOTLOADER
+	select ARCH_HAVE_DEBUG
 	select ARCH_HAVE_RESET
 	select ARCH_HAVE_TEXT_HEAP
 	select ARCH_VECNOTIRQ
+	select ARCH_MINIMAL_VECTORTABLE
 	select LIBC_ARCH_MEMCPY
 	select LIBC_ARCH_MEMCHR
 	select LIBC_ARCH_MEMCMP
@@ -66,6 +70,7 @@ config ARCH_CHIP_ESP32S2
 	select LIBC_ARCH_STRNCPY
 	select LIBC_ARCH_STRLEN
 	select LIBC_ARCH_STRNLEN
+	select LIBC_ATOMIC_IRQ
 	---help---
 		ESP32-S2 is a truly secure, highly integrated, low-power, 2.4 GHz Wi-Fi
 		Microcontroller SoC supporting Wi-Fi HT40 and having 43 GPIOs.
@@ -78,6 +83,7 @@ config ARCH_CHIP_ESP32S3
 	select XTENSA_HAVE_INTERRUPTS
 	select ARCH_HAVE_BOOTLOADER if !ESPRESSIF_SIMPLE_BOOT
 	select ARCH_HAVE_COPY_SECTION
+	select ARCH_HAVE_DEBUG
 	select ARCH_HAVE_FPU
 	select ARCH_HAVE_MPU
 	select ARCH_HAVE_MULTICPU
@@ -86,7 +92,10 @@ config ARCH_CHIP_ESP32S3
 	select ARCH_HAVE_TEXT_HEAP_SEPARATE_DATA_ADDRESS
 	select ARCH_HAVE_TEXT_HEAP_WORD_ALIGNED_READ
 	select ARCH_HAVE_TESTSET
+	select ARCH_DCACHE
+	select ARCH_ICACHE
 	select ARCH_VECNOTIRQ
+	select ARCH_MINIMAL_VECTORTABLE
 	select LIBC_PREVENT_STRING_KERNEL
 	select LIBC_ARCH_MEMCPY if BUILD_FLAT
 	select LIBC_ARCH_MEMCHR if BUILD_FLAT
@@ -283,7 +292,7 @@ config XTENSA_TARGET_ISS
 	default n
 	---help---
 		This setting determines whether the target is Cadence Instruction
-		Set Simulator, which might have some sepecial characteristics such
+		Set Simulator, which might have some special characteristics such
 		as how to open a file nonblock.
 
 if XTENSA_SEMIHOSTING_HOSTFS
@@ -292,7 +301,7 @@ config XTENSA_SEMIHOSTING_HOSTFS_CACHE_COHERENCE
 	bool "Cache coherence in semihosting hostfs"
 	depends on ARCH_DCACHE
 	---help---
-		Flush & Invalidte cache before & after sim call.
+		Flush & Invalidate cache before & after sim call.
 
 endif
 

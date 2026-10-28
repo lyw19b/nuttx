@@ -30,7 +30,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/kmalloc.h>
@@ -134,7 +134,7 @@ static void sixlowpan_reass_expire(void)
       next = reass->rb_flink;
 
       /* Free any inactive reassembly buffers.  This is done because the life
-       * the reassembly buffer is not cerain.
+       * the reassembly buffer is not certain.
        */
 
       if (!reass->rb_active)

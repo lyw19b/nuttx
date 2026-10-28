@@ -28,9 +28,11 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <nuttx/compiler.h>
 
 #include <stdlib.h>
 
+#include <nuttx/mutex.h>
 #include <nuttx/net/net.h>
 #include <nuttx/net/ip.h>
 #include <nuttx/net/netdev.h>
@@ -88,7 +90,7 @@
   (dynalloc) <= 0 ? (prealloc) : ((maxalloc) > 0 ? (maxalloc) : INT16_MAX)
 
 #define NET_BUFPOOL_DECLARE(pool, nodesize, prealloc, dynalloc, maxalloc) \
-  static char pool##_buffer[prealloc][nodesize]; \
+  static char pool##_buffer[prealloc][nodesize] aligned_data(sizeof(uintptr_t)); \
   static struct net_bufpool_s pool = \
     { \
       pool##_buffer[0], \
@@ -96,6 +98,7 @@
       dynalloc, \
       -(int)(nodesize), \
       SEM_INITIALIZER(NET_BUFPOOL_MAX(prealloc, dynalloc, maxalloc)), \
+      NXRMUTEX_INITIALIZER, \
       { NULL, NULL } \
     };
 
@@ -104,6 +107,9 @@
 #define NET_BUFPOOL_ALLOC(p)        net_bufpool_timedalloc(&p, UINT_MAX)
 #define NET_BUFPOOL_FREE(p,n)       net_bufpool_free(&p, n)
 #define NET_BUFPOOL_TEST(p)         net_bufpool_test(&p)
+#define NET_BUFPOOL_NAVAIL(p)       net_bufpool_navail(&p)
+#define NET_BUFPOOL_LOCK(p)         net_bufpool_lock(&p)
+#define NET_BUFPOOL_UNLOCK(p)       net_bufpool_unlock(&p)
 
 /****************************************************************************
  * Public Types
@@ -131,6 +137,7 @@ struct net_bufpool_s
 
   sem_t      sem;      /* The semaphore for waiting for free buffers */
 
+  rmutex_t   lock;     /* The lock for the pool */
   sq_queue_t freebuffers;
 };
 
@@ -145,6 +152,69 @@ extern "C"
 #else
 #define EXTERN extern
 #endif
+
+/****************************************************************************
+ * Inline Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: conn_lock, conn_unlock, conn_dev_lock, conn_dev_unlock
+ *
+ * Description:
+ *   Lock and unlock the connection and device.
+ *
+ ****************************************************************************/
+
+static inline_function void conn_lock(FAR struct socket_conn_s *sconn)
+{
+  nxrmutex_lock(&sconn->s_lock);
+}
+
+static inline_function void conn_unlock(FAR struct socket_conn_s *sconn)
+{
+  nxrmutex_unlock(&sconn->s_lock);
+}
+
+static inline_function void conn_dev_lock(FAR struct socket_conn_s *sconn,
+                                          FAR struct net_driver_s *dev)
+{
+  if (dev != NULL)
+    {
+      netdev_lock(dev);
+    }
+
+  nxrmutex_lock(&sconn->s_lock);
+}
+
+static inline_function void conn_dev_unlock(FAR struct socket_conn_s *sconn,
+                                            FAR struct net_driver_s *dev)
+{
+  nxrmutex_unlock(&sconn->s_lock);
+
+  if (dev != NULL)
+    {
+      netdev_unlock(dev);
+    }
+}
+
+/****************************************************************************
+ * Name: conn_dev_sem_timedwait
+ *
+ * Description:
+ *   Wait on the connection semaphore, unlocking the device and connection
+ *   locks while waiting.
+ *
+ ****************************************************************************/
+
+static inline_function int
+conn_dev_sem_timedwait(FAR sem_t *sem, bool interruptible,
+                       unsigned int timeout, FAR struct socket_conn_s *sconn,
+                       FAR struct net_driver_s *dev)
+{
+  return net_sem_timedwait2(sem, interruptible, timeout,
+                            sconn ? &sconn->s_lock : NULL,
+                            dev ? &dev->d_lock : NULL);
+}
 
 /****************************************************************************
  * Public Function Prototypes
@@ -172,7 +242,7 @@ int net_breaklock(FAR unsigned int *count);
  *
  * Returned Value:
  *   Zero (OK) is returned on success; a negated errno value is returned on
- *   failured (probably -ECANCELED).
+ *   failure (probably -ECANCELED).
  *
  ****************************************************************************/
 
@@ -247,7 +317,7 @@ unsigned int net_timeval2dsec(FAR struct timeval *tv,
  *   This, of course, assumes that all MS bits are '1' and all LS bits are
  *   '0' with no intermixed 1's and 0's.  This function searches from the MS
  *   bit until the first '0' is found (this does not necessary mean that
- *   there might not be additional '1' bits following the firs '0', but that
+ *   there might not be additional '1' bits following the first '0', but that
  *   will be a malformed netmask.
  *
  * Input Parameters:
@@ -294,7 +364,7 @@ uint8_t net_ipv6_common_pref(FAR const uint16_t *a1, FAR const uint16_t *a2);
  *   This, of course, assumes that all MS bits are '1' and all LS bits are
  *   '0' with no intermixed 1's and 0's.  This function searches from the MS
  *   bit until the first '0' is found (this does not necessary mean that
- *   there might not be additional '1' bits following the firs '0', but that
+ *   there might not be additional '1' bits following the first '0', but that
  *   will be a malformed netmask.
  *
  * Input Parameters:
@@ -413,6 +483,45 @@ void net_bufpool_free(FAR struct net_bufpool_s *pool, FAR void *node);
  ****************************************************************************/
 
 int net_bufpool_test(FAR struct net_bufpool_s *pool);
+
+/****************************************************************************
+ * Name: net_bufpool_navail
+ *
+ * Description:
+ *   Return the number of available buffers in the buffer pool.
+ *
+ * Assumptions:
+ *   None.
+ *
+ ****************************************************************************/
+
+int net_bufpool_navail(FAR struct net_bufpool_s *pool);
+
+/****************************************************************************
+ * Name: net_bufpool_lock
+ *
+ * Description:
+ *   Use the bufpool lock to protect the node of the buffer pool.
+ *
+ * Input Parameters:
+ *   pool - The lock of pool to be locked.
+ *
+ ****************************************************************************/
+
+void net_bufpool_lock(FAR struct net_bufpool_s *pool);
+
+/****************************************************************************
+ * Name: net_bufpool_unlock
+ *
+ * Description:
+ *   Finish using the bufpool lock to protect the node of the buffer pool.
+ *
+ * Input Parameters:
+ *   pool - The lock of pool to be unlocked.
+ *
+ ****************************************************************************/
+
+void net_bufpool_unlock(FAR struct net_bufpool_s *pool);
 
 /****************************************************************************
  * Name: net_chksum_adjust
@@ -559,7 +668,27 @@ uint16_t icmpv6_chksum(FAR struct net_driver_s *dev, unsigned int iplen);
  ****************************************************************************/
 
 FAR void *cmsg_append(FAR struct msghdr *msg, int level, int type,
-                      FAR void *value, int value_len);
+                      FAR const void *value, int value_len);
+
+/****************************************************************************
+ * Name: cmsg_store_timestamp
+ *
+ * Description:
+ *   Store the timestamp in the cmsg
+ *
+ * Input Parameters:
+ *   msg    - Pointer to the msghdr containing ancillary data (CMSG).
+ *   tstamp - Timestamp information.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NET_TIMESTAMP
+void cmsg_store_timestamp(FAR struct msghdr *msg,
+                          FAR const struct timespec *tstamp, sockopt_t opt);
+#endif /* CONFIG_NET_TIMESTAMP */
 
 #undef EXTERN
 #ifdef __cplusplus

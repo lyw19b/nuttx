@@ -29,8 +29,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 
 #include "arm_internal.h"
@@ -217,7 +217,7 @@ void gd32_syscfg_clock_enable(void)
 
   regaddr = GD32_RCU_APB2EN;
 
-  /* Check clock if alreay enable. */
+  /* Check clock if already enable. */
 
   if (rcu_en != (rcu_en & getreg32(regaddr)))
     {

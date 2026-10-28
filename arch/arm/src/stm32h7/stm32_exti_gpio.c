@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <arch/irq.h>
 
@@ -40,14 +40,28 @@
 #include "stm32_gpio.h"
 #include "stm32_exti.h"
 
+/* Lines 9:5 and 15:10 either share one vector each or have a vector per
+ * line.  Only the mapping from pin to IRQ differs.
+ */
+
+#ifdef CONFIG_STM32_HAVE_EXTI_SHARED_IRQ
+#  define EXTI95_IRQ(pin)    STM32_IRQ_EXTI95
+#  define EXTI1510_IRQ(pin)  STM32_IRQ_EXTI1510
+#else
+#  define EXTI95_IRQ(pin)    (STM32_IRQ_EXTI0 + (pin))
+#  define EXTI1510_IRQ(pin)  (STM32_IRQ_EXTI0 + (pin))
+#endif
+
 /* Content of this file requires verification before it is used with other
  * families
  */
 
-#if defined(CONFIG_STM32H7_STM32H7X3XX) || \
-    defined(CONFIG_STM32H7_STM32H7B3XX) || \
-    defined(CONFIG_STM32H7_STM32H7X5XX) || \
-    defined(CONFIG_STM32H7_STM32H7X7XX)
+#if defined(CONFIG_STM32_STM32H7RSXX) || \
+    defined(CONFIG_STM32_STM32H7X0XX) || \
+    defined(CONFIG_STM32_STM32H7X3XX) || \
+    defined(CONFIG_STM32_STM32H7B3XX) || \
+    defined(CONFIG_STM32_STM32H7X5XX) || \
+    defined(CONFIG_STM32_STM32H7X7XX)
 
 /****************************************************************************
  * Private Types
@@ -267,6 +281,7 @@ int stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
   xcpt_t   handler;
   int      nshared;
   int      i;
+  int      ret;
 
   /* Select the interrupt handler for this EXTI pin */
 
@@ -300,14 +315,14 @@ int stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
     }
   else if (pin < 10)
     {
-      irq        = STM32_IRQ_EXTI95;
+      irq        = EXTI95_IRQ(pin);
       handler    = stm32_exti95_isr;
       shared_cbs = &g_gpio_callbacks[5];
       nshared    = 5;
     }
   else
     {
-      irq        = STM32_IRQ_EXTI1510;
+      irq        = EXTI1510_IRQ(pin);
       handler    = stm32_exti1510_isr;
       shared_cbs = &g_gpio_callbacks[10];
       nshared    = 6;
@@ -341,6 +356,16 @@ int stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
 
       if (i == nshared)
         {
+          /* remove any leftover callback */
+
+          ret = irq_detach(irq);
+          if (ret < 0)
+            {
+              return ret;
+            }
+
+          /* disable the interrupt */
+
           up_disable_irq(irq);
         }
     }
@@ -377,4 +402,4 @@ int stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
   return OK;
 }
 
-#endif /* CONFIG_STM32H7_STM32H7X3XX || CONFIG_STM32H7_STM32H7X7XX || CONFIG_STM32H7_STM32H7B3XX */
+#endif /* CONFIG_STM32_STM32H7X3XX || CONFIG_STM32_STM32H7X7XX || CONFIG_STM32_STM32H7B3XX */

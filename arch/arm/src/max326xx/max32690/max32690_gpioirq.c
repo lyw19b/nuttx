@@ -27,7 +27,7 @@
 #include <nuttx/config.h>
 
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/irq.h>
@@ -163,7 +163,7 @@ void max32690_gpio_irq_enable(max32690_pinconfig_t pinconf)
   int bank = pinconf.gpio_bank;
   irq_infos[bank].irq_handler[pinconf.pin] = pinconf.irq_handler;
 
-  /* enable the interupt for the gpio bank */
+  /* enable the interrupt for the gpio bank */
 
   if (irq_infos[pinconf.gpio_bank].int_enabled == 0)
   {

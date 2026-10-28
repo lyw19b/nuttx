@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
@@ -186,9 +186,6 @@ static void timer_initialize(void)
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
  *
- *   CONFIG_BOARD_LATE_INITIALIZE=n && CONFIG_BOARDCTL=y :
- *     Called from the NSH library
- *
  ****************************************************************************/
 
 int cxd56_bringup(void)
@@ -243,7 +240,7 @@ int cxd56_bringup(void)
   ret = cxd56_pm_bootup();
   if (ret < 0)
     {
-      _err("ERROR: Failed to powermgr bootup.\n");
+      _err("ERROR: Failed to powermgr boot up.\n");
     }
 #endif
 
@@ -265,6 +262,15 @@ int cxd56_bringup(void)
 
 #ifdef CONFIG_CXD56_SCU
   scu_initialize();
+#endif
+
+#if defined(CONFIG_SENSORS_CXD5602PWBIMU) && \
+    !defined(CONFIG_CXD56_CXD5602PWBIMU_LATE_INITIALIZE)
+  ret = board_cxd5602pwbimu_initialize(5);
+  if (ret < 0)
+    {
+      _err("ERROR: Failed to initialize CXD5602PWBIMU.\n");
+    }
 #endif
 
 #ifdef CONFIG_CXD56_I2C_DRIVER

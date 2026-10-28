@@ -28,7 +28,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <stdio.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/fs/ioctl.h>
 #include <nuttx/fs/fs.h>
@@ -234,6 +234,13 @@ static int cfi_mtd_ioctl(FAR struct mtd_dev_s *dev, int cmd,
           ret = cfi_mtd_erase(dev, erase->startblock, erase->nblocks);
         }
         break;
+
+      case MTDIOC_ERASESTATE:
+        {
+          FAR uint8_t *result = (FAR uint8_t *)arg;
+          *result = 0xff;
+          break;
+        }
 
       default:
         ret = -ENOTTY;

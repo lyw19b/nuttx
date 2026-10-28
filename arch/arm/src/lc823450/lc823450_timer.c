@@ -30,7 +30,8 @@
 #include <stddef.h>
 #include <time.h>
 #include <assert.h>
-#include <debug.h>
+
+#include <nuttx/debug.h>
 #include <nuttx/nuttx.h>
 #include <nuttx/arch.h>
 #include <nuttx/spinlock.h>
@@ -198,7 +199,7 @@ static void hrt_queue_refresh(void)
 
 cont:
 
-  /* serch for expired */
+  /* search for expired */
 
   for (pent = hrt_timer_queue.head; pent; pent = dq_next(pent))
     {
@@ -705,9 +706,9 @@ int up_rtc_gettime(struct timespec *tp)
 
   /* Get the elapsed time */
 
-  elapsed = NSEC_PER_TICK * (uint64_t)g_system_ticks;
+  elapsed = NSEC_PER_TICK * clock_systime_ticks();
 
-  /* Add the tiemr fraction in nanoseconds */
+  /* Add the timer fraction in nanoseconds */
 
   f = up_get_timer_fraction();
   elapsed += f;
@@ -723,9 +724,9 @@ int up_rtc_gettime(struct timespec *tp)
 
   /* And return the result to the caller. */
 
-  tp->tv_sec  = (time_t)secs;
-  tp->tv_nsec = (long)nsecs;
+  tp->tv_sec  = secs;
+  tp->tv_nsec = nsecs;
 
-  tmrinfo("Returning tp=(%d,%d)\n", (int)tp->tv_sec, (int)tp->tv_nsec);
+  tmrinfo("Returning tp=(%jd,%ld)\n", (intmax_t)tp->tv_sec, tp->tv_nsec);
   return OK;
 }

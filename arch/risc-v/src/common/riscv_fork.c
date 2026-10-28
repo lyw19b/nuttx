@@ -30,7 +30,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/sched.h>
 #include <nuttx/arch.h>
@@ -40,8 +40,6 @@
 #include "riscv_internal.h"
 
 #include "sched/sched.h"
-
-#ifdef CONFIG_ARCH_HAVE_FORK
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -59,17 +57,15 @@
  * Name: riscv_fork
  *
  * Description:
- *   The fork() function has the same effect as posix fork(), except that the
- *   behavior is undefined if the process created by fork() either modifies
- *   any data other than a variable of type pid_t used to store the return
- *   value from fork(), or returns from the function in which fork() was
- *   called, or calls any other function before successfully calling _exit()
- *   or one of the exec family of functions.
+ *   The common RISC-V worker behind up_fork().  vfork() and fork() snapshot
+ *   the caller's registers identically; `vfork' says which primitive was
+ *   called, and is passed straight through to nxtask_setup_fork(), which is
+ *   where the memory semantics are decided.
  *
  *   The overall sequence is:
  *
- *   1) User code calls fork().  fork() collects context information and
- *      transfers control up riscv_fork().
+ *   1) User code calls vfork() or fork().  up_fork() collects context
+ *      information and transfers control to riscv_fork().
  *   2) riscv_fork() and calls nxtask_setup_fork().
  *   3) nxtask_setup_fork() allocates and configures the child task's TCB.
  *     This consists of:
@@ -90,7 +86,8 @@
  * and 6.
  *
  * Input Parameters:
- *   context - Caller context information saved by fork()
+ *   vfork   - true for vfork(), false for fork()
+ *   context - Caller context information saved by up_fork()
  *
  * Returned Value:
  *   Upon successful completion, fork() returns 0 to the child process and
@@ -102,10 +99,10 @@
 
 #ifdef CONFIG_LIB_SYSCALL
 
-pid_t riscv_fork(const struct fork_s *context)
+pid_t riscv_fork(bool vfork, const struct fork_s *context)
 {
   struct tcb_s *parent = this_task();
-  struct task_tcb_s *child;
+  struct tcb_s *child;
   uintptr_t newsp;
   uintptr_t newtop;
   uintptr_t stacktop;
@@ -117,7 +114,7 @@ pid_t riscv_fork(const struct fork_s *context)
 
   /* Allocate and initialize a TCB for the child task. */
 
-  child = nxtask_setup_fork((start_t)parent->xcp.sregs[REG_RA]);
+  child = nxtask_setup_fork((start_t)parent->xcp.sregs[REG_RA], vfork);
   if (!child)
     {
       sinfo("nxtask_setup_fork failed\n");
@@ -130,27 +127,41 @@ pid_t riscv_fork(const struct fork_s *context)
   DEBUGASSERT(stacktop > parent->xcp.sregs[REG_SP]);
   stackutil = stacktop - parent->xcp.sregs[REG_SP];
 
-  /* Copy goes to child's user stack top */
+  if (child->stack_base_ptr == parent->stack_base_ptr)
+    {
+      /* The child is running at the parent's stack addresses, inside its
+       * own duplicated address environment.  There is nothing to relocate:
+       * every stack address the child inherits is still the address it
+       * names.
+       */
 
-  newtop = (uintptr_t)child->cmn.stack_base_ptr + child->cmn.adj_stack_size;
-  newsp = newtop - stackutil;
+      newsp = parent->xcp.sregs[REG_SP];
+    }
+  else
+    {
+      /* Copy goes to child's user stack top */
 
-  memcpy((void *)newsp, (const void *)parent->xcp.sregs[REG_SP], stackutil);
+      newtop = (uintptr_t)child->stack_base_ptr + child->adj_stack_size;
+      newsp = newtop - stackutil;
+
+      memcpy((void *)newsp, (const void *)parent->xcp.sregs[REG_SP],
+             stackutil);
+    }
 
 #ifdef CONFIG_SCHED_THREAD_LOCAL
   /* Save child's thread pointer */
 
-  tp = child->cmn.xcp.regs[REG_TP];
+  tp = child->xcp.regs[REG_TP];
 #endif
 
   /* Determine the integer context save area */
 
 #ifdef CONFIG_ARCH_KERNEL_STACK
-  if (child->cmn.xcp.kstack)
+  if (child->xcp.kstack)
     {
       /* Set context to kernel stack */
 
-      stacktop = (uintptr_t)child->cmn.xcp.ktopstk;
+      stacktop = (uintptr_t)child->xcp.ktopstk;
     }
   else
 #endif
@@ -162,37 +173,37 @@ pid_t riscv_fork(const struct fork_s *context)
 
   /* Set the new register restore area to the new stack top */
 
-  child->cmn.xcp.regs = (void *)(stacktop - XCPTCONTEXT_SIZE);
+  child->xcp.regs = (void *)(stacktop - XCPTCONTEXT_SIZE);
 
   /* Copy the parent integer context (overwrites child's SP and TP) */
 
-  memcpy(child->cmn.xcp.regs, parent->xcp.sregs, XCPTCONTEXT_SIZE);
+  memcpy(child->xcp.regs, parent->xcp.sregs, XCPTCONTEXT_SIZE);
 
   /* Save FPU */
 
-  riscv_savefpu(child->cmn.xcp.regs, riscv_fpuregs(&child->cmn));
+  riscv_savefpu(child->xcp.regs, riscv_fpuregs(child));
 
   /* Return 0 to child */
 
-  child->cmn.xcp.regs[REG_A0] = 0;
-  child->cmn.xcp.regs[REG_SP] = newsp;
+  child->xcp.regs[REG_A0] = 0;
+  child->xcp.regs[REG_SP] = newsp;
 #ifdef CONFIG_SCHED_THREAD_LOCAL
-  child->cmn.xcp.regs[REG_TP] = tp;
+  child->xcp.regs[REG_TP] = tp;
 #endif
 
   /* And, finally, start the child task.  On a failure, nxtask_start_fork()
    * will discard the TCB by calling nxtask_abort_fork().
    */
 
-  return nxtask_start_fork(child);
+  return nxtask_start_fork(child, vfork);
 }
 
 #else
 
-pid_t riscv_fork(const struct fork_s *context)
+pid_t riscv_fork(bool vfork, const struct fork_s *context)
 {
   struct tcb_s *parent = this_task();
-  struct task_tcb_s *child;
+  struct tcb_s *child;
   uintptr_t newsp;
 #ifdef CONFIG_RISCV_FRAMEPOINTER
   uintptr_t newfp;
@@ -215,7 +226,7 @@ pid_t riscv_fork(const struct fork_s *context)
         context->fp, context->sp, context->ra, context->gp);
 #else
   sinfo("fp:%" PRIxREG " sp:%" PRIxREG " ra:%" PRIxREG "\n",
-        context->fp context->sp, context->ra);
+        context->fp, context->sp, context->ra);
 #endif
 #else
   sinfo("s5:%" PRIxREG " s6:%" PRIxREG " s7:%" PRIxREG " s8:%" PRIxREG "\n",
@@ -231,7 +242,7 @@ pid_t riscv_fork(const struct fork_s *context)
 
   /* Allocate and initialize a TCB for the child task. */
 
-  child = nxtask_setup_fork((start_t)(uintptr_t)context->ra);
+  child = nxtask_setup_fork((start_t)(uintptr_t)context->ra, vfork);
   if (!child)
     {
       sinfo("nxtask_setup_fork failed\n");
@@ -252,52 +263,71 @@ pid_t riscv_fork(const struct fork_s *context)
 
   sinfo("Parent: stackutil:%" PRIxPTR "\n", stackutil);
 
-  /* Make some feeble effort to preserve the stack contents.  This is
-   * feeble because the stack surely contains invalid pointers and other
-   * content that will not work in the child context.  However, if the
-   * user follows all of the caveats of fork() usage, even this feeble
-   * effort is overkill.
-   */
-
-  newtop = (uintptr_t)child->cmn.stack_base_ptr + child->cmn.adj_stack_size;
-  newsp = newtop - stackutil;
-
-  /* Set up frame for context and copy the initial context there */
-
-  memcpy((void *)(newsp - XCPTCONTEXT_SIZE),
-         child->cmn.xcp.regs, XCPTCONTEXT_SIZE);
-
-  /* Copy the parent stack contents (overwrites child's SP and TP) */
-
-  memcpy((void *)newsp, (const void *)(uintptr_t)context->sp, stackutil);
-
-  /* Set the new register restore area to the new stack top */
-
-  child->cmn.xcp.regs = (void *)(newsp - XCPTCONTEXT_SIZE);
-
-  /* Was there a frame pointer in place before? */
-
-#ifdef CONFIG_RISCV_FRAMEPOINTER
-  if (context->fp >= context->sp && context->fp < stacktop)
+  if (child->stack_base_ptr == parent->stack_base_ptr)
     {
-      uintptr_t frameutil = stacktop - context->fp;
-      newfp = newtop - frameutil;
+      /* The child is running at the parent's stack addresses, inside its
+       * own duplicated address environment.  There is nothing to relocate:
+       * every stack address the child inherits is still the address it
+       * names.
+       */
+
+      newsp = (uintptr_t)context->sp;
+#ifdef CONFIG_RISCV_FRAMEPOINTER
+      newfp = (uintptr_t)context->fp;
+#endif
     }
   else
     {
-      newfp = context->fp;
-    }
+      /* Make some feeble effort to preserve the stack contents.  This is
+       * feeble because the stack surely contains invalid pointers and other
+       * content that will not work in the child context.  However, if the
+       * user follows all of the caveats of vfork() usage, even this feeble
+       * effort is overkill.
+       *
+       * For a POSIX fork() child the stack contents are not merely a feeble
+       * effort:  the child is entitled to use them, and it does.
+       */
 
-  sinfo("Old stack top:%" PRIxPTR " SP:%" PRIxREG " FP:%" PRIxREG "\n",
-        stacktop, context->sp, context->fp);
-  sinfo("New stack top:%" PRIxPTR " SP:%" PRIxPTR " FP:%" PRIxPTR "\n",
-        newtop, newsp, newfp);
+      newtop = (uintptr_t)child->stack_base_ptr + child->adj_stack_size;
+      newsp = newtop - stackutil;
+
+      /* Set up frame for context and copy the initial context there */
+
+      memcpy((void *)(newsp - XCPTCONTEXT_SIZE),
+             child->xcp.regs, XCPTCONTEXT_SIZE);
+
+      /* Copy the parent stack contents (overwrites child's SP and TP) */
+
+      memcpy((void *)newsp, (const void *)(uintptr_t)context->sp, stackutil);
+
+      /* Set the new register restore area to the new stack top */
+
+      child->xcp.regs = (void *)(newsp - XCPTCONTEXT_SIZE);
+
+      /* Was there a frame pointer in place before? */
+
+#ifdef CONFIG_RISCV_FRAMEPOINTER
+      if (context->fp >= context->sp && context->fp < stacktop)
+        {
+          uintptr_t frameutil = stacktop - context->fp;
+          newfp = newtop - frameutil;
+        }
+      else
+        {
+          newfp = context->fp;
+        }
+
+      sinfo("Old stack top:%" PRIxPTR " SP:%" PRIxREG " FP:%" PRIxREG "\n",
+            stacktop, context->sp, context->fp);
+      sinfo("New stack top:%" PRIxPTR " SP:%" PRIxPTR " FP:%" PRIxPTR "\n",
+            newtop, newsp, newfp);
 #else
-  sinfo("Old stack top:%" PRIxPTR " SP:%" PRIxREG "\n",
-        stacktop, context->sp);
-  sinfo("New stack top:%" PRIxPTR " SP:%" PRIxPTR "\n",
-        newtop, newsp);
+      sinfo("Old stack top:%" PRIxPTR " SP:%" PRIxREG "\n",
+            stacktop, context->sp);
+      sinfo("New stack top:%" PRIxPTR " SP:%" PRIxPTR "\n",
+            newtop, newsp);
 #endif
+    }
 
   /* Update the stack pointer, frame pointer, global pointer and saved
    * registers.  When the child TCB was initialized, all of the values
@@ -306,48 +336,47 @@ pid_t riscv_fork(const struct fork_s *context)
    * indication to the newly started child thread.
    */
 
-  child->cmn.xcp.regs[REG_S1]   = context->s1;  /* Saved register s1 */
-  child->cmn.xcp.regs[REG_S2]   = context->s2;  /* Saved register s2 */
-  child->cmn.xcp.regs[REG_S3]   = context->s3;  /* Saved register s3 */
-  child->cmn.xcp.regs[REG_S4]   = context->s4;  /* Saved register s4 */
-  child->cmn.xcp.regs[REG_S5]   = context->s5;  /* Saved register s5 */
-  child->cmn.xcp.regs[REG_S6]   = context->s6;  /* Saved register s6 */
-  child->cmn.xcp.regs[REG_S7]   = context->s7;  /* Saved register s7 */
-  child->cmn.xcp.regs[REG_S8]   = context->s8;  /* Saved register s8 */
-  child->cmn.xcp.regs[REG_S9]   = context->s9;  /* Saved register s9 */
-  child->cmn.xcp.regs[REG_S10]  = context->s10; /* Saved register s10 */
-  child->cmn.xcp.regs[REG_S11]  = context->s11; /* Saved register s11 */
+  child->xcp.regs[REG_S1]   = context->s1;  /* Saved register s1 */
+  child->xcp.regs[REG_S2]   = context->s2;  /* Saved register s2 */
+  child->xcp.regs[REG_S3]   = context->s3;  /* Saved register s3 */
+  child->xcp.regs[REG_S4]   = context->s4;  /* Saved register s4 */
+  child->xcp.regs[REG_S5]   = context->s5;  /* Saved register s5 */
+  child->xcp.regs[REG_S6]   = context->s6;  /* Saved register s6 */
+  child->xcp.regs[REG_S7]   = context->s7;  /* Saved register s7 */
+  child->xcp.regs[REG_S8]   = context->s8;  /* Saved register s8 */
+  child->xcp.regs[REG_S9]   = context->s9;  /* Saved register s9 */
+  child->xcp.regs[REG_S10]  = context->s10; /* Saved register s10 */
+  child->xcp.regs[REG_S11]  = context->s11; /* Saved register s11 */
 #ifdef CONFIG_RISCV_FRAMEPOINTER
-  child->cmn.xcp.regs[REG_FP]   = newfp;        /* Frame pointer */
+  child->xcp.regs[REG_FP]   = newfp;        /* Frame pointer */
 #else
-  child->cmn.xcp.regs[REG_S0]   = context->s0;  /* Saved register s0 */
+  child->xcp.regs[REG_S0]   = context->s0;  /* Saved register s0 */
 #endif
-  child->cmn.xcp.regs[REG_SP]   = newsp;        /* Stack pointer */
+  child->xcp.regs[REG_SP]   = newsp;        /* Stack pointer */
 #ifdef RISCV_SAVE_GP
-  child->cmn.xcp.regs[REG_GP]   = context->gp;  /* Global pointer */
+  child->xcp.regs[REG_GP]   = context->gp;  /* Global pointer */
 #endif
 #ifdef CONFIG_ARCH_FPU
-  fregs                         = riscv_fpuregs(&child->cmn);
-  fregs[REG_FS0]                = context->fs0;  /* Saved register fs1 */
-  fregs[REG_FS1]                = context->fs1;  /* Saved register fs1 */
-  fregs[REG_FS2]                = context->fs2;  /* Saved register fs2 */
-  fregs[REG_FS3]                = context->fs3;  /* Saved register fs3 */
-  fregs[REG_FS4]                = context->fs4;  /* Saved register fs4 */
-  fregs[REG_FS5]                = context->fs5;  /* Saved register fs5 */
-  fregs[REG_FS6]                = context->fs6;  /* Saved register fs6 */
-  fregs[REG_FS7]                = context->fs7;  /* Saved register fs7 */
-  fregs[REG_FS8]                = context->fs8;  /* Saved register fs8 */
-  fregs[REG_FS9]                = context->fs9;  /* Saved register fs9 */
-  fregs[REG_FS10]               = context->fs10; /* Saved register fs10 */
-  fregs[REG_FS11]               = context->fs11; /* Saved register fs11 */
+  fregs                     = riscv_fpuregs(child);
+  fregs[REG_FS0]            = context->fs0;  /* Saved register fs1 */
+  fregs[REG_FS1]            = context->fs1;  /* Saved register fs1 */
+  fregs[REG_FS2]            = context->fs2;  /* Saved register fs2 */
+  fregs[REG_FS3]            = context->fs3;  /* Saved register fs3 */
+  fregs[REG_FS4]            = context->fs4;  /* Saved register fs4 */
+  fregs[REG_FS5]            = context->fs5;  /* Saved register fs5 */
+  fregs[REG_FS6]            = context->fs6;  /* Saved register fs6 */
+  fregs[REG_FS7]            = context->fs7;  /* Saved register fs7 */
+  fregs[REG_FS8]            = context->fs8;  /* Saved register fs8 */
+  fregs[REG_FS9]            = context->fs9;  /* Saved register fs9 */
+  fregs[REG_FS10]           = context->fs10; /* Saved register fs10 */
+  fregs[REG_FS11]           = context->fs11; /* Saved register fs11 */
 #endif
 
   /* And, finally, start the child task.  On a failure, nxtask_start_fork()
    * will discard the TCB by calling nxtask_abort_fork().
    */
 
-  return nxtask_start_fork(child);
+  return nxtask_start_fork(child, vfork);
 }
 
 #endif /* CONFIG_LIB_SYSCALL */
-#endif /* CONFIG_ARCH_HAVE_FORK */

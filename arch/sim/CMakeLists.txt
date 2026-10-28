@@ -44,9 +44,9 @@ set_property(
   TARGET nuttx
   APPEND
   PROPERTY NUTTX_ELF_MODULE_LINK_OPTIONS -r -e module_initialize -T
-           ${NUTTX_DIR}/libs/libc/modlib/gnu-elf.ld)
+           ${NUTTX_DIR}/libs/libc/elf/gnu-elf.ld)
 
-if(CONFIG_LIBC_ARCH_ELF_64BIT)
+if(CONFIG_ARCH_64BIT)
   # For amd64: It seems macOS/x86_64 loads the program text around
   # 00000001_xxxxxxxx. The gcc default (-mcmodel=small) would produce
   # out-of-range 32-bit relocations. Even on Linux, NuttX modules are loaded

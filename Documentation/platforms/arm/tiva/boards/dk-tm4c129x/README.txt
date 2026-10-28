@@ -494,9 +494,6 @@ Temperature Sensor
       CONFIG_SENSORS_LM75=y
       CONFIG_LM75_I2C=y
 
-    Applications -> NSH Library
-      CONFIG_NSH_ARCHINIT=y
-
   Then you can implement logic like the following to use the temperature sensor:
 
     #include <nuttx/sensors/lm75.h>
@@ -523,9 +520,6 @@ Temperature Sensor
     Library
       CONFIG_LIBM=y
       CONFIG_LIBC_FLOATINGPOINT=y
-
-    Applications -> NSH Library
-      CONFIG_NSH_ARCHINIT=y
 
     Applications -> System Add-Ons
       CONFIG_SYSTEM_LM75=y
@@ -725,7 +719,7 @@ Where <subdir> is one of the following:
        [80.6 F in January.  I love living in Costa Rica1]
 
        The default units is degrees Fahrenheit, but that is easily
-       reconfigured.  See the discussin above in the paragraph entitled
+       reconfigured.  See the discussion above in the paragraph entitled
        "Temperature Sensor".
 
   ipv6:
@@ -746,7 +740,7 @@ Where <subdir> is one of the following:
 
     2. This configuration can be modified to that both IPv4 and IPv6
        are support.  Here is a summary of the additional configuration
-       settings requird to support both IPv4 and IPv6:
+       settings required to support both IPv4 and IPv6:
 
          CONFIG_NET_IPv4=y
          CONFIG_NET_ARP=y

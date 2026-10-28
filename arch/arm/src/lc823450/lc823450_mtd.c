@@ -33,7 +33,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/fs/ioctl.h>
@@ -395,6 +395,7 @@ static int lc823450_ioctl(struct mtd_dev_s *dev, int cmd,
  *
  * Precondition:
  *   Semaphore has been taken.
+ *
  ****************************************************************************/
 
 static int mtd_mediainitialize(struct lc823450_mtd_dev_s *dev)
@@ -504,6 +505,7 @@ exit_with_error:
  *
  * Precondition:
  *   Semaphore has been taken.
+ *
  ****************************************************************************/
 
 static struct mtd_dev_s *lc823450_mtd_allocdev(uint32_t channel)

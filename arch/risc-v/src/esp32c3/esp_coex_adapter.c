@@ -24,7 +24,7 @@
  * Included Files
  ****************************************************************************/
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -37,7 +37,6 @@
 #include <nuttx/kmalloc.h>
 
 #include "esp_hr_timer.h"
-#include "esp_wlan.h"
 
 #include "esp_attr.h"
 #include "esp_timer.h"
@@ -49,6 +48,10 @@
 #include "soc/system_reg.h"
 #include "private/esp_modem_wrapper.h"
 
+#include "espressif/esp_wifi_utils.h"
+
+#include "esp_coex_adapter.h"
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -59,7 +62,7 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-static int64_t esp_coex_esp_timer_get_time_wrapper(void);
+static IRAM_ATTR int64_t esp_coex_esp_timer_get_time_wrapper(void);
 static int32_t esp_coex_semphr_take_from_isr_wrapper(void *semphr,
                                                      void *hptw);
 static int32_t esp_coex_semphr_give_from_isr_wrapper(void *semphr,
@@ -114,7 +117,7 @@ coex_adapter_funcs_t g_coex_adapter_funcs =
 
 static IRAM_ATTR int64_t esp_coex_esp_timer_get_time_wrapper(void)
 {
-  return (int64_t)esp_hr_timer_time_us();
+  return esp_hr_timer_time_us();
 }
 
 /****************************************************************************
@@ -137,7 +140,7 @@ static int32_t IRAM_ATTR esp_coex_semphr_take_from_isr_wrapper(void *semphr,
 {
   *(int *)hptw = 0;
 
-  return nuttx_err_to_freertos(nxsem_trywait(semphr));
+  return nuttx_err_to_common_err(nxsem_trywait(semphr));
 }
 
 /****************************************************************************
@@ -316,7 +319,7 @@ void IRAM_ATTR esp_coex_common_task_yield_from_isr_wrapper(void)
  *   Create and initialize semaphore
  *
  * Input Parameters:
- *   max  - No meanining for NuttX
+ *   max  - No meaning for NuttX
  *   init - semaphore initialization value
  *
  * Returned Value:
@@ -326,7 +329,6 @@ void IRAM_ATTR esp_coex_common_task_yield_from_isr_wrapper(void)
 
 void *esp_coex_common_semphr_create_wrapper(uint32_t max, uint32_t init)
 {
-  int ret;
   sem_t *sem;
   int tmp;
 
@@ -338,13 +340,7 @@ void *esp_coex_common_semphr_create_wrapper(uint32_t max, uint32_t init)
       return NULL;
     }
 
-  ret = nxsem_init(sem, 0, init);
-  if (ret)
-    {
-      wlerr("Failed to initialize sem error=%d\n", ret);
-      kmm_free(sem);
-      return NULL;
-    }
+  nxsem_init(sem, 0, init);
 
   return sem;
 }
@@ -418,7 +414,7 @@ int32_t esp_coex_common_semphr_take_wrapper(void *semphr,
             block_time_tick, ret);
     }
 
-  return nuttx_err_to_freertos(ret);
+  return nuttx_err_to_common_err(ret);
 }
 
 /****************************************************************************
@@ -449,7 +445,7 @@ int32_t esp_coex_common_semphr_give_wrapper(void *semphr)
       wlerr("Failed to post sem error=%d\n", ret);
     }
 
-  return nuttx_err_to_freertos(ret);
+  return nuttx_err_to_common_err(ret);
 }
 
 /****************************************************************************
@@ -578,6 +574,7 @@ uint32_t esp_coex_common_clk_slowclk_cal_get_wrapper(void)
   if (GET_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_XTAL))
     {
       uint64_t time_per_us = 1000000ULL;
+
       return (((time_per_us << RTC_CLK_CAL_FRACT) / (MHZ)) >>
               (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
     }

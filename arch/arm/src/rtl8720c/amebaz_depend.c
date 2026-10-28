@@ -28,6 +28,7 @@
 #include <nuttx/mqueue.h>
 #include <nuttx/semaphore.h>
 #include <nuttx/signal.h>
+#include <nuttx/spinlock.h>
 #include <nuttx/syslog/syslog.h>
 
 /****************************************************************************
@@ -52,24 +53,24 @@ int __wrap_printf(const char *fmt, ...)
 
 /* stdio.h Wrapper End */
 
-static int uxcriticalnesting = 0;
+static rspinlock_t g_lock = RSPINLOCK_INITIALIZER;
+static irqstate_t g_flags = 0;
 
 /* Critical Operation Start */
 
 void save_and_cli(void)
 {
-  enter_critical_section();
-  uxcriticalnesting++;
+  irqstate_t flags = rspin_lock_irqsave(&g_lock);
+
+  if (!rspin_lock_is_recursive(&g_lock))
+    {
+      g_flags = flags;
+    }
 }
 
 void restore_flags(void)
 {
-  ASSERT(uxcriticalnesting);
-  uxcriticalnesting--;
-  if (uxcriticalnesting == 0)
-    {
-      leave_critical_section(0);
-    }
+  rspin_unlock_irqrestore(&g_lock, g_flags);
 }
 
 void rtw_enter_critical(void **plock, unsigned long *pirql)
@@ -166,17 +167,14 @@ void rtw_memset(void *pbuf, int c, uint32_t n)
 void rtw_init_sema(void **sema, int init_val)
 {
   sem_t *_sema;
+
   _sema = calloc(1, sizeof(sem_t));
   if (!_sema)
     {
       return;
     }
 
-  if (nxsem_init(_sema, 0, init_val))
-    {
-      free(_sema);
-      return;
-    }
+  nxsem_init(_sema, 0, init_val);
 
   *sema = _sema;
 }
@@ -313,6 +311,7 @@ int rtw_init_xqueue(void **queue,
   struct mq_attr attr;
   struct file *mq;
   int ret;
+
   mq = malloc(sizeof(struct file));
   if (!mq)
     {
@@ -338,6 +337,7 @@ int rtw_push_to_xqueue(void **queue, void *message, uint32_t timeout_ms)
 {
   struct file *mq = *queue;
   struct mq_attr attr;
+
   file_mq_getattr(mq, &attr);
   return file_mq_send(mq, message, attr.mq_msgsize, 1);
 }
@@ -347,6 +347,7 @@ int rtw_pop_from_xqueue(void **queue, void *message, uint32_t timeout_ms)
   struct file *mq = *queue;
   struct mq_attr attr;
   unsigned int prio;
+
   file_mq_getattr(mq, &attr);
   return !file_mq_receive(mq, message, attr.mq_msgsize, &prio);
 }
@@ -355,6 +356,7 @@ int rtw_deinit_xqueue(void **queue)
 {
   struct file *mq = *queue;
   int ret;
+
   ret = file_mq_close(mq);
   if (ret >= 0)
     {
@@ -400,7 +402,7 @@ void rtw_yield_os(void)
 
 void rtw_usleep_os(int us)
 {
-  nxsig_usleep(us);
+  nxsched_usleep(us);
 }
 
 void rtw_msleep_os(int ms)
@@ -469,6 +471,7 @@ void ATOMIC_DEC(atomic_t *v)
 int ATOMIC_ADD_RETURN(atomic_t *v, int i)
 {
   int temp;
+
   save_and_cli();
   temp = v->counter;
   temp += i;
@@ -480,6 +483,7 @@ int ATOMIC_ADD_RETURN(atomic_t *v, int i)
 int ATOMIC_SUB_RETURN(atomic_t *v, int i)
 {
   int temp;
+
   save_and_cli();
   temp = v->counter;
   temp -= i;
@@ -514,11 +518,12 @@ static unsigned int __div64_32(uint64_t *n, unsigned int base)
   uint64_t res;
   uint64_t d = 1;
   unsigned int high = rem >> 32;
+
   res = 0;
   if (high >= base)
     {
       high /= base;
-      res = (uint64_t) high << 32;
+      res = (uint64_t)high << 32;
       rem -= (uint64_t)(high * base) << 32;
     }
 
@@ -548,6 +553,7 @@ uint64_t rtw_modular64(uint64_t x, uint64_t y)
 {
   unsigned int __base = (y);
   unsigned int __rem;
+
   if (((x) >> 32) == 0)
     {
       __rem = (unsigned int)(x) % __base;
@@ -566,6 +572,7 @@ static int arc4random(void)
 {
   uint32_t res = rtw_get_current_time();
   static unsigned long rtw_seed = 0xdeadb00b;
+
   rtw_seed = ((rtw_seed & 0x007f00ff) << 7) ^
              ((rtw_seed & 0x0f80ff00) >> 8) ^
              (res << 13) ^ (res >> 9);
@@ -578,6 +585,7 @@ int rtw_get_random_bytes(void *dst, uint32_t size)
   unsigned int *lp;
   int i;
   int count;
+
   count = size / sizeof(unsigned int);
   lp = (unsigned int *)dst;
   for (i = 0; i < count; i++)
@@ -603,6 +611,7 @@ static int nuttx_task_hook(int argc, char *argv[])
 {
   struct task_struct *task;
   struct nthread_wrapper *wrap;
+
   task = (struct task_struct *)
          ((uintptr_t)strtoul(argv[1], NULL, 16));
   if (!task || !task->priv)
@@ -627,6 +636,7 @@ int rtw_create_task(struct task_struct *task, const char *name,
   char *argv[2];
   char arg1[16];
   int pid;
+
   snprintf(arg1, 16, "%p", task);
   argv[0] = arg1;
   argv[1] = NULL;
@@ -663,6 +673,7 @@ int rtw_create_task(struct task_struct *task, const char *name,
 void rtw_delete_task(struct task_struct *task)
 {
   struct nthread_wrapper *wrap = task->priv;
+
   if (kill(wrap->pid, SIGKILL))
     {
       return;
@@ -700,6 +711,7 @@ void *rtw_timer_create(const signed char *pctimername,
                       thread_func_t pxcallbackfunction)
 {
   struct ntimer_wrapper *wrap;
+
   wrap = calloc(1, sizeof(*wrap));
   if (!wrap)
     {
@@ -714,6 +726,7 @@ uint32_t rtw_timer_stop(void *xtimer,
                        unsigned long xblocktime)
 {
   struct ntimer_wrapper *wrap = xtimer;
+
   if (!work_available(&wrap->work))
     {
       work_cancel(LPWORK, &wrap->work);
@@ -726,6 +739,7 @@ uint32_t rtw_timer_delete(void *xtimer,
                          unsigned long xblocktime)
 {
   struct ntimer_wrapper *wrap = xtimer;
+
   rtw_timer_stop(xtimer, xblocktime);
   free(wrap);
   return 1;
@@ -734,6 +748,7 @@ uint32_t rtw_timer_delete(void *xtimer,
 uint32_t rtw_timer_is_timer_active(void *xtimer)
 {
   struct ntimer_wrapper *wrap = xtimer;
+
   return !work_available(&wrap->work);
 }
 
@@ -742,6 +757,7 @@ uint32_t rtw_timer_change_period(void *xtimer,
                                unsigned long xblocktime)
 {
   struct ntimer_wrapper *wrap = xtimer;
+
   if (work_available(&wrap->work))
     {
       work_queue(LPWORK, &wrap->work, wrap->callback, wrap, xnewperiod);
@@ -871,21 +887,15 @@ uint32_t rtw_end_of_queue_search(struct list_head *head,
 
 /* Device lock Wrapper Start */
 
-static uint32_t mutex_init;
+static atomic_t mutex_init;
 static void *device_mutex[5];
 static void device_mutex_init(uint32_t device)
 {
   irqstate_t status;
-  if (!(mutex_init & (1 << device)))
-    {
-      status = enter_critical_section();
-      if (!(mutex_init & (1 << device)))
-        {
-          rtw_mutex_init(&device_mutex[device]);
-          mutex_init |= (1 << device);
-        }
 
-      leave_critical_section(status);
+  if (atomic_or(&mutex_init, (1 << device)) & (1 << device) == 0)
+    {
+      rtw_mutex_init(&device_mutex[device]);
     }
 }
 
@@ -908,6 +918,7 @@ void device_mutex_unlock(uint32_t device)
 uint32_t rtw_get_free_heap_size(void)
 {
   struct mallinfo mem;
+
   mem = mallinfo();
   return mem.arena;
 }

@@ -1,6 +1,9 @@
 /****************************************************************************
  * libs/libc/string/lib_bsdstrlen.c
  *
+ * SPDX-License-Identifier: BSD
+ * SPDX-FileCopyrightText: 1994-2009  Red Hat, Inc. All rights reserved
+ *
  * Copyright (c) 1994-2009  Red Hat, Inc. All rights reserved.
  *
  * This copyrighted material is made available to anyone wishing to use,
@@ -30,34 +33,22 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define LBLOCKSIZE (sizeof(long))
-#define UNALIGNED(x) ((long)(uintptr_t)(x) & (LBLOCKSIZE - 1))
-
-/* Macros for detecting endchar */
-
-#if LONG_MAX == 2147483647
-#  define DETECTNULL(x) (((x) - 0x01010101) & ~(x) & 0x80808080)
-#elif LONG_MAX == 9223372036854775807
-/* Nonzero if x (a long int) contains a NULL byte. */
-
-#  define DETECTNULL(x) (((x) - 0x0101010101010101) & ~(x) & 0x8080808080808080)
-#endif
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 #if !defined(CONFIG_LIBC_ARCH_STRLEN) && defined(LIBC_BUILD_STRLEN)
-#undef strlen /* See mm/README.txt */
+#undef strlen
+no_builtin("strlen")
 nosanitize_address
 size_t strlen(FAR const char *s)
 {
   FAR const char *start = s;
-  FAR unsigned long *aligned_addr;
+  FAR libc_data_t *aligned_addr;
 
   /* Align the pointer, so we can search a word at a time. */
 
-  while (UNALIGNED(s))
+  while (UNALIGNED_X(s))
     {
       if (!*s)
         {
@@ -71,7 +62,7 @@ size_t strlen(FAR const char *s)
    * a null in each word-sized block.
    */
 
-  aligned_addr = (FAR unsigned long *)s;
+  aligned_addr = (FAR libc_data_t *)s;
   while (!DETECTNULL(*aligned_addr))
     {
       aligned_addr++;

@@ -24,8 +24,10 @@ include $(TOPDIR)/Make.defs
 
 CSRCS = qemu_boardinit.c qemu_bringup.c
 
-ifeq ($(CONFIG_BOARDCTL),y)
-CSRCS += qemu_appinit.c
+ifeq ($(CONFIG_ETC_ROMFS),y)
+ifeq ($(CONFIG_SYSTEM_NXINIT),y)
+  RCSRCS += etc/init.d/init.rc
+endif
 endif
 
 ifeq ($(CONFIG_LIBC_FDT),y)

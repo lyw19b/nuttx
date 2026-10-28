@@ -37,12 +37,12 @@ ifeq ($(CONFIG_VIDEOUTILS_LIBX264),y)
 INCLUDES += ${INCDIR_PREFIX}$(APPSDIR)/videoutils/x264/x264
 endif
 
-ifeq ($(CONFIG_VIDEOUTILS_LIBMAD),y)
+ifeq ($(CONFIG_AUDIOUTILS_LIBMAD),y)
 INCLUDES += ${INCDIR_PREFIX}$(APPSDIR)/audioutils/libmad/libmad
 endif
 
-ifeq ($(CONFIG_VIDEOUTILS_LAME),y)
-INCLUDES += ${INCDIR_PREFIX}$(APPSDIR)/audioutils/lame/lame
+ifeq ($(CONFIG_AUDIOUTILS_LAME),y)
+INCLUDES += ${INCDIR_PREFIX}$(APPSDIR)/audioutils/lame/lame/include
 endif
 
 CPPFLAGS += $(INCLUDES)
@@ -57,7 +57,8 @@ NUTTX = $(call CONVERT_PATH,$(TOPDIR)$(DELIM)nuttx$(EXEEXT))
 # there are a fews that must be included because they
 # are called only from the host OS-specific logic(HOSTOBJS)
 
-LINKOBJS = sim_head$(OBJEXT)
+LINKSRCS = sim_head.c
+LINKOBJS = $(LINKSRCS:.c=$(OBJEXT))
 REQUIREDOBJS = $(LINKOBJS) sim_doirq$(OBJEXT)
 ifeq ($(CONFIG_SIM_NETUSRSOCK),y)
   REQUIREDOBJS += sim_usrsock$(OBJEXT)
@@ -81,16 +82,20 @@ AOBJS = $(ASRCS:.S=$(OBJEXT))
 
 CSRCS  = sim_initialize.c sim_idle.c sim_doirq.c sim_initialstate.c
 CSRCS += sim_createstack.c sim_usestack.c sim_releasestack.c sim_stackframe.c
-CSRCS += sim_exit.c sim_schedulesigaction.c sim_switchcontext.c sim_heap.c
-CSRCS += sim_uart.c sim_copyfullstate.c sim_sigdeliver.c sim_tcbinfo.c sim_cpuinfo.c
+CSRCS += sim_exit.c sim_switchcontext.c sim_ummheap.c
+CSRCS += sim_uart.c sim_copyfullstate.c sim_tcbinfo.c sim_cpuinfo.c
 CSRCS += sim_registerdump.c sim_saveusercontext.c sim_sectionheap.c
 CSRCS += sim_checkhostfstypes.c
+
+ifeq ($(CONFIG_ENABLE_ALL_SIGNALS),y)
+CSRCS += sim_schedulesigaction.c sim_sigdeliver.c
+endif
 
 ifeq ($(CONFIG_SCHED_BACKTRACE),y)
 CSRCS += sim_backtrace.c
 endif
 
-ifeq ($(CONFIG_ARCH_HAVE_FORK),y)
+ifneq ($(CONFIG_ARCH_HAVE_VFORK)$(CONFIG_ARCH_HAVE_FORK),)
 CSRCS += sim_fork.c
 endif
 
@@ -102,15 +107,24 @@ else
 endif
 DEPPATH = $(patsubst %,--dep-path %,$(subst :, ,$(VPATH)))
 
+vpath nuttx$(EXEEXT) $(TOPDIR)
+
 CFLAGS += -fvisibility=default
 HOSTCFLAGS = $(ARCHWARNINGS) $(ARCHOPTIMIZATION) \
+   $(ARCHCFLAGS) $(HOSTINCLUDES) $(EXTRAFLAGS) -D__SIM__ \
+   -fvisibility=default
+HOSTMFLAGS = $(ARCHWARNINGS) $(ARCHOPTIMIZATION) \
    $(ARCHCFLAGS) $(HOSTINCLUDES) $(EXTRAFLAGS) -D__SIM__ \
    -fvisibility=default
 
 HOSTCFLAGS += ${INCDIR_PREFIX}$(ARCH_SRCDIR)
 HOSTCFLAGS += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)chip
+
 ifeq ($(CONFIG_HOST_MACOS),y)
   HOSTCFLAGS += -Wno-deprecated-declarations
+ifeq ($(CONFIG_SIM_X11FB),y)
+  HOSTCFLAGS += -I/opt/X11/include
+endif
 endif
 
 ifeq ($(CONFIG_FS_LARGEFILE),y)
@@ -118,7 +132,7 @@ ifeq ($(CONFIG_FS_LARGEFILE),y)
 endif
 
 HOSTSRCS  = sim_hostirq.c sim_hostmemory.c sim_hostmisc.c sim_hosttime.c sim_hostuart.c
-HOSTSRCS += sim_hostfs.c
+HOSTSRCS += sim_hostfs.c sim_errno.c
 
 hostfs.h: $(TOPDIR)/include/nuttx/fs/hostfs.h
 	@echo "CP:  $<"
@@ -128,19 +142,15 @@ sim_hostfs.c: hostfs.h
 
 STDLIBS += -lpthread
 ifeq ($(CONFIG_HOST_MACOS),y)
-ifeq ($(CONFIG_HAVE_CXXINITIALIZE),y)
-  # Note: sim_macho_init.c is not in CSRCS because it's picky about
-  # the place in the object list for linking. Namely, its constructor
-  # should be the first one in the executable.
-  HEADSRC = sim_macho_init.c
-
-  # sim_macho_init.c is not compatible with chained fixups.
-  # cf. https://github.com/apache/nuttx/issues/15208
-  ifeq ($(shell $(LD) -ld_classic -no_fixup_chains 2>&1 | grep "unknown option"),)
+  ifeq ($(CONFIG_HAVE_CXXINITIALIZE),y)
     LDLINKFLAGS += -ld_classic -no_fixup_chains
     LDFLAGS += -Wl,-ld_classic,-no_fixup_chains
   endif
-endif
+
+  # Keep the simulator executable from exporting NuttX symbols. Otherwise dyld
+  # may resolve host libc references against NuttX's internal libc implementation
+  # during process initialization, which can crash before main() runs.
+  LDFLAGS += -Wl,-exported_symbol,__mh_execute_header
 else
   STDLIBS += -lrt
 endif
@@ -186,11 +196,20 @@ endif
 ifeq ($(CONFIG_SIM_X11FB),y)
   HOSTSRCS += sim_x11framebuffer.c
 ifeq ($(CONFIG_HOST_MACOS),y)
-  STDLIBS += -L/opt/X11/lib
+  ifneq ($(wildcard /opt/X11/include/X11/Xlib.h),)
+    HOSTCFLAGS += -I/opt/X11/include
+    STDLIBS += -L/opt/X11/lib
+  else ifneq ($(wildcard /usr/X11/include/X11/Xlib.h),)
+    HOSTCFLAGS += -I/usr/X11/include
+    STDLIBS += -L/usr/X11/lib
+  endif
 endif
   STDLIBS += -lX11 -lXext
 ifeq ($(CONFIG_SIM_TOUCHSCREEN),y)
   CSRCS += sim_touchscreen.c
+  HOSTSRCS += sim_x11eventloop.c
+else ifeq ($(CONFIG_SIM_MOUSE),y)
+  CSRCS += sim_mouse.c
   HOSTSRCS += sim_x11eventloop.c
 else ifeq ($(CONFIG_SIM_AJOYSTICK),y)
   CSRCS += sim_ajoystick.c
@@ -209,8 +228,9 @@ ifeq ($(CONFIG_FS_FAT),y)
   STDLIBS += -lz
 endif
 
-ifneq ($(CONFIG_SIM_WIFIDEV_NUMBER),0)
+ifeq ($(CONFIG_SIM_WIFIDEV_HOST),y)
   CFLAGS += -DTOPDIR=\"$(TOPDIR)\"
+  CSRCS += sim_wifihost.c
 endif
 
 ifeq ($(CONFIG_SIM_NETDEV_TAP),y)
@@ -246,6 +266,11 @@ ifeq ($(CONFIG_SIM_SPI_LINUX),y)
   HOSTSRCS += sim_linuxspi.c
 endif
 
+ifeq ($(CONFIG_SIM_GPIOCHIP_LINUX),y)
+  HOSTSRCS += sim_linux_gpiochip.c
+  CSRCS += sim_gpiochip.c
+endif
+
 ifeq ($(CONFIG_SIM_USB_DEV),y)
   CSRCS += sim_usbdev.c
 ifeq ($(CONFIG_SIM_USB_RAW_GADGET),y)
@@ -259,6 +284,18 @@ ifeq ($(CONFIG_SIM_LIBUSB),y)
   HOSTSRCS += sim_libusb.c
   STDLIBS += -lusb-1.0
 endif
+endif
+
+ifeq ($(CONFIG_SIM_CANDEV),y)
+  HOSTSRCS += sim_hostcan.c
+endif
+
+ifeq ($(CONFIG_SIM_CANDEV_CHAR),y)
+  CSRCS += sim_canchar.c
+endif
+
+ifeq ($(CONFIG_SIM_CANDEV_SOCK),y)
+  CSRCS += sim_cansock.c
 endif
 
 ifeq ($(CONFIG_RPMSG_VIRTIO_LITE),y)
@@ -285,6 +322,15 @@ ifeq ($(CONFIG_SIM_CAMERA_V4L2),y)
   STDLIBS += -lv4l2
 endif
 
+ifeq ($(CONFIG_SIM_CAMERA_AVFOUNDATION),y)
+  HOSTMSRCS += sim/macos/sim_host_avfoundation_backend.m
+  CSRCS += sim_camera.c
+ifeq ($(CONFIG_HOST_MACOS),y)
+  STDLIBS += -framework AVFoundation -framework CoreMedia \
+             -framework CoreVideo -framework Foundation
+endif
+endif
+
 ifeq ($(CONFIG_SIM_VIDEO_DECODER),y)
   CSRCS += sim_decoder.c
   CSRCS += sim_openh264dec.c
@@ -297,12 +343,14 @@ ifeq ($(CONFIG_SIM_VIDEO_ENCODER),y)
 endif
 
 COBJS = $(CSRCS:.c=$(OBJEXT))
+HOSTCOBJS = $(HOSTSRCS:.c=$(OBJEXT))
+HOSTMOBJS = $(HOSTMSRCS:.m=$(OBJEXT))
 
 NUTTXOBJS = $(AOBJS) $(COBJS)
-HOSTOBJS = $(HOSTSRCS:.c=$(OBJEXT))
+HOSTOBJS = $(HOSTCOBJS) $(HOSTMOBJS)
 HEADOBJ = $(HEADSRC:.c=$(OBJEXT))
 
-SRCS = $(ASRCS) $(CSRCS) $(HOSTSRCS)
+SRCS = $(ASRCS) $(CSRCS) $(HOSTSRCS) $(HOSTMSRCS) $(LINKSRCS)
 OBJS = $(AOBJS) $(COBJS) $(HOSTOBJS)
 
 $(foreach lib,$(notdir $(wildcard $(APPDIR)$(DELIM)staging$(DELIM)*$(LIBEXT))), \
@@ -318,6 +366,7 @@ $(foreach lib,$(notdir $(wildcard $(APPDIR)$(DELIM)staging$(DELIM)*$(LIBEXT))), 
 
 EXTRA_LIBS := $(filter-out $(NAMEFULL_LIBS) $(NAMESPEC_LIBS),$(EXTRA_LIBS))
 EXTRA_LIBS += $(wildcard $(APPDIR)$(DELIM)staging$(DELIM)*$(LIBEXT))
+EXTRA_LIB_DEPS := $(wildcard $(filter-out -%,$(EXTRA_LIBS)))
 
 # Override in Make.defs if linker is not 'ld'
 
@@ -350,7 +399,7 @@ RELLIBS += -lboard
 
 all: sim_head$(OBJEXT) libarch$(LIBEXT)
 
-.PHONY: export_startup clean distclean cleanrel depend board/libboard$(LIBEXT)
+.PHONY: export_startup clean distclean cleanrel depend FORCE
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -358,22 +407,29 @@ $(AOBJS): %$(OBJEXT): %.S
 $(COBJS) $(LINKOBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-$(HOSTOBJS) $(HEADOBJ): %$(OBJEXT): %.c
+$(HOSTCOBJS) $(HEADOBJ): %$(OBJEXT): %.c
 	$(Q) $(ECHO_BEGIN)"CC:  $<"
 	$(Q) "$(CC)" -c $(HOSTCFLAGS) $< -o $@
+	$(Q) $(ECHO_END)
+
+$(HOSTMOBJS): %$(OBJEXT): %.m
+	$(Q) $(ECHO_BEGIN)"CC:  $<"
+	$(Q) $(HOSTCC) -c $(HOSTMFLAGS) -x objective-c $< -o $@
 	$(Q) $(ECHO_END)
 
 # The architecture-specific library
 
 libarch$(LIBEXT): $(NUTTXOBJS)
-	$(call ARCHIVE, $@, $(NUTTXOBJS))
+	$(call ARCHIVE_REBUILD, $@, $(NUTTXOBJS))
 
 # The "board"-specific library. Of course, there really are no boards in
 # the simulation.  However, this is a good place to keep parts of the simulation
 # that are not hardware-related.
 
-board/libboard$(LIBEXT):
+board/libboard$(LIBEXT): FORCE
 	$(Q) $(MAKE) -C board libboard$(LIBEXT) EXTRAFLAGS="$(EXTRAFLAGS)"
+
+FORCE:
 
 # A partially linked object containing only NuttX code (no interface to host OS)
 # Change the names of most symbols that conflict with libc symbols.
@@ -429,7 +485,7 @@ endef
 # stuff doesn't work there as we expect.
 # Note: _stext stuff is for CONFIG_CXX_INITIALIZE_SINIT, which in not
 # necessary for macOS.
-nuttx$(EXEEXT): libarch$(LIBEXT) board/libboard$(LIBEXT) $(HEADOBJ) $(LINKOBJS) $(HOSTOBJS) nuttx-names.dat
+nuttx$(EXEEXT): libarch$(LIBEXT) board/libboard$(LIBEXT) $(HEADOBJ) $(LINKOBJS) $(HOSTOBJS) nuttx-names.dat $(EXTRA_LIB_DEPS) $(addprefix $(TOPDIR)$(DELIM)staging$(DELIM),$(LINKLIBS))
 	$(Q) echo "LD:  nuttx$(EXEEXT)"
 	$(Q) $(LD) -r $(LDLINKFLAGS) $(RELPATHS) $(EXTRA_LIBPATHS) $(EXTRALINKCMDS) \
 	     -o nuttx.rel $(REQUIREDOBJS) $(LDSTARTGROUP) $(RELLIBS) $(EXTRA_LIBS) $(LDENDGROUP)
@@ -462,6 +518,9 @@ else
 	$(Q) $(call LINK_ALLSYMS_KASAN)
 	$(Q) $(call LINK_ALLSYMS_KASAN)
 endif
+ifeq ($(CONFIG_HOST_MACOS)$(CONFIG_HAVE_CXXINITIALIZE),yy)
+	$(Q) python3 $(ARCH_SRCDIR)/patch_macho_initsection.py $(TOPDIR)/$@
+endif
 	$(Q) $(NM) $(TOPDIR)/$@ | \
 		grep -v '\(compiled\)\|\(\.o$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
 		sort > $(TOPDIR)/System.map
@@ -474,9 +533,13 @@ export_startup: sim_head.o $(HOSTOBJS) nuttx-names.dat
 
 # Dependencies
 
-makedepfile: $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds) $(HOSTSRCS:.c=.ddh)
+makedepfile: $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds) \
+             $(HOSTSRCS:.c=.ddh) $(LINKSRCS:.c=.ddc)
 	$(call CATFILE, Make.dep, $^)
 	$(call DELFILE, $^)
+
+$(HOSTSRCS:.c=.ddh): %.ddh: %.c
+	$(Q) $(MKDEP) --obj-path $(OBJPATH) --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(HOSTCFLAGS) -- $< > $@
 
 config.h: $(TOPDIR)/include/nuttx/config.h
 	@echo "CP:  $<"
@@ -507,6 +570,8 @@ distclean:: clean
 	$(Q) if [ -e board/Makefile ]; then \
 		$(MAKE) -C board distclean ; \
 	fi
+	$(call DELFILE, $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds) \
+	                   $(HOSTSRCS:.c=.ddh) $(LINKSRCS:.c=.ddc))
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
 	$(call DELFILE, config.h)

@@ -20,7 +20,7 @@
 #
 # ##############################################################################
 
-set(VERSION_H ${CMAKE_BINARY_DIR}/include/nuttx/version.h)
+set(VERSION_H ${NUTTX_BINARY_DIR}/include/nuttx/version.h)
 if(EXISTS ${VERSION_H})
   return()
 endif()
@@ -38,6 +38,7 @@ if(${VERSION_STATUS} AND NOT ${VERSION_STATUS} EQUAL 0)
 else()
   string(REPLACE "-" ";" NUTTX_VERSION ${NUTTX_VERSION})
   list(GET NUTTX_VERSION 1 NUTTX_VERSION)
+  string(STRIP "${NUTTX_VERSION}" NUTTX_VERSION)
 endif()
 
 string(REPLACE "." ";" NUTTX_CHECK_VERSION ${NUTTX_VERSION})

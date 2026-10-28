@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/nuttx.h>
@@ -145,7 +145,7 @@ static void drv8301_read(FAR struct drv8301_priv_s *priv, uint8_t addr,
   regval = 0;
   SPI_RECVBLOCK(priv->spi, &regval, 1);
 
-  /* Retrun data */
+  /* Return data */
 
   *data = (regval & 0x7ff);
 

@@ -49,3 +49,19 @@ int board_app_initialize(uintptr_t arg)
   return 0;
 #endif
 }
+
+#if defined(CONFIG_BOARD_LATE_INITIALIZE) && !defined(CONFIG_LOONGARCH_USER_TEST)
+/****************************************************************************
+ * Name: board_late_initialize
+ *
+ * Description:
+ *   Initialize board services before starting the application. The user
+ *   regression supplies its own late initializer to install the test ELF.
+ *
+ ****************************************************************************/
+
+void board_late_initialize(void)
+{
+  board_app_initialize(0);
+}
+#endif

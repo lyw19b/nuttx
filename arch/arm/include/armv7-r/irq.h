@@ -123,7 +123,7 @@
 #  define REG_D15           (30) /* D15 */
 #  define REG_S30           (30) /* S30 */
 #  define REG_S31           (31) /* S31 */
-#  ifdef CONFIG_ARM_HAVE_DPFPU32
+#  ifdef CONFIG_ARM_DPFPU32
 #    define REG_D16         (32) /* D16 */
 #    define REG_D17         (34) /* D17 */
 #    define REG_D18         (36) /* D18 */
@@ -200,11 +200,11 @@
 #define REG_LR              REG_R14
 #define REG_PC              REG_R15
 
-/* The PIC register is usually R10. It can be R9 is stack checking is enabled
- * or if the user changes it with -mpic-register on the GCC command line.
+/* The PIC base register is R9, the AAPCS platform register.  See PIC_REG
+ * in arch/arm/include/arch.h; every PIC binary format uses the same one.
  */
 
-#define REG_PIC             REG_R10
+#define REG_PIC             REG_R9
 
 /* Multiprocessor Affinity Register (MPIDR): CRn=c0, opc1=0, CRm=c0, opc2=5 */
 
@@ -259,6 +259,7 @@ struct xcpt_syscall_s
 
 struct xcptcontext
 {
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
   /* These are saved copies of the context used during
    * signal processing.
    */
@@ -272,6 +273,7 @@ struct xcptcontext
 
   uint32_t sigreturn;
 #endif
+#endif /* CONFIG_ENABLE_ALL_SIGNALS */
 
   /* Register save area with XCPTCONTEXT_SIZE, only valid when:
    * 1.The task isn't running or
@@ -366,9 +368,10 @@ noinstrument_function static inline_function irqstate_t up_irq_save(void)
   __asm__ __volatile__
     (
       "\tmrs    %0, cpsr\n"
-      "\tcpsid  i\n"
-#if defined(CONFIG_ARMV7R_DECODEFIQ)
+#ifdef CONFIG_ARCH_TRUSTZONE_SECURE
       "\tcpsid  f\n"
+#else
+      "\tcpsid  i\n"
 #endif
       : "=r" (cpsr)
       :
@@ -387,9 +390,12 @@ static inline_function irqstate_t up_irq_enable(void)
   __asm__ __volatile__
     (
       "\tmrs    %0, cpsr\n"
-      "\tcpsie  i\n"
-#if defined(CONFIG_ARMV7R_DECODEFIQ)
+#if defined(CONFIG_ARCH_HIPRI_INTERRUPT)
+      "\tcpsie  if\n"
+#elif defined(CONFIG_ARCH_TRUSTZONE_SECURE)
       "\tcpsie  f\n"
+#else
+      "\tcpsie  i\n"
 #endif
       : "=r" (cpsr)
       :

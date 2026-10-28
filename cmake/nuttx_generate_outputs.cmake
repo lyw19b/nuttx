@@ -28,7 +28,7 @@ function(nuttx_generate_outputs target)
       DEPENDS ${target})
     add_custom_target(${target}-hex ALL DEPENDS ${target}.hex)
     add_dependencies(nuttx_post ${target}-hex)
-    file(APPEND ${CMAKE_BINARY_DIR}/nuttx.manifest "${target}.hex\n")
+    file(APPEND ${NUTTX_BINARY_DIR}/nuttx.manifest "${target}.hex\n")
   endif()
 
   if(CONFIG_MOTOROLA_SREC)
@@ -38,7 +38,7 @@ function(nuttx_generate_outputs target)
       DEPENDS ${target})
     add_custom_target(${target}-srec ALL DEPENDS ${target}.srec)
     add_dependencies(nuttx_post ${target}-srec)
-    file(APPEND ${CMAKE_BINARY_DIR}/nuttx.manifest "${target}.srec\n")
+    file(APPEND ${NUTTX_BINARY_DIR}/nuttx.manifest "${target}.srec\n")
   endif()
 
   if(CONFIG_RAW_BINARY)
@@ -48,15 +48,22 @@ function(nuttx_generate_outputs target)
       DEPENDS ${target})
     add_custom_target(${target}-bin ALL DEPENDS ${target}.bin)
     add_dependencies(nuttx_post ${target}-bin)
-    file(APPEND ${CMAKE_BINARY_DIR}/nuttx.manifest "${target}.bin\n")
+    file(APPEND ${NUTTX_BINARY_DIR}/nuttx.manifest "${target}.bin\n")
   endif()
 
   if(CONFIG_RAW_DISASSEMBLY)
-    add_custom_command(
-      OUTPUT ${target}.asm
-      COMMAND ${CMAKE_OBJDUMP} -d ${target} > ${target}.asm
-      DEPENDS ${target})
+    if(CONFIG_ARCH_TOOLCHAIN_GHS)
+      add_custom_command(
+        OUTPUT ${target}.asm
+        COMMAND ${CMAKE_OBJDUMP} ${target} -ytext -yl -yp > ${target}.asm
+        DEPENDS ${target})
+    else()
+      add_custom_command(
+        OUTPUT ${target}.asm
+        COMMAND ${CMAKE_OBJDUMP} -d ${target} > ${target}.asm
+        DEPENDS ${target})
+    endif()
     add_custom_target(${target}-asm ALL DEPENDS ${target}.asm)
-    file(APPEND ${CMAKE_BINARY_DIR}/nuttx.manifest "${target}.asm\n")
+    file(APPEND ${NUTTX_BINARY_DIR}/nuttx.manifest "${target}.asm\n")
   endif()
 endfunction(nuttx_generate_outputs)

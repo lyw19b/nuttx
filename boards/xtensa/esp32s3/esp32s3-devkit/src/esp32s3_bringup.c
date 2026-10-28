@@ -32,13 +32,16 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdio.h>
 
 #include <errno.h>
 #include <nuttx/fs/fs.h>
 #include <nuttx/himem/himem.h>
 #include <arch/board/board.h>
+
+#include "espressif/esp_gpio.h"
+#include "esp32s3_start.h"
 
 #ifdef CONFIG_ESP32S3_TIMER
 #  include "esp32s3_board_tim.h"
@@ -56,16 +59,12 @@
 #  include "esp32s3_wifi_adapter.h"
 #endif
 
-#ifdef CONFIG_ESP32S3_RT_TIMER
-#  include "esp32s3_rt_timer.h"
-#endif
-
 #ifdef CONFIG_ESP32S3_I2C
 #  include "esp32s3_i2c.h"
 #endif
 
-#ifdef CONFIG_ESP32S3_I2S
-#  include "esp32s3_i2s.h"
+#ifdef CONFIG_ESPRESSIF_I2S
+#  include "espressif/esp_i2s.h"
 #endif
 
 #ifdef CONFIG_WATCHDOG
@@ -77,19 +76,23 @@
 #endif
 
 #ifdef CONFIG_RTC_DRIVER
-#  include "esp32s3_rtc_lowerhalf.h"
+#  include "espressif/esp_rtc.h"
+#endif
+
+#ifdef CONFIG_ESPRESSIF_HR_TIMER
+#  include "espressif/esp_hr_timer.h"
 #endif
 
 #ifdef CONFIG_VIDEO_FB
 #include <nuttx/video/fb.h>
 #endif
 
-#ifdef CONFIG_ESP32S3_EFUSE
-#  include "esp32s3_efuse.h"
+#ifdef CONFIG_ESPRESSIF_EFUSE
+#  include "espressif/esp_efuse.h"
 #endif
 
-#ifdef CONFIG_ESP32S3_LEDC
-#  include "esp32s3_ledc.h"
+#ifdef CONFIG_ESPRESSIF_LEDC
+#  include "esp32s3_board_ledc.h"
 #endif
 
 #ifdef CONFIG_ESP32S3_PARTITION_TABLE
@@ -112,15 +115,19 @@
 #  endif
 #endif
 
-#ifdef CONFIG_ESP32S3_SDMMC
+#ifdef CONFIG_SPI_SLAVE_DRIVER
+#include "esp32s3_board_spislavedev.h"
+#endif
+
+#if defined(CONFIG_ESP32S3_SDMMC) || defined(CONFIG_MMCSD_SPI)
 #include "esp32s3_board_sdmmc.h"
 #endif
 
-#ifdef CONFIG_ESP32S3_AES_ACCELERATOR
-#  include "esp32s3_aes.h"
+#ifdef CONFIG_ESPRESSIF_AES_ACCELERATOR
+#  include "espressif/esp_aes.h"
 #endif
 
-#ifdef CONFIG_ESP32S3_ADC
+#ifdef CONFIG_ESPRESSIF_ADC
 #include "esp32s3_board_adc.h"
 #endif
 
@@ -135,6 +142,25 @@
 
 #ifdef CONFIG_SYSTEM_NXDIAG_ESPRESSIF_CHIP_WO_TOOL
 #  include "espressif/esp_nxdiag.h"
+#endif
+
+#ifdef CONFIG_ESP_SDM
+#  include "espressif/esp_sdm.h"
+#endif
+
+#ifdef CONFIG_ESPRESSIF_SHA_ACCELERATOR
+#  include "espressif/esp_sha.h"
+#endif
+
+#ifdef CONFIG_ESPRESSIF_AES_ACCELERATOR
+#  include "espressif/esp_aes.h"
+#endif
+
+#ifdef CONFIG_ESPRESSIF_USE_ULP_RISCV_CORE
+#  include "espressif/esp_ulp.h"
+#  ifdef CONFIG_ESPRESSIF_ULP_USE_TEST_BIN
+#    include "ulp/ulp_code.h"
+#  endif
 #endif
 
 #include "esp32s3-devkit.h"
@@ -152,16 +178,13 @@
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
  *
- *   CONFIG_BOARD_LATE_INITIALIZE=n && CONFIG_BOARDCTL=y :
- *     Called from the NSH library
- *
  ****************************************************************************/
 
 int esp32s3_bringup(void)
 {
   int ret;
-#if (defined(CONFIG_ESP32S3_I2S0) && !defined(CONFIG_AUDIO_CS4344)) || \
-    defined(CONFIG_ESP32S3_I2S1)
+#if (defined(CONFIG_ESPRESSIF_I2S0) && !defined(CONFIG_AUDIO_CS4344)) || \
+    defined(CONFIG_ESPRESSIF_I2S1)
   bool i2s_enable_tx;
   bool i2s_enable_rx;
 #endif
@@ -175,16 +198,43 @@ int esp32s3_bringup(void)
     }
 #endif
 
-#if defined(CONFIG_ESP32S3_SPI) && defined(CONFIG_SPI_DRIVER)
-  #ifdef CONFIG_ESP32S3_SPI2
-  ret = board_spidev_initialize(ESP32S3_SPI2);
+#ifdef CONFIG_ESPRESSIF_HR_TIMER
+  ret = esp_hr_timer_init();
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to init spidev 2: %d\n", ret);
+      syslog(LOG_ERR, "ERROR: esp_hr_timer_init() failed: %d\n", ret);
+    }
+#endif
+
+#if defined(CONFIG_ESP32S3_SPI) && defined(CONFIG_SPI_DRIVER)
+
+  #if defined(CONFIG_SPI_SLAVE_DRIVER) && defined(CONFIG_ESP32S3_SPI2)
+  ret = board_spislavedev_initialize(ESP32S3_SPI2);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize SPI%d Slave driver: %d\n",
+             ESP32S3_SPI2, ret);
     }
   #endif
 
-  #ifdef CONFIG_ESP32S3_SPI3
+  #if defined(CONFIG_SPI_SLAVE_DRIVER) && defined(CONFIG_ESP32S3_SPI3)
+  ret = board_spislavedev_initialize(ESP32S3_SPI3);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize SPI%d Slave driver: %d\n",
+             ESP32S3_SPI3, ret);
+    }
+  #endif
+
+  #if defined(CONFIG_ESP32S3_SPI2) && !defined(CONFIG_SPI_SLAVE_DRIVER)
+  ret = board_spidev_initialize(ESP32S3_SPI2);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to init spidev 3: %d\n", ret);
+    }
+  #endif
+
+  #if defined(CONFIG_ESP32S3_SPI3) && !defined(CONFIG_SPI_SLAVE_DRIVER)
   ret = board_spidev_initialize(ESP32S3_SPI3);
   if (ret < 0)
     {
@@ -201,12 +251,31 @@ int esp32s3_bringup(void)
   #endif /* CONFIG_ESPRESSIF_SPI_BITBANG */
 #endif /* CONFIG_ESP32S3_SPI && CONFIG_SPI_DRIVER*/
 
-#if defined(CONFIG_ESP32S3_EFUSE)
-  ret = esp32s3_efuse_initialize("/dev/efuse");
+#if defined(CONFIG_ESPRESSIF_EFUSE)
+  ret = esp_efuse_initialize("/dev/efuse");
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to init EFUSE: %d\n", ret);
     }
+#endif
+
+#if !defined(CONFIG_CRYPTO_CRYPTODEV_HARDWARE)
+#  if defined(CONFIG_ESPRESSIF_SHA_ACCELERATOR)
+  ret = esp_sha_init();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR,
+             "ERROR: Failed to initialize SHA: %d\n", ret);
+    }
+#  endif
+
+#  if defined(CONFIG_ESPRESSIF_AES_ACCELERATOR)
+  ret = esp_aes_init();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize AES: %d\n", ret);
+    }
+#  endif
 #endif
 
 #ifdef CONFIG_FS_PROCFS
@@ -230,13 +299,13 @@ int esp32s3_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_ESP32S3_LEDC
+#ifdef CONFIG_ESPRESSIF_LEDC
   ret = esp32s3_pwm_setup();
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: esp32s3_pwm_setup() failed: %d\n", ret);
     }
-#endif /* CONFIG_ESP32S3_LEDC */
+#endif /* CONFIG_ESPRESSIF_LEDC */
 
 #ifdef CONFIG_ESP32S3_TIMER
   /* Configure general purpose timers */
@@ -265,22 +334,14 @@ int esp32s3_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_ESP32S3_RT_TIMER
-  ret = esp32s3_rt_timer_init();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "Failed to initialize RT timer: %d\n", ret);
-    }
-#endif
-
 #ifdef CONFIG_ESP_RMT
-  ret = board_rmt_txinitialize(RMT_TXCHANNEL, RMT_OUTPUT_PIN);
+  ret = board_rmt_txinitialize(RMT_OUTPUT_PIN);
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: board_rmt_txinitialize() failed: %d\n", ret);
     }
 
-  ret = board_rmt_rxinitialize(RMT_RXCHANNEL, RMT_INPUT_PIN);
+  ret = board_rmt_rxinitialize(RMT_INPUT_PIN);
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: board_rmt_txinitialize() failed: %d\n", ret);
@@ -298,9 +359,9 @@ int esp32s3_bringup(void)
 #endif
 
 #ifdef CONFIG_RTC_DRIVER
-  /* Instantiate the ESP32-S3 RTC driver */
+  /* Instantiate the RTC driver */
 
-  ret = esp32s3_rtc_driverinit();
+  ret = esp_rtc_driverinit();
   if (ret < 0)
     {
       syslog(LOG_ERR,
@@ -350,7 +411,7 @@ int esp32s3_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_ESP32S3_I2S
+#if defined(CONFIG_ESPRESSIF_I2S)
 
 #ifdef CONFIG_AUDIO_CS4344
 
@@ -363,17 +424,17 @@ int esp32s3_bringup(void)
     }
 #else
 
-#ifdef CONFIG_ESP32S3_I2S0_TX
+#if defined(CONFIG_ESPRESSIF_I2S0_TX)
   i2s_enable_tx = true;
 #else
   i2s_enable_tx = false;
-#endif /* CONFIG_ESP32S3_I2S0_TX */
+#endif /* CONFIG_ESPRESSIF_I2S0_TX */
 
-#ifdef CONFIG_ESP32S3_I2S0_RX
+#if defined(CONFIG_ESPRESSIF_I2S0_RX)
   i2s_enable_rx = true;
 #else
   i2s_enable_rx = false;
-#endif /* CONFIG_ESP32S3_I2S0_RX */
+#endif /* CONFIG_ESPRESSIF_I2S0_RX */
 
   /* Configure I2S generic audio on I2S0 */
 
@@ -384,19 +445,19 @@ int esp32s3_bringup(void)
     }
 #endif /* CONFIG_AUDIO_CS4344 */
 
-#ifdef CONFIG_ESP32S3_I2S1
+#if defined(CONFIG_ESPRESSIF_I2S1)
 
-#ifdef CONFIG_ESP32S3_I2S1_TX
+#if defined(CONFIG_ESPRESSIF_I2S1_TX)
   i2s_enable_tx = true;
 #else
   i2s_enable_tx = false;
-#endif /* CONFIG_ESP32S3_I2S1_TX */
+#endif /* CONFIG_ESPRESSIF_I2S1_TX */
 
-#ifdef CONFIG_ESP32S3_I2S1_RX
+#if defined(CONFIG_ESPRESSIF_I2S1_RX)
   i2s_enable_rx = true;
 #else
   i2s_enable_rx = false;
-#endif /* CONFIG_ESP32S3_I2S1_RX */
+#endif /* CONFIG_ESPRESSIF_I2S1_RX */
 
   /* Configure I2S generic audio on I2S1 */
 
@@ -404,12 +465,12 @@ int esp32s3_bringup(void)
   if (ret < 0)
     {
       syslog(LOG_ERR, "Failed to initialize I2S%d driver: %d\n",
-             CONFIG_ESP32S3_I2S1, ret);
+             ESP32S3_I2S1, ret);
     }
 
-#endif /* CONFIG_ESP32S3_I2S1 */
+#endif /* CONFIG_ESPRESSIF_I2S1 */
 
-#endif /* CONFIG_ESP32S3_I2S */
+#endif /* CONFIG_ESPRESSIF_I2S */
 
 #ifdef CONFIG_INPUT_BUTTONS
   /* Register the BUTTON driver */
@@ -451,7 +512,7 @@ int esp32s3_bringup(void)
   ret = board_wlan_init();
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to initialize wireless subsystem=%d\n",
+      syslog(LOG_ERR, "ERROR: Failed to initialize wlan subsystem=%d\n",
              ret);
     }
 #endif
@@ -466,7 +527,7 @@ int esp32s3_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_DEV_GPIO
+#if defined(CONFIG_DEV_GPIO) && !defined(CONFIG_GPIO_LOWER_HALF)
   ret = esp32s3_gpio_init();
   if (ret < 0)
     {
@@ -504,8 +565,16 @@ int esp32s3_bringup(void)
     }
 #endif
 
-#ifdef CONFIG_ESP32S3_AES_ACCELERATOR
-  ret = esp32s3_aes_init();
+#ifdef CONFIG_MMCSD_SPI
+  ret = board_sdmmc_spi_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize SDMMC: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_ESPRESSIF_AES_ACCELERATOR
+  ret = esp_aes_init();
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize AES: %d\n", ret);
@@ -513,18 +582,35 @@ int esp32s3_bringup(void)
 #ifdef CONFIG_ESP32S3_AES_ACCELERATOR_TEST
   else
     {
-      esp32s3_aes_test();
+      esp_aes_test();
     }
 #endif
 #endif
 
-#ifdef CONFIG_ESP32S3_ADC
+#ifdef CONFIG_ESPRESSIF_ADC
   /* Configure ADC */
 
   ret = board_adc_init();
   if (ret)
     {
       syslog(LOG_ERR, "ERROR: board_adc_init() failed: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_ESP_SDM
+  struct esp_sdm_chan_config_s config =
+  {
+    .gpio_num = 5,
+    .sample_rate_hz = 1000 * 1000,
+    .flags = 0,
+  };
+
+  struct dac_dev_s *dev = esp_sdminitialize(config);
+  ret = dac_register("/dev/dac0", dev);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize DAC driver: %d\n",
+             ret);
     }
 #endif
 
@@ -558,6 +644,18 @@ int esp32s3_bringup(void)
     {
       syslog(LOG_ERR, "ERROR: esp_nxdiag_initialize failed: %d\n", ret);
     }
+#endif
+
+#ifdef CONFIG_ESPRESSIF_USE_ULP_RISCV_CORE
+
+  /* ULP initialization should be the handled later than
+   * peripherals to use supported peripherals properly on ULP core
+   */
+
+  esp_ulp_init();
+#  ifdef CONFIG_ESPRESSIF_ULP_USE_TEST_BIN
+  esp_ulp_load_bin((char *)esp_ulp_bin, esp_ulp_bin_len);
+#  endif
 #endif
 
   /* If we got here then perhaps not all initialization was successful, but

@@ -40,7 +40,7 @@ endfunction()
 # ~~~
 # add_dynamic_rcsrcs & add_dynamic_rcraws
 # provide a way to add dynamic ROMFS data
-# which genrate during the build process
+# which generate during the build process
 # to the final romfs_holder target
 # ~~~
 function(add_dynamic_rcsrcs)
@@ -235,7 +235,8 @@ function(nuttx_add_cromfs)
             copy_directory ${PATH} cromfs_${NAME} \; fi
     COMMAND if \[ \"${FILES}\" != \"\" \]; then ${CMAKE_COMMAND} -E copy
             ${FILES} cromfs_${NAME} \; fi
-    COMMAND ${CMAKE_BINARY_DIR}/bin/gencromfs cromfs_${NAME} cromfs_${NAME}.c
+    COMMAND ${NUTTX_BINARY_DIR}/bin_host/gencromfs cromfs_${NAME}
+            cromfs_${NAME}.c
     DEPENDS ${DEPENDS})
 
   add_library(cromfs_${NAME} OBJECT cromfs_${NAME}.c)
@@ -244,7 +245,7 @@ endfunction()
 
 # ~~~
 # The files of romfs may be added in
-# ANY PROCESS IN ANY DIRECORY,
+# ANY PROCESS IN ANY DIRECTORY,
 # so we process all the targets at the end.
 # ~~~
 function(process_all_directory_romfs)
@@ -280,6 +281,118 @@ function(process_all_directory_romfs)
 
   list(PREPEND RCSRCS ${board_rcsrcs} ${dyn_rcsrcs})
   list(PREPEND RCRAWS ${board_rcraws} ${dyn_rcraws})
+
+  # Auto-generate /etc/passwd at build time if configured
+  if(CONFIG_BOARD_ETC_ROMFS_PASSWD_ENABLE)
+    # Host tools are POSIX shell scripts (same as Make/configure.sh).  Invoke
+    # them via an explicit interpreter so CMake works on Linux, macOS, MSYS2,
+    # and Cygwin — not only when the script path is marked executable.
+    if(NOT NUTTX_POSIX_SHELL)
+      find_program(NUTTX_POSIX_SHELL NAMES sh bash)
+    endif()
+    if(NOT NUTTX_POSIX_SHELL)
+      message(
+        FATAL_ERROR
+          "ROMFS passwd generation requires a POSIX shell (sh or bash). "
+          "On Windows, configure and build from the MSYS2 or Cygwin environment."
+      )
+    endif()
+
+    execute_process(
+      COMMAND ${NUTTX_POSIX_SHELL} "${NUTTX_DIR}/tools/update_romfs_password.sh"
+              "${NUTTX_DIR}/.config" RESULT_VARIABLE _cred_rc)
+    if(NOT _cred_rc EQUAL 0)
+      message(FATAL_ERROR "update_romfs_password.sh failed (rc=${_cred_rc})")
+    endif()
+
+    file(
+      STRINGS "${NUTTX_DIR}/.config" _passwd_line
+      REGEX "^CONFIG_BOARD_ETC_ROMFS_PASSWD_PASSWORD="
+      LIMIT_COUNT 1)
+    if(_passwd_line MATCHES "^CONFIG_BOARD_ETC_ROMFS_PASSWD_PASSWORD=(.*)$")
+      set(CONFIG_BOARD_ETC_ROMFS_PASSWD_PASSWORD "${CMAKE_MATCH_1}")
+      string(STRIP "${CONFIG_BOARD_ETC_ROMFS_PASSWD_PASSWORD}"
+                   CONFIG_BOARD_ETC_ROMFS_PASSWD_PASSWORD)
+      string(REGEX
+             REPLACE "^\"(.*)\"$" "\\1" CONFIG_BOARD_ETC_ROMFS_PASSWD_PASSWORD
+                     "${CONFIG_BOARD_ETC_ROMFS_PASSWD_PASSWORD}")
+    endif()
+
+    if("${CONFIG_BOARD_ETC_ROMFS_PASSWD_PASSWORD}" STREQUAL "")
+      message(
+        FATAL_ERROR
+          "\n"
+          "  BUILD ERROR: Root password not set.\n"
+          "\n"
+          "  Run make menuconfig and set:\n"
+          "    Board Selection -> Auto-generate /etc/passwd -> Root password\n"
+          "\n"
+          "  For TEA keys, either enable random generation in the same menu,\n"
+          "  or set CONFIG_FSUTILS_PASSWD_KEY1..4 under Application Configuration\n"
+          "  -> File System Utilities -> Password file support.\n"
+          "\n"
+          "  Password and keys are not saved in defconfig.\n")
+    endif()
+
+    if(CONFIG_FSUTILS_PASSWD_PBKDF2_ITERATIONS)
+      set(MKPASSWD_ITERATIONS ${CONFIG_FSUTILS_PASSWD_PBKDF2_ITERATIONS})
+    else()
+      set(MKPASSWD_ITERATIONS 10000)
+    endif()
+
+    # Determine host executable suffix (.exe on Windows, empty elsewhere)
+    if(CMAKE_HOST_WIN32)
+      set(HOST_EXE_SUFFIX .exe)
+    else()
+      set(HOST_EXE_SUFFIX "")
+    endif()
+
+    # Locate a host C compiler to build the mkpasswd tool
+    find_program(HOST_CC NAMES cc gcc clang REQUIRED)
+
+    # Build mkpasswd.c as a host binary in the CMake build directory and keep
+    # the source tree clean.
+    set(MKPASSWD_SRC ${NUTTX_DIR}/tools/mkpasswd.c)
+    set(MKPASSWD_BIN ${NUTTX_BINARY_DIR}/tools/mkpasswd${HOST_EXE_SUFFIX})
+
+    if(NOT TARGET build_host_mkpasswd)
+      add_custom_command(
+        OUTPUT ${MKPASSWD_BIN}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${NUTTX_BINARY_DIR}/tools
+        COMMAND ${HOST_CC} -o ${MKPASSWD_BIN} ${MKPASSWD_SRC}
+        DEPENDS ${MKPASSWD_SRC}
+        COMMENT "Building host tool: mkpasswd")
+      add_custom_target(build_host_mkpasswd DEPENDS ${MKPASSWD_BIN})
+    endif()
+
+    set(GENPASSWD_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/etc/passwd)
+    set(GENPASSWD_OUTPUTS ${GENPASSWD_OUTPUT})
+    if(CONFIG_BOARD_ETC_ROMFS_PASSWD_EXTRA_ENABLE
+       AND CONFIG_BOARD_ETC_ROMFS_PASSWD_EXTRA_SUDOERS)
+      set(GENSUDOERS_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/etc/sudoers)
+      list(APPEND GENPASSWD_OUTPUTS ${GENSUDOERS_OUTPUT})
+    endif()
+
+    add_custom_command(
+      OUTPUT ${GENPASSWD_OUTPUTS}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/etc
+      COMMAND
+        ${NUTTX_POSIX_SHELL} ${NUTTX_DIR}/tools/board_romfs_mkpasswd.sh
+        ${NUTTX_DIR} ${CMAKE_CURRENT_BINARY_DIR}/.romfs_passwd.txt
+        ${MKPASSWD_BIN} ${GENPASSWD_OUTPUT} --user
+        "${CONFIG_BOARD_ETC_ROMFS_PASSWD_USER}" --uid
+        ${CONFIG_BOARD_ETC_ROMFS_PASSWD_UID} --gid
+        ${CONFIG_BOARD_ETC_ROMFS_PASSWD_GID} --home
+        "${CONFIG_BOARD_ETC_ROMFS_PASSWD_HOME}"
+      DEPENDS ${MKPASSWD_BIN} ${NUTTX_DIR}/.config
+              ${NUTTX_DIR}/tools/board_romfs_mkpasswd.sh
+      COMMENT "Generating /etc/passwd with PBKDF2 hash")
+
+    add_custom_target(generate_passwd DEPENDS ${GENPASSWD_OUTPUTS})
+    add_dependencies(generate_passwd build_host_mkpasswd)
+    list(APPEND RCRAWS ${GENPASSWD_OUTPUTS})
+    list(APPEND dyn_deps generate_passwd)
+  endif()
 
   # init dynamic dependencies
 
@@ -340,12 +453,18 @@ function(process_all_directory_romfs)
         DEPENDS ${dyn_deps})
       list(APPEND DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${SOURCE_ETC_SUFFIX})
     else()
+      list(FIND DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${SOURCE_ETC_SUFFIX} index)
+      if(index GREATER -1)
+        set(APPEND_OPTION APPEND)
+      else()
+        set(APPEND_OPTION)
+      endif()
       list(APPEND DEPENDS ${SOURCE_ETC_PREFIX}/${SOURCE_ETC_SUFFIX})
       add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${SOURCE_ETC_SUFFIX}
         COMMAND
           ${CMAKE_COMMAND} -E copy ${SOURCE_ETC_PREFIX}/${SOURCE_ETC_SUFFIX}
-          ${CMAKE_CURRENT_BINARY_DIR}/${SOURCE_ETC_SUFFIX}
+          ${CMAKE_CURRENT_BINARY_DIR}/${SOURCE_ETC_SUFFIX} ${APPEND_OPTION}
         DEPENDS ${dyn_deps})
       list(APPEND DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${SOURCE_ETC_SUFFIX})
     endif()

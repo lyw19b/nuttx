@@ -55,7 +55,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/kmalloc.h>
@@ -216,7 +216,7 @@
 #endif
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Types
  ****************************************************************************/
 
 /* State of an endpoint */
@@ -3219,7 +3219,7 @@ sam_ep_reserve(struct sam_usbdev_s *priv, uint8_t epset)
  *
  * Description:
  *   The endpoint is no long in-used.  It will be un-reserved and can be
- *   re-used if needed.
+ *   reused if needed.
  *
  ****************************************************************************/
 

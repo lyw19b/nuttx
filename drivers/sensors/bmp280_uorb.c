@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <fixedmath.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/kmalloc.h>
@@ -125,7 +125,7 @@
 #define COMBINE(d) (((int)(d)[0] << 12) | ((int)(d)[1] << 4) | ((int)(d)[2] >> 4))
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Type
  ****************************************************************************/
 
 struct bmp280_dev_s
@@ -427,13 +427,13 @@ static int bmp280_initialize(FAR struct bmp280_dev_s *priv)
  * Name: bmp280_compensate
  *
  * Description:
- *   calculate compensate tempreture
+ *   calculate compensate temperature
  *
  * Input Parameters:
- *   temp - uncompensate value of tempreture.
+ *   temp - uncompensate value of temperature.
  *
  * Returned Value:
- *   calculate result of compensate tempreture.
+ *   calculate result of compensate temperature.
  *
  ****************************************************************************/
 
@@ -659,8 +659,8 @@ static int bmp280_fetch(FAR struct sensor_lowerhalf_s *lower,
   clock_systime_timespec(&ts);
 
   baro_data.timestamp = 1000000ull * ts.tv_sec + ts.tv_nsec / 1000;
-  baro_data.pressure = press / 100.0f;
-  baro_data.temperature = temp / 100.0f;
+  baro_data.pressure = sensor_data_divi(press, 100);
+  baro_data.temperature = sensor_data_divi(temp, 100);
 
   memcpy(buffer, &baro_data, sizeof(baro_data));
 

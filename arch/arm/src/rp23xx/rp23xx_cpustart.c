@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -143,6 +143,8 @@ static void core1_boot(void)
 
   arm_initialize_stack();
 #endif
+
+  arm_fpuconfig();
 
   fifo_drain();
 

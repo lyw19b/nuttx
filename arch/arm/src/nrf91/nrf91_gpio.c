@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/spinlock.h>
 
@@ -304,7 +304,7 @@ int nrf91_gpio_config(nrf91_pinset_t cfgset)
           nrf91_gpio_sense(cfgset, port, pin);
           break;
 
-        case GPIO_OUTPUT:  /* GPIO outpout pin */
+        case GPIO_OUTPUT:  /* GPIO output pin */
           nrf91_gpio_output(cfgset, port, pin);
           break;
 

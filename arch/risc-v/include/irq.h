@@ -52,6 +52,10 @@
 #endif
 #define __XSTR(s)   __STR(s)
 
+/* RISC-V requires a 16-byte stack alignment. */
+
+#define STACKFRAME_ALIGN 16
+
 /****************************************************************************
  * Map RISC-V exception code to NuttX IRQ,
  * the exception that code > 19 is reserved or custom exception.
@@ -132,7 +136,7 @@
 
 #define REG_EPC_NDX         0
 
-/* General pupose registers
+/* General purpose registers
  * $0: Zero register does not need to be saved
  * $1: ra (return address)
  */
@@ -569,6 +573,7 @@
 
 struct xcptcontext
 {
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
   /* These additional register save locations are used to implement the
    * signal delivery trampoline.
    *
@@ -587,6 +592,7 @@ struct xcptcontext
 
   uintptr_t sigreturn;
 #endif
+#endif /* CONFIG_ENABLE_ALL_SIGNALS */
 
 #ifdef CONFIG_ARCH_ADDRENV
 #ifdef CONFIG_ARCH_KERNEL_STACK
@@ -628,7 +634,7 @@ struct xcptcontext
 #  if CONFIG_ARCH_RV_VECTOR_BYTE_LENGTH > 0
   /* There are 32 vector registers(v0 - v31) with vlenb length. */
 
-  uintreg_t vregs[VPU_XCPTC_SIZE];
+  uintreg_t vregs[VPU_XCPTC_SIZE / INT_REG_SIZE];
 #  else
   uintreg_t *vregs;
 #  endif

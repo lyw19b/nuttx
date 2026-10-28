@@ -2,7 +2,10 @@
  * include/nuttx/net/dns.h
  *
  * SPDX-License-Identifier: BSD-3-Clause
- * SPDX-FileCopyrightText: 2007-2009, 2011-2012, 2014-2015, 2018 Gregory Nutt. All rights reserved.
+ * SPDX-FileCopyrightText: 2018 Gregory Nutt. All rights reserved.
+ * SPDX-FileCopyrightText: 2014-2015 Gregory Nutt. All rights reserved.
+ * SPDX-FileCopyrightText: 2011-2012 Gregory Nutt. All rights reserved.
+ * SPDX-FileCopyrightText: 2007-2009 Gregory Nutt. All rights reserved.
  * SPDX-FileCopyrightText: 2002-2003, Adam Dunkels. All rights reserved.
  * SPDX-FileContributor: Gregory Nutt <gnutt@nuttx.org>
  * SPDX-FileContributor: Adam Dunkels <adam@dunkels.com>
@@ -155,6 +158,19 @@ begin_packed_struct struct dns_question_s
 
 /* The DNS answer message structure */
 
+/* The fixed part of an answer: type, class, ttl and length, before the
+ * address itself.
+ *
+ * Use this rather than sizeof(struct dns_answer_s) to test whether a
+ * response holds a whole answer header.  That structure also carries the
+ * union below, sixteen bytes once IPv6 is built, so its sizeof demands far
+ * more of the response than the header needs and wrongly rejects a
+ * trailing answer as truncated.  The address that follows is bounds
+ * checked separately, against its len field.
+ */
+
+#define DNS_ANSWER_HEADER_SIZE 10
+
 begin_packed_struct struct dns_answer_s
 {
   uint16_t type;
@@ -177,7 +193,7 @@ begin_packed_struct struct dns_answer_s
 
 typedef CODE int (*dns_callback_t)(FAR void *arg,
                                    FAR struct sockaddr *addr,
-                                   FAR socklen_t addrlen);
+                                   socklen_t addrlen);
 
 /****************************************************************************
  * Public Function Prototypes
@@ -202,6 +218,26 @@ extern "C"
  ****************************************************************************/
 
 int dns_add_nameserver(FAR const struct sockaddr *addr, socklen_t addrlen);
+
+/****************************************************************************
+ * Name: dns_del_nameserver
+ *
+ * Description:
+ *   Remove a DNS server from the list by address.
+ *
+ ****************************************************************************/
+
+int dns_del_nameserver(FAR const struct sockaddr *addr, socklen_t addrlen);
+
+/****************************************************************************
+ * Name: dns_del_nameserver_by_index
+ *
+ * Description:
+ *   Remove a DNS server from the list by index (0-based).
+ *
+ ****************************************************************************/
+
+int dns_del_nameserver_by_index(int index);
 
 /****************************************************************************
  * Name: dns_default_nameserver

@@ -51,7 +51,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <inttypes.h>
 
 #include <nuttx/kmalloc.h>
@@ -433,7 +433,7 @@ static int spiffs_open(FAR struct file *filep, FAR const char *relpath,
    */
 
   offset = 0;
-  if ((oflags & (O_APPEND | O_WROK)) == (O_APPEND | O_WROK))
+  if ((oflags & O_APPEND) && (oflags & O_ACCMODE) != O_RDONLY)
     {
       offset = fobj->size == SPIFFS_UNDEFINED_LEN ? 0 : fobj->size;
     }
@@ -510,7 +510,7 @@ static int spiffs_close(FAR struct file *filep)
 
       /* Flush any cached writes for the file object being closed.
        * This could result in an ENOSPC error being reported if the
-       * cache could not flushed to FALSH (and the file will appear to
+       * cache could not flushed to FLASH (and the file will appear to
        * to have been truncated).
        */
 
@@ -629,7 +629,7 @@ static ssize_t spiffs_write(FAR struct file *filep, FAR const char *buffer,
 
   /* Verify that the file was opened with write access */
 
-  if ((fobj->oflags & O_WROK) == 0)
+  if ((fobj->oflags & O_ACCMODE) == O_RDONLY)
     {
       ret = -EACCES;
       goto errout_with_lock;

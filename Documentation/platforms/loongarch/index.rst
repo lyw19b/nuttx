@@ -11,7 +11,7 @@ The initial port was migrated from the LoongArch changes ending at
 ``dd86df106de`` in the supplied NuttX repository. The RT-Thread port was
 consulted for platform behavior; its MMU and SMP implementation is not
 included here. Scheduler, page allocation, locking, and SMP callbacks use
-NuttX interfaces from this repository's revision.
+NuttX 13.1.0 interfaces. Use the matching ``nuttx-13.1.0`` apps tag.
 
 Memory management
 =================
@@ -76,8 +76,8 @@ Demand-zero and copy-on-write
 ``CONFIG_LOONGARCH_DEMAND_PAGING`` reserves heap extensions without backing
 storage. A read fault maps an immutable zero page; a write fault allocates
 and clears a private page. ``CONFIG_LOONGARCH_INITIAL_HEAP_SIZE`` keeps a
-page-aligned bootstrap heap resident (64 KiB by default), because the ELF
-loader initializes its allocator and initial stack with interrupts masked.
+page-aligned bootstrap heap resident (64 KiB by default) for the ELF
+loader to initialize allocator metadata and the initial user stack.
 Text and data loading remain eager. This is anonymous demand-zero paging;
 file-backed faults, swapping and reclaim policies are not implemented.
 
@@ -165,9 +165,11 @@ Current scope and limitations:
   paths use PATH_MAX, and exec vectors are limited to 32 strings each.
 * Unadapted interfaces include device ioctls, asynchronous I/O, retained
   buffers, general nested objects, user-supplied pthread stacks and blocking
-  user synchronization queues. Uncontended semaphore counter operations
-  never follow user wait-list pointers; contention requiring such queues
-  returns ENOSYS. Disabling strict checking restores the old stub ABI.
+  user synchronization queues. The 13.1 libc handles uncontended semaphore
+  and mutex operations in userspace. Checked slow-path counting operations
+  never follow user wait-list pointers; mutex slow paths and contention
+  requiring queues return ENOSYS. Disabling strict checking bypasses these
+  argument policies.
 * This architecture-only validation does not redesign NuttX's user heap,
   TLS or kernel services that internally use user-resident allocator and
   synchronization metadata. It is not a complete malicious-process security
@@ -231,7 +233,8 @@ Building and testing with QEMU
 =============================
 
 Use a ``loongarch64-linux-gnu-`` toolchain and an apps checkout compatible
-with this NuttX revision (NuttX apps 12.9.0 was used for validation).
+with this NuttX revision: use the official ``nuttx-13.1.0`` tag in both
+repositories.
 ``CROSSDEV`` can override the Make toolchain prefix. CMake accepts
 ``TOOLCHAIN_PREFIX``.
 
@@ -242,6 +245,8 @@ Configuration  Purpose
 ============== ==========================================================
 ``nsh``        Single-core interactive NSH
 ``smp``        Four-core interactive NSH
+``apps``       Single-core NSH with libc, heap, pipe and OS tests
+``smp-apps``   Four-core version of the apps regression configuration
 ``mmu``        Single-core MMU and context regression tests
 ``smp-mmu``    Four-core MMU, context and TLB shootdown regression tests
 ``kernel``     Single-core ELF, syscall and user-permission regression
@@ -362,8 +367,49 @@ backing-page ownership. It reports
 Success is reported as
 ``LoongArch userspace isolation/syscall tests: PASS``.
 
-Validation performed
-====================
+13.1.0 upgrade and validation
+============================
+
+The kernel and apps are based on their official ``nuttx-13.1.0`` tags.
+The common kernel code matches that release, apart from LoongArch
+architecture/board registration, ELF machine identification and the libc
+Make integration. Upgrade adaptations are contained in the LoongArch port.
+Both repositories retain ``backup/loongarch-pre-13.1.0`` as a local rollback
+reference.
+
+The port uses the combined scheduler-switch notification and callback-based
+signal delivery. Stack scans accept the new bounded-size argument. The
+flat stack-copy primitive now advertises ``vfork`` rather than the 13.1
+``fork`` capability, which requires an independent process address space.
+User entry refreshes TLS process/thread IDs after exec exchanges IDs, using
+checked user copies. Strict syscall handling recognizes the new semaphore
+slow-path ABI and rejects mutex holder words as counters.
+
+GCC 15.2.0 and the local QEMU 11.1.50 build were used for the following
+upgrade checks:
+
+* CMake single-CPU and four-CPU user regressions with software refill and
+  hardware PTW: ASID rollover, all 13 libc assembly functions, demand-zero
+  pages, COW, checked user copies, syscalls, exec, signals, migration, fault
+  isolation and repeated process cleanup.
+* Four-CPU flat MMU/context regressions with both refill modes.
+* Make four-CPU kernel regression with hardware PTW and libc assembly.
+* LS2K0300 NSH compilation and link; this is not peripheral hardware testing.
+
+The ``apps`` and ``smp-apps`` configurations passed ``hello``, ``atomic``,
+``fmemopen_test``, ``open_memstream_test``, ``stdbit_test``, ``heap``, ``pipe``
+and ``ostest`` on one and four CPUs. Run these commands from NSH and check
+each exit status with
+``echo $?``. The OS tests exercise vfork, FPU context preservation, threads,
+signals, timers, synchronization and message queues. ``fopencookie_test``
+also passed in a single-CPU Make build; the upstream apps release does not
+provide its CMake build file. These selected applications do not represent
+a complete apps-tree test. Network services, hardware-dependent programs,
+external-package applications and other configurations require additional
+coverage.
+
+Earlier baseline validation
+---------------------------
 
 With GCC 15.2.0 and NuttX apps 12.9.0, QEMU passed the single-CPU and
 four-CPU MMU/context tests with both software refill and hardware PTW.

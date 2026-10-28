@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include "hardware/s32k1xx_ftfc.h"
 #include "hardware/s32k1xx_sim.h"
@@ -140,7 +140,7 @@ static uint32_t execute_ftfc_command()
   if (retval & (FTTC_FSTAT_MGSTAT0 | FTTC_FSTAT_FPVIOL |
                 FTTC_FSTAT_ACCERR | FTTC_FSTAT_RDCOLERR))
     {
-      return retval; /* Error has occured */
+      return retval; /* Error has occurred */
     }
 
   return retval;
@@ -304,7 +304,7 @@ static int eeed_geometry(struct inode *inode, struct geometry *geometry)
 
       finfo("available: true mediachanged: false writeenabled: %s\n",
             geometry->geo_writeenabled ? "true" : "false");
-      finfo("nsectors: %" PRIuOFF " sectorsize: %" PRIu16 "\n",
+      finfo("nsectors: %" PRIuOFF " sectorsize: %" PRId32 "\n",
             geometry->geo_nsectors, geometry->geo_sectorsize);
 
       return OK;

@@ -29,7 +29,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/usb/usbhost.h>
@@ -590,15 +590,17 @@ int usbhost_composite(FAR struct usbhost_hubport_s *hport,
 
           if (desc->type == USB_DESC_TYPE_INTERFACE)
             {
-#ifdef CONFIG_DEBUG_ASSERTIONS
               FAR struct usb_ifdesc_s *ifdesc =
                 (FAR struct usb_ifdesc_s *)desc;
 
               DEBUGASSERT(ifdesc->ifno < 32);
-#endif
+
               /* Increment the count of interfaces */
 
-              nintfs++;
+              if (ifdesc->alt == 0)
+                {
+                  nintfs++;
+                }
             }
 
           /* Check for IAD descriptors that will be used when it is

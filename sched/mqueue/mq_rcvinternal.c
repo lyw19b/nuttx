@@ -34,8 +34,8 @@
 #include <errno.h>
 #include <mqueue.h>
 #include <sched.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/cancelpt.h>
@@ -127,7 +127,7 @@ static void nxmq_rcvtimeout(wdparm_t arg)
 int nxmq_wait_receive(FAR struct mqueue_inode_s *msgq,
                       FAR struct mqueue_msg_s **rcvmsg,
                       FAR const struct timespec *abstime,
-                      sclock_t ticks)
+                      clock_t ticks)
 {
   FAR struct mqueue_msg_s *newmsg;
   FAR struct tcb_s *rtcb = this_task();
@@ -253,10 +253,7 @@ void nxmq_notify_receive(FAR struct mqueue_inode_s *msgq)
 
       DEBUGASSERT(btcb != NULL);
 
-      if (WDOG_ISACTIVE(&btcb->waitdog))
-        {
-          wd_cancel(&btcb->waitdog);
-        }
+      wd_cancel(&btcb->waitdog);
 
       msgq->cmn.nwaitnotfull--;
 
@@ -270,7 +267,7 @@ void nxmq_notify_receive(FAR struct mqueue_inode_s *msgq)
 
       if (nxsched_add_readytorun(btcb))
         {
-          up_switch_context(btcb, rtcb);
+          up_switch_context(this_task(), rtcb);
         }
     }
 }

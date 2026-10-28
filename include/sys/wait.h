@@ -46,11 +46,12 @@
 #define WEXITSTATUS(s)  (((s) >> 8) & 0xff) /* Return exit status */
 #define WIFEXITED(s)    (((s) & 0xff) == 0) /* True: Child exited normally */
 
-#define WIFCONTINUED(s) (false)  /* True: Child has been continued */
-#define WIFSIGNALED(s)  (false)  /* True: Child exited due to uncaught signal */
-#define WIFSTOPPED(s)   (false)  /* True: Child is currently stopped */
-#define WSTOPSIG(s)     (false)  /* Return signal number that caused process to stop */
-#define WTERMSIG(s)     (false)  /* Return signal number that caused process to terminate */
+#define WIFCONTINUED(s) (false)             /* True: Child has been continued */
+#define WIFSIGNALED(s)  (false)             /* True: Child exited due to uncaught signal */
+#define WIFSTOPPED(s)   (false)             /* True: Child is currently stopped */
+#define WSTOPSIG(s)     (false)             /* Return signal number that caused process to stop */
+#define WTERMSIG(s)     (((s) >> 8) & 0x7f) /* Return signal number that caused process to terminate */
+#define WCOREDUMP(s)    (((s) >> 8) & 0x80) /* True: Child has produced a core dump */
 
 /* The following symbolic constants are possible values for the options
  * argument to waitpid() (1) and/or waitid() (2),
@@ -94,6 +95,15 @@ extern "C"
 pid_t wait(FAR int *stat_loc);
 int   waitid(idtype_t idtype, id_t id, FAR siginfo_t *info, int options);
 pid_t waitpid(pid_t pid, FAR int *stat_loc, int options);
+
+/* wait4() is waitpid() plus the reaped child's struct rusage in one call.
+ * struct rusage is forward-declared here (not #include <sys/resource.h>)
+ * since it is only ever used as a pointer type in this prototype.
+ */
+
+struct rusage;
+pid_t wait4(pid_t pid, FAR int *stat_loc, int options,
+            FAR struct rusage *rusage);
 
 #undef EXTERN
 #if defined(__cplusplus)

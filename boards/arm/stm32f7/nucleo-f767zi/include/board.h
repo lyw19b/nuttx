@@ -106,7 +106,7 @@
 
 /* Configure factors for  PLLSAI clock */
 
-#define CONFIG_STM32F7_PLLSAI 1
+#define CONFIG_STM32_PLLSAI 1
 #define STM32_RCC_PLLSAICFGR_PLLSAIN    RCC_PLLSAICFGR_PLLSAIN(192)
 #define STM32_RCC_PLLSAICFGR_PLLSAIP    RCC_PLLSAICFGR_PLLSAIP(8)
 #define STM32_RCC_PLLSAICFGR_PLLSAIQ    RCC_PLLSAICFGR_PLLSAIQ(4)
@@ -125,7 +125,7 @@
 
 /* Configure factors for  PLLI2S clock */
 
-#define CONFIG_STM32F7_PLLI2S 1
+#define CONFIG_STM32_PLLI2S 1
 #define STM32_RCC_PLLI2SCFGR_PLLI2SN   RCC_PLLI2SCFGR_PLLI2SN(192)
 #define STM32_RCC_PLLI2SCFGR_PLLI2SP   RCC_PLLI2SCFGR_PLLI2SP(2)
 #define STM32_RCC_PLLI2SCFGR_PLLI2SQ   RCC_PLLI2SCFGR_PLLI2SQ(2)
@@ -170,15 +170,15 @@
 
 /* Timers driven from APB1 will be twice PCLK1 */
 
-#define STM32_APB1_TIM2_CLKIN   (2*STM32_PCLK1_FREQUENCY)
-#define STM32_APB1_TIM3_CLKIN   (2*STM32_PCLK1_FREQUENCY)
-#define STM32_APB1_TIM4_CLKIN   (2*STM32_PCLK1_FREQUENCY)
-#define STM32_APB1_TIM5_CLKIN   (2*STM32_PCLK1_FREQUENCY)
-#define STM32_APB1_TIM6_CLKIN   (2*STM32_PCLK1_FREQUENCY)
-#define STM32_APB1_TIM7_CLKIN   (2*STM32_PCLK1_FREQUENCY)
-#define STM32_APB1_TIM12_CLKIN  (2*STM32_PCLK1_FREQUENCY)
-#define STM32_APB1_TIM13_CLKIN  (2*STM32_PCLK1_FREQUENCY)
-#define STM32_APB1_TIM14_CLKIN  (2*STM32_PCLK1_FREQUENCY)
+#define STM32_TIM2_CLKIN   (2*STM32_PCLK1_FREQUENCY)
+#define STM32_TIM3_CLKIN   (2*STM32_PCLK1_FREQUENCY)
+#define STM32_TIM4_CLKIN   (2*STM32_PCLK1_FREQUENCY)
+#define STM32_TIM5_CLKIN   (2*STM32_PCLK1_FREQUENCY)
+#define STM32_TIM6_CLKIN   (2*STM32_PCLK1_FREQUENCY)
+#define STM32_TIM7_CLKIN   (2*STM32_PCLK1_FREQUENCY)
+#define STM32_TIM12_CLKIN  (2*STM32_PCLK1_FREQUENCY)
+#define STM32_TIM13_CLKIN  (2*STM32_PCLK1_FREQUENCY)
+#define STM32_TIM14_CLKIN  (2*STM32_PCLK1_FREQUENCY)
 
 /* APB2 clock (PCLK2) is HCLK/2 (108MHz) */
 
@@ -187,11 +187,11 @@
 
 /* Timers driven from APB2 will be twice PCLK2 */
 
-#define STM32_APB2_TIM1_CLKIN   (2*STM32_PCLK2_FREQUENCY)
-#define STM32_APB2_TIM8_CLKIN   (2*STM32_PCLK2_FREQUENCY)
-#define STM32_APB2_TIM9_CLKIN   (2*STM32_PCLK2_FREQUENCY)
-#define STM32_APB2_TIM10_CLKIN  (2*STM32_PCLK2_FREQUENCY)
-#define STM32_APB2_TIM11_CLKIN  (2*STM32_PCLK2_FREQUENCY)
+#define STM32_TIM1_CLKIN   (2*STM32_PCLK2_FREQUENCY)
+#define STM32_TIM8_CLKIN   (2*STM32_PCLK2_FREQUENCY)
+#define STM32_TIM9_CLKIN   (2*STM32_PCLK2_FREQUENCY)
+#define STM32_TIM10_CLKIN  (2*STM32_PCLK2_FREQUENCY)
+#define STM32_TIM11_CLKIN  (2*STM32_PCLK2_FREQUENCY)
 
 /* SDMMC dividers.  Note that slower clocking is required when DMA
  * is disabledin order to avoid RX overrun/TX underrun errors due
@@ -302,7 +302,7 @@
 #define LED_SIGNAL         5 /* In a signal handler      N/C    GLOW  N/C  */
 #define LED_ASSERTION      6 /* An assertion failed      GLOW   N/C   GLOW */
 #define LED_PANIC          7 /* The system has crashed   Blink  OFF   N/C  */
-#define LED_IDLE           8 /* MCU is is sleep mode     ON     OFF   OFF  */
+#define LED_IDLE           8 /* MCU is in sleep mode     ON     OFF   OFF  */
 
 /* Thus if the Green LED is statically on, NuttX has successfully booted and
  * is, apparently, running normally.  If the Red LED is flashing at
@@ -312,14 +312,45 @@
 
 /* Button definitions *******************************************************/
 
-/* The STM32F7 Discovery supports one button:  Pushbutton B1, labeled "User",
- * is connected to GPIO PI11.
- * A high value will be sensed when the button is depressed.
+/* The STM32F7 Discovery has just one user_button natively, which one is
+ * connected to GPIO PC13. This button, in this context, named as BUILT_IN,
+ * is connected in a pulldown resistor. Thus, when it changes from default
+ * value (LOW) to HIGH value, it is considered as 'pressed'.
+ *
+ * Plus, we can use the same strategy like in stm32103-minimun (bluepill) to
+ * provide more freedom to the users. Hence, four additional buttons will be
+ * available now and, then, five buttons can be directly handled.
+ *
+ * Please, make sure to also use your external buttons with a pulldown
+ * resistor as well, otherwise it will not work as expected.
+ *
+ * For this example we'll use the availables pin at ST Zio connector CN10,
+ * as listed below:
+ *
+ *   -------------------|----------|------------|-----------------
+ *      button_name     | pin_name | pin_number |  stm32_gpio_pin
+ *   -------------------|----------|------------|-----------------
+ *     BUTTON_EXTERN_1  |    D2    |     12     |     PF_15
+ *     BUTTON_EXTERN_2  |    D1    |     14     |     PG_14
+ *     BUTTON_EXTERN_3  |    D0    |     16     |     PG_9
+ *     BUTTON_EXTERN_4  |    D34   |     33     |     PE_0
+ *   -------------------------------------------------------------
+ *
  */
 
-#define BUTTON_USER        0
-#define NUM_BUTTONS        1
-#define BUTTON_USER_BIT    (1 << BUTTON_USER)
+#define BUTTON_BUILT_IN        0
+#define BUTTON_EXTERN_1        1
+#define BUTTON_EXTERN_2        2
+#define BUTTON_EXTERN_3        3
+#define BUTTON_EXTERN_4        4
+
+#define BUTTON_BUILT_IN_BIT    (1 << BUTTON_BUILT_IN)
+#define BUTTON_EXTERN_1_BIT    (1 << BUTTON_EXTERN_1)
+#define BUTTON_EXTERN_2_BIT    (1 << BUTTON_EXTERN_2)
+#define BUTTON_EXTERN_3_BIT    (1 << BUTTON_EXTERN_3)
+#define BUTTON_EXTERN_4_BIT    (1 << BUTTON_EXTERN_4)
+
+#define NUM_BUTTONS            5
 
 /* DMA channels *************************************************************/
 

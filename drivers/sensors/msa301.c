@@ -20,13 +20,26 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -62,14 +75,6 @@ struct msa301_ops_s
   CODE int (*stop)(FAR struct msa301_dev_s *priv);
   CODE int (*sensor_read)(FAR struct msa301_dev_s *priv);
 };
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#  ifndef CONFIG_MSA301_I2C_FREQUENCY
-#    define CONFIG_MSA301_I2C_FREQUENCY 400000
-#  endif
 
 /****************************************************************************
  * Private Function Prototypes
@@ -697,7 +702,7 @@ static int msa301_register(FAR const char *devpath,
 
   /* Register the character driver */
 
-  ret = register_driver(devpath, &g_fops, 0666, priv);
+  ret = register_driver(devpath, &g_fops, 0600, priv);
   if (ret < 0)
     {
       snerr("ERROR: Failed to register driver: %d\n", ret);

@@ -24,9 +24,9 @@
 # changes)
 
 set(KCONFIG_ENV
-    "KCONFIG_CONFIG=${CMAKE_BINARY_DIR}/.config" "EXTERNALDIR=dummy"
+    "KCONFIG_CONFIG=${NUTTX_BINARY_DIR}/.config" "EXTERNALDIR=dummy"
     "APPSDIR=${NUTTX_APPS_DIR}" "DRIVERS_PLATFORM_DIR=dummy"
-    "APPSBINDIR=${NUTTX_APPS_BINDIR}" "BINDIR=${CMAKE_BINARY_DIR}")
+    "APPSBINDIR=${NUTTX_APPS_BINDIR}" "BINDIR=${NUTTX_BINARY_DIR}")
 
 # Use qconfig instead of menuconfig since PowerShell not support curses
 # redirection
@@ -41,7 +41,7 @@ add_custom_target(
   menuconfig
   COMMAND ${CMAKE_COMMAND} -E env ${KCONFIG_ENV} ${MENUCONFIG}
   COMMAND ${CMAKE_COMMAND} -E remove -f
-          ${CMAKE_BINARY_DIR}/include/nuttx/config.h # invalidate existing
+          ${NUTTX_BINARY_DIR}/include/nuttx/config.h # invalidate existing
                                                      # config
   COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_PARENT_LIST_FILE}
   WORKING_DIRECTORY ${NUTTX_DIR}
@@ -53,38 +53,61 @@ add_custom_target(
   qconfig
   COMMAND ${CMAKE_COMMAND} -E env ${KCONFIG_ENV} guiconfig
   COMMAND ${CMAKE_COMMAND} -E remove -f
-          ${CMAKE_BINARY_DIR}/include/nuttx/config.h # invalidate existing
+          ${NUTTX_BINARY_DIR}/include/nuttx/config.h # invalidate existing
                                                      # config
   COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_PARENT_LIST_FILE}
   WORKING_DIRECTORY ${NUTTX_DIR}
   USES_TERMINAL)
 
+# Refresh ${NUTTX_BINARY_DIR}/.config in place (set defaults, satisfy deps),
+# like "make olddefconfig". Use after hand-editing .config; does not copy from
+# board defconfig (see resetconfig for that).
+add_custom_target(
+  olddefconfig
+  COMMAND ${CMAKE_COMMAND} -E env ${KCONFIG_ENV} olddefconfig
+  COMMAND ${CMAKE_COMMAND} -E remove -f
+          ${NUTTX_BINARY_DIR}/include/nuttx/config.h
+  COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_PARENT_LIST_FILE}
+  WORKING_DIRECTORY ${NUTTX_DIR})
+
 # utility target to restore .config from board's defconfig
 add_custom_target(
   resetconfig
   COMMAND ${CMAKE_COMMAND} -E copy ${NUTTX_DEFCONFIG}
-          ${CMAKE_BINARY_DIR}/.config
+          ${NUTTX_BINARY_DIR}/.config
   COMMAND ${CMAKE_COMMAND} -E env ${KCONFIG_ENV} olddefconfig
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/.config
-          ${CMAKE_BINARY_DIR}/.config.orig
+  COMMAND ${CMAKE_COMMAND} -E copy ${NUTTX_BINARY_DIR}/.config
+          ${NUTTX_BINARY_DIR}/.config.orig
   COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_PARENT_LIST_FILE}
+  WORKING_DIRECTORY ${NUTTX_DIR})
+
+# utility target to remove .config (and related) so next configure regenerates
+# from the current BOARD_CONFIG defconfig. Use when switching defconfigs after
+# "clean" so that the next "cmake -B build -DBOARD_CONFIG=board:newconfig"
+# recreates .config from the new defconfig.
+add_custom_target(
+  distcleanconfig
+  COMMAND
+    ${CMAKE_COMMAND} -E remove -f ${NUTTX_BINARY_DIR}/.config
+    ${NUTTX_BINARY_DIR}/.config.orig ${NUTTX_BINARY_DIR}/.config.prev
+    ${NUTTX_BINARY_DIR}/include/nuttx/config.h
   WORKING_DIRECTORY ${NUTTX_DIR})
 
 # utility target to refresh .config from board's defconfig for GITHUB
 add_custom_target(
   refreshsilent
-  COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/SAVEconfig
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/.config
-          ${CMAKE_BINARY_DIR}/SAVEconfig
-  COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_BINARY_DIR}/.config
+  COMMAND ${CMAKE_COMMAND} -E remove -f ${NUTTX_BINARY_DIR}/SAVEconfig
+  COMMAND ${CMAKE_COMMAND} -E copy ${NUTTX_BINARY_DIR}/.config
+          ${NUTTX_BINARY_DIR}/SAVEconfig
+  COMMAND ${CMAKE_COMMAND} -E remove -f ${NUTTX_BINARY_DIR}/.config
   COMMAND ${CMAKE_COMMAND} -E copy ${NUTTX_DEFCONFIG}
-          ${CMAKE_BINARY_DIR}/.config
+          ${NUTTX_BINARY_DIR}/.config
   COMMAND ${CMAKE_COMMAND} -E env ${KCONFIG_ENV} olddefconfig
   COMMAND ${CMAKE_COMMAND} -E env ${KCONFIG_ENV} savedefconfig --out
-          ${CMAKE_BINARY_DIR}/defconfig.tmp
+          ${NUTTX_BINARY_DIR}/defconfig.tmp
   COMMAND ${CMAKE_COMMAND} -P ${NUTTX_DIR}/cmake/savedefconfig.cmake
-          ${CMAKE_BINARY_DIR}/.config ${CMAKE_BINARY_DIR}/defconfig.tmp
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/defconfig
+          ${NUTTX_BINARY_DIR}/.config ${NUTTX_BINARY_DIR}/defconfig.tmp
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${NUTTX_BINARY_DIR}/defconfig
           ${NUTTX_DEFCONFIG}
   WORKING_DIRECTORY ${NUTTX_DIR})
 
@@ -92,9 +115,15 @@ add_custom_target(
 add_custom_target(
   savedefconfig
   COMMAND ${CMAKE_COMMAND} -E env ${KCONFIG_ENV} savedefconfig --out
-          ${CMAKE_BINARY_DIR}/defconfig.tmp
+          ${NUTTX_BINARY_DIR}/defconfig.tmp
   COMMAND ${CMAKE_COMMAND} -P ${NUTTX_DIR}/cmake/savedefconfig.cmake
-          ${CMAKE_BINARY_DIR}/.config ${CMAKE_BINARY_DIR}/defconfig.tmp
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/defconfig
-          ${NUTTX_DEFCONFIG}
+          ${NUTTX_BINARY_DIR}/.config ${NUTTX_BINARY_DIR}/defconfig.tmp
+  COMMAND
+    ${Python3_EXECUTABLE} ${NUTTX_DIR}/tools/process_config.py postprocess
+    ${NUTTX_BINARY_DIR}/config_tree.json ${NUTTX_BINARY_DIR}/defconfig.orig
+    ${NUTTX_BINARY_DIR}/defconfig ${NUTTX_BINARY_DIR}/defconfig.post
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${NUTTX_BINARY_DIR}/defconfig.post ${NUTTX_DEFCONFIG}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${NUTTX_BINARY_DIR}/defconfig.post ${NUTTX_ORIG_DEFCONFIG}
   WORKING_DIRECTORY ${NUTTX_DIR})

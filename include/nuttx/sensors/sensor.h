@@ -29,6 +29,7 @@
 
 #include <nuttx/config.h>
 
+#include <nuttx/debug.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -160,6 +161,26 @@
  */
 
 #define SENSOR_BODY_COORDINATE_P7                   7
+
+#ifdef CONFIG_SENSORS_MONITOR
+#  define smlog(level, name, fmt, ...) \
+    do  \
+      { \
+        if (level <= sensor_monitor_level(name)) \
+          { \
+            sninfo("[topic: %s] "fmt, name, ##__VA_ARGS__); \
+          } \
+      } \
+    while (0)
+#else
+#  define smlog(log_level, name, fmt,...)
+#endif
+
+#define smerr(name, fmt, ...)    smlog(LOG_ERR, name, fmt, ##__VA_ARGS__)
+#define smwarn(name, fmt, ...)   smlog(LOG_WARN, name, fmt, ##__VA_ARGS__)
+#define smnotice(name, fmt, ...) smlog(LOG_NOTICE, name, fmt, ##__VA_ARGS__)
+#define sminfo(name, fmt, ...)   smlog(LOG_INFO, name, fmt, ##__VA_ARGS__)
+#define smdebug(name, fmt, ...)  smlog(LOG_DEBUG, name, fmt, ##__VA_ARGS__)
 
 /****************************************************************************
  * Inline Functions
@@ -332,10 +353,10 @@ struct sensor_ops_s
    * If fetch isn't NULL, upper half driver will disable intermediate
    * buffer and userspace can't set buffer size by ioctl.
    *
-   * You can call this function to read sensor register data by I2C/SPI bus
-   * when open mode is non-block, and poll are always successful.
-   * When you call this function and open mode is block, you will wait
-   * until sensor data ready, then read sensor data.
+   * You can call this function to read sensor register data by I2C/SPI
+   * bus. The data is read from the device on demand, so it is always
+   * available: poll() always reports POLLIN and read() never blocks,
+   * whether or not the open mode is non-block.
    *
    * Input Parameters:
    *   lower      - The instance of lower half sensor driver.
@@ -477,6 +498,25 @@ struct sensor_ops_s
   CODE int (*get_info)(FAR struct sensor_lowerhalf_s *lower,
                        FAR struct file *filep,
                        FAR struct sensor_device_info_s *info);
+
+  /**************************************************************************
+   * Name: set_nonwakeup
+   *
+   * With this method, the user can disable wakeup capacity for the sensor
+   * when data or fifo ready to avoid wakeup cpu, and save power.
+   *
+   * Input Parameters:
+   *   lower      - The instance of lower half sensor driver.
+   *   filep      - The pointer of file, represents each user using sensor.
+   *   nonwakeup  - true(nonwakeup) and false(wakeup)
+   *
+   * Returned Value:
+   *   Zero (OK) on success; a negated errno value on failure.
+   *
+   **************************************************************************/
+
+  CODE int (*set_nonwakeup)(FAR struct sensor_lowerhalf_s *lower,
+                            FAR struct file *filep, bool nonwakeup);
 
   /**************************************************************************
    * Name: control
@@ -654,7 +694,7 @@ void sensor_remap_vector_raw16(FAR const int16_t *in, FAR int16_t *out,
  *           instance is bound to the sensor driver and must persist as long
  *           as the driver persists.
  *   devno - The user specifies which device of this type, from 0. If the
- *           devno alerady exists, -EEXIST will be returned.
+ *           devno already exists, -EEXIST will be returned.
  *
  * Returned Value:
  *   OK if the driver was successfully register; A negated errno value is
@@ -732,7 +772,7 @@ void sensor_custom_unregister(FAR struct sensor_lowerhalf_s *dev,
  * Description:
  *   This function registers usensor character node "/dev/usensor", so that
  *   application can register user sensor by this node. The node will
- *   manager all user sensor in this character dirver.
+ *   manage all user sensor in this character driver.
  *
  ****************************************************************************/
 
@@ -784,7 +824,7 @@ void sensor_rpmsg_unregister(FAR struct sensor_lowerhalf_s *lower);
  *
  * Description:
  *   This function initializes the context of sensor rpmsg, registers
- *   rpmsg callback and prepares enviroment to intercat with remote sensor.
+ *   rpmsg callback and prepares environment to interact with remote sensor.
  *
  * Returned Value:
  *   OK on success; A negated errno value is returned on any failure.
@@ -793,6 +833,36 @@ void sensor_rpmsg_unregister(FAR struct sensor_lowerhalf_s *lower);
 
 #ifdef CONFIG_SENSORS_RPMSG
 int sensor_rpmsg_initialize(void);
+#endif
+
+/****************************************************************************
+ *Name: sensor_monitor_initialize
+ *
+ * Description:
+ *   Initialize sensor procfs.
+ *
+ * Return Value:
+ *   0 on success, or negative error code on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SENSORS_MONITOR
+int sensor_monitor_initialize(void);
+#endif
+
+/****************************************************************************
+ * Name: sensor_monitor_level
+ *
+ * Description:
+ *   get sensor monitor log level
+ *
+ * Return Value:
+ *   syslog level
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SENSORS_MONITOR
+int sensor_monitor_level(FAR const char *name);
 #endif
 
 #undef EXTERN

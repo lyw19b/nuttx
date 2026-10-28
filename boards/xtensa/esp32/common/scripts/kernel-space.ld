@@ -20,6 +20,8 @@
  *
  ****************************************************************************/
 
+#include <nuttx/config.h>
+
 /* Provide these so there is no need for using config files for this */
 
 __uirom_start = ORIGIN(UIROM);
@@ -117,11 +119,15 @@ SECTIONS
     _iram_text_start = ABSOLUTE(.);
     *(.iram1 .iram1.*)
     *librtc.a:(.literal .text .literal.* .text.*)
-    *libkarch.a:esp32_spiflash.*(.literal .text .literal.* .text.*)
+    *libkarch.a:esp_spiflash.*(.literal .text .literal.* .text.*)
+    *libkarch.a:*esp_clk.*(.text .text.* .literal .literal.*)
     *libkarch.a:xtensa_cpupause.*(.literal .text .literal.* .text.*)
     *libkarch.a:xtensa_copystate.*(.literal .text .literal.* .text.*)
     *libkarch.a:xtensa_interruptcontext.*(.literal .text .literal.* .text.*)
     *libkarch.a:xtensa_testset.*(.literal .text .literal.* .text.*)
+    *libkarch.a:esp_app_desc.*(.literal .text .literal.* .text.*)
+
+    *libc.a:arch_atomic.*(.literal .text .literal.* .text.*)
 
     *libsched.a:sched_suspendscheduler.*(.literal .text .literal.* .text.*)
     *libsched.a:sched_note.*(.literal .text .literal.* .text.*)
@@ -129,6 +135,110 @@ SECTIONS
     *libsched.a:spinlock.*(.literal .text .literal.* .text.*)
     *libsched.a:irq_csection.*(.literal .text .literal.* .text.*)
     *libsched.a:irq_dispatch.*(.literal .text .literal.* .text.*)
+    *libkarch.a:esp_spiflash.*(.literal .text .literal.* .text.*)
+    *libkarch.a:esp_flash_api.*(.text .text.* .literal .literal.*)
+    *libkarch.a:esp_flash_spi_init.*(.text .text.* .literal .literal.*)
+    *libkarch.a:spi_flash_hal_iram.*(.literal .literal.* .text .text.*)
+    *libkarch.a:spi_flash_encrypt_hal_iram.*(.text .text.* .literal .literal.*)
+    *libkarch.a:spi_flash_hal_gpspi.*(.literal .literal.* .text .text.*)
+    *libkarch.a:spi_flash_chip*.*(.literal .literal.* .text .text.*)
+    *libkarch.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
+    *libkarch.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
+    *libkarch.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
+    *libkarch.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
+    *libkarch.a:esp_cache_utils.*(.literal .literal.* .text .text.*)
+    *libkarch.a:cache_esp32.*(.literal .literal.* .text .text.*)
+    *libkarch.a:cache_hal_esp32.*(.literal .literal.* .text .text.*)
+    *libkarch.a:cache_utils.*(.literal .literal.* .text .text.*)
+    *libkarch.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
+    *libkarch.a:critical_section.*(.literal .literal.* .text .text.*)
+    *libkarch.a:os.*(.literal.nuttx_enter_critical .text.nuttx_enter_critical)
+    *libkarch.a:os.*(.literal.nuttx_exit_critical .text.nuttx_exit_critical)
+    *libkarch.a:intr_alloc.*(.literal.esp_intr_get_intno .text.esp_intr_get_intno)
+    *libkarch.a:intr_alloc.*(.literal.esp_intr_get_cpu .text.esp_intr_get_cpu)
+    *libkarch.a:interrupt.*(.literal.intr_handler_get .text.intr_handler_get)
+    *libkarch.a:interrupt.*(.literal.intr_handler_get_arg .text.intr_handler_get_arg)
+    *libkarch.a:interrupt.*(.literal.intr_get_item .text.intr_get_item)
+    *libkarch.a:interrupt.*(.literal.intr_handler_get_arg .text.intr_handler_get_arg)
+
+#ifdef CONFIG_ESPRESSIF_SIMPLE_BOOT
+    /* Simple boot has no second-stage bootloader.  __start() runs
+     * bootloader_init() and map_rom_segments() before any flash mapping
+     * exists, so everything they reach must be resident in RAM.
+     */
+
+    /* __start() itself runs before the mapping it creates, so it cannot
+     * live in the flash it is about to map.
+     */
+
+    esp32_start.*(.literal .text .literal.* .text.*)
+
+    *libkarch.a:*esp_loader.*(.literal .text .literal.* .text.*)
+    *libkarch.a:*bootloader_init.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_common.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_common_loader.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_console.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_console_loader.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_banner_wrap.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_clock_init.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_clock_loader.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_efuse.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_esp32.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_flash.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_flash_config_esp32.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_mem.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_panic.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_random.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_random_esp32.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_sha.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*bootloader_soc.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*esp_image_format.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*flash_encrypt.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*flash_qio_mode.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*brownout_hal.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*cpu.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*cpu_region_protect.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*gpio_hal.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*periph_ctrl.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*clk.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*clk_tree_hal.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*esp_clk_tree.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*esp_clk_tree_common.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*rtc_init.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*rtc_clk.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*rtc_clk_init.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*rtc_sleep.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*rtc_time.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*regi2c_ctrl.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*efuse_hal.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*efuse_utility.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*mmu_hal.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*mpu_hal.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*cache_esp32.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*cache_hal_esp32.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*uart_hal.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*uart_hal_iram.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*uart_periph.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*wdt_hal_iram.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*esp_rom_uart.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*esp_rom_sys.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*esp_rom_spiflash.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*esp_rom_wdt.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*log.*(.text .text.* .literal .literal.*)
+    *libkarch.a:*log_lock.*(.literal .literal.* .text .text.*)
+    *libkarch.a:*log_print.*(.literal .literal.* .text .text.*)
+    *libkarch.a:*log_timestamp.*(.literal .literal.* .text .text.*)
+    *libkarch.a:*log_timestamp_common.*(.literal .literal.* .text .text.*)
+    *libkarch.a:*log_write.*(.literal .literal.* .text .text.*)
+    *libkarch.a:esp_app_desc.*(.literal .literal.* .text .text.*)
+    *libkarch.a:esp_flash_api.*(.text .text.* .literal .literal.*)
+    *libkarch.a:esp_flash_spi_init.*(.text .text.* .literal .literal.*)
+    *libkarch.a:spi_flash_hal_gpspi.*(.literal .literal.* .text .text.*)
+    *libkarch.a:spi_flash_encrypt_hal_iram.*(.text .text.* .literal .literal.*)
+    *libkarch.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
+    *libkarch.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
+    *libkarch.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
+#endif
 
     *(.wifirxiram .wifirxiram.*)
     *(.wifi0iram  .wifi0iram.*)
@@ -176,7 +286,7 @@ SECTIONS
     *(.share.mem)
     *(.gnu.linkonce.b.*)
     *(COMMON)
-    *libkarch.a:esp32_spiflash.*(.bss  .bss.*  COMMON)
+    *libkarch.a:esp_spiflash.*(.bss  .bss.*  COMMON)
     *libkarch.a:xtensa_cpupause.*(.bss  .bss.*  COMMON)
     *libkarch.a:xtensa_copystate.*(.bss  .bss.*  COMMON)
     *libkarch.a:xtensa_interruptcontext.*(.bss  .bss.*  COMMON)
@@ -229,11 +339,78 @@ SECTIONS
     KEEP (*(.jcr))
     *(.dram1 .dram1.*)
     *libphy.a:(.rodata  .rodata.*)
-    *libkarch.a:esp32_spiflash.*(.rodata  .rodata.*)
+    *libkarch.a:esp_cache_utils.*(.rodata .rodata.*)
+    *libkarch.a:esp_spiflash.*(.rodata  .rodata.*)
+    *libkarch.a:*esp_clk.*(.rodata .rodata.*)
     *libkarch.a:xtensa_cpupause.*(.rodata  .rodata.*)
     *libkarch.a:xtensa_copystate.*(.rodata  .rodata.*)
     *libkarch.a:xtensa_interruptcontext.*(.rodata  .rodata.*)
     *libkarch.a:xtensa_testset.*(.rodata  .rodata.*)
+    *libkarch.a:spi_flash_chip*.*(.rodata .rodata.*)
+    *libkarch.a:critical_section.*(.rodata .rodata.*)
+    *libkarch.a:os.*(.rodata.g_int_flags_count .rodata.g_int_flags)
+    *libkc.a:arch_atomic.*(.rodata .rodata.*)
+
+#ifdef CONFIG_ESPRESSIF_SIMPLE_BOOT
+    /* The read-only data of everything pinned into IRAM above. */
+
+    esp32_start.*(.rodata .rodata.*)
+
+    *libkarch.a:*esp_loader.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_init.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_common.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_common_loader.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_console.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_console_loader.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_banner_wrap.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_clock_init.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_clock_loader.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_efuse.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_esp32.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_flash.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_flash_config_esp32.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_mem.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_panic.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_random.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_random_esp32.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_sha.*(.rodata .rodata.*)
+    *libkarch.a:*bootloader_soc.*(.rodata .rodata.*)
+    *libkarch.a:*esp_image_format.*(.rodata .rodata.*)
+    *libkarch.a:*flash_encrypt.*(.rodata .rodata.*)
+    *libkarch.a:*flash_qio_mode.*(.rodata .rodata.*)
+    *libkarch.a:*brownout_hal.*(.rodata .rodata.*)
+    *libkarch.a:*cpu.*(.rodata .rodata.*)
+    *libkarch.a:*cpu_region_protect.*(.rodata .rodata.*)
+    *libkarch.a:*gpio_hal.*(.rodata .rodata.*)
+    *libkarch.a:*periph_ctrl.*(.rodata .rodata.*)
+    *libkarch.a:*clk.*(.rodata .rodata.*)
+    *libkarch.a:*clk_tree_hal.*(.rodata .rodata.*)
+    *libkarch.a:*esp_clk_tree.*(.rodata .rodata.*)
+    *libkarch.a:*esp_clk_tree_common.*(.rodata .rodata.*)
+    *libkarch.a:*rtc_init.*(.rodata .rodata.*)
+    *libkarch.a:*rtc_clk.*(.rodata .rodata.*)
+    *libkarch.a:*rtc_clk_init.*(.rodata .rodata.*)
+    *libkarch.a:*rtc_time.*(.rodata .rodata.*)
+    *libkarch.a:*regi2c_ctrl.*(.rodata .rodata.*)
+    *libkarch.a:*efuse_hal.*(.rodata .rodata.*)
+    *libkarch.a:*efuse_utility.*(.rodata .rodata.*)
+    *libkarch.a:*mmu_hal.*(.rodata .rodata.*)
+    *libkarch.a:*mpu_hal.*(.rodata .rodata.*)
+    *libkarch.a:*cache_esp32.*(.rodata .rodata.*)
+    *libkarch.a:*cache_hal_esp32.*(.rodata .rodata.*)
+    *libkarch.a:*uart_hal.*(.rodata .rodata.*)
+    *libkarch.a:*uart_hal_iram.*(.rodata .rodata.*)
+    *libkarch.a:*uart_periph.*(.rodata .rodata.*)
+    *libkarch.a:*wdt_hal_iram.*(.rodata .rodata.*)
+    *libkarch.a:*esp_rom_uart.*(.rodata .rodata.*)
+    *libkarch.a:*esp_rom_sys.*(.rodata .rodata.*)
+    *libkarch.a:*esp_rom_spiflash.*(.rodata .rodata.*)
+    *libkarch.a:*esp_rom_wdt.*(.rodata .rodata.*)
+    *libkarch.a:*log.*(.rodata .rodata.*)
+    *libkarch.a:esp_app_desc.*(.rodata .rodata.*)
+    *libkarch.a:esp_flash_api.*(.rodata .rodata.*)
+    *libkarch.a:esp_flash_spi_init.*(.rodata .rodata.*)
+#endif
 
     *libsched.a:sched_suspendscheduler.*(.rodata  .rodata.*)
     *libsched.a:sched_thistask.*(.rodata  .rodata.*)
@@ -252,7 +429,13 @@ SECTIONS
 
   .flash.rodata :
   {
+    _srodata = ABSOLUTE(.);_rodata_reserved_start = ABSOLUTE(.);
     _srodata = ABSOLUTE(.);
+
+    /* !DO NOT PUT ANYTHING BEFORE THIS! */
+    /* Should be the first.  App version info. */
+    *(.rodata_desc .rodata_desc.*)
+
     *(.rodata)
     *(.rodata.*)
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
@@ -267,19 +450,6 @@ SECTIONS
     *(.eh_frame)
 
     . = (. + 3) & ~ 3;
-
-    /* C++ constructor and destructor tables, properly ordered: */
-
-    _sinit = ABSOLUTE(.);
-    KEEP (*crtbegin.o(.ctors))
-    KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
-    KEEP (*(SORT(.ctors.*)))
-    KEEP (*(.ctors))
-    _einit = ABSOLUTE(.);
-    KEEP (*crtbegin.o(.dtors))
-    KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
-    KEEP (*(SORT(.dtors.*)))
-    KEEP (*(.dtors))
 
     /* C++ exception handlers table: */
 
@@ -297,6 +467,32 @@ SECTIONS
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
+
+    /* C++ constructor tables. Those are initialized by lib_cxx_initialize
+     * which calls constructor functions that may be on common source code.
+     */
+
+    . = ALIGN(4);
+    _sinit = ABSOLUTE(.);
+    __init_array_start = ABSOLUTE(.);
+    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors SORT(.ctors.*)))
+    __init_array_end = ABSOLUTE(.);
+    _einit = ABSOLUTE(.);
+
+    /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
+
+    . = ALIGN(4);
+    soc_reserved_memory_region_start = ABSOLUTE(.);
+    KEEP (*(.reserved_memory_address))
+    soc_reserved_memory_region_end = ABSOLUTE(.);
+
+    /* System init functions registered via ESP_SYSTEM_INIT_FN */
+
+    . = ALIGN(4);
+    _esp_system_init_fn_array_start = ABSOLUTE(.);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
+    _esp_system_init_fn_array_end = ABSOLUTE(.);
+
     . = ALIGN(4);
   } >KDROM
 
@@ -312,4 +508,103 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _etext = .;
   } >KIROM
+
+#ifdef CONFIG_ESPRESSIF_SIMPLE_BOOT
+  /* Simple boot has no second-stage bootloader to map the flash, so __start()
+   * does it.  map_rom_segments() reads the segment table out of the image in
+   * flash, but the entry point still needs these to be defined.
+   */
+
+  _image_irom_vma = ADDR(.flash.text);
+  _image_irom_lma = LOADADDR(.flash.text);
+  _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) -
+                     _image_irom_lma;
+
+  _image_drom_vma = ADDR(.flash.rodata);
+  _image_drom_lma = LOADADDR(.flash.rodata);
+  _image_drom_size = LOADADDR(.flash.rodata) + SIZEOF(.flash.rodata) -
+                     _image_drom_lma;
+#endif
+
+  .rtc.text :
+  {
+    . = ALIGN(4);
+    _rtc_data_start = ABSOLUTE(.);
+    *(.rtc.literal .rtc.text)
+  } >rtc_iram_seg AT>ROM
+
+  .rtc.data :
+  {
+    *(.rtc.data)
+    *(.rtc.data.*)
+    *(.rtc.rodata)
+    *(.rtc.rodata.*)
+
+   /* Whatever is left from the RTC memory is used as a special heap. */
+
+    . = ALIGN (4);
+    _srtcheap = ABSOLUTE(.);
+  } >rtc_slow_seg AT>ROM
+
+  .rtc.force_slow :
+  {
+    . = ALIGN(4);
+    _rtc_force_slow_start = ABSOLUTE(.);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4);
+    _rtc_force_slow_end = ABSOLUTE(.);
+  } >rtc_slow_seg AT>ROM
+
+  /* This section holds RTC FAST data that should have fixed addresses.
+   * The data are not initialized at power-up and are retained during deep
+   * sleep.
+   */
+
+  .rtc_fast_reserved (NOLOAD):
+  {
+    . = ALIGN(4);
+    _rtc_fast_reserved_start = ABSOLUTE(.);
+
+    /* New data can only be added here to ensure existing data are not moved.
+     * Because data have adhered to the end of the segment and code is relied
+     * on it.
+     * >> put new data here <<
+     */
+
+    KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
+
+    _rtc_fast_reserved_end = ABSOLUTE(.);
+  } > rtc_fast_reserved_seg
+
+  _rtc_fast_reserved_length = _rtc_fast_reserved_end - _rtc_fast_reserved_start;
+  ASSERT((_rtc_fast_reserved_length <= LENGTH(rtc_fast_reserved_seg)),
+          "RTC FAST reserved segment data does not fit.")
+
+  /* This section holds RTC SLOW data that should have fixed addresses.
+   * The data are not initialized at power-up and are retained during deep
+   * sleep.
+   */
+
+  .rtc_slow_reserved (NOLOAD):
+  {
+    . = ALIGN(4);
+    _rtc_slow_reserved_start = ABSOLUTE(.);
+
+    /* New data can only be added here to ensure existing data are not moved.
+     * Because data have adhered to the end of the segment and code is relied
+     * on it.
+     * >> put new data here <<
+     */
+
+    *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
+
+    _rtc_slow_reserved_end = ABSOLUTE(.);
+  } > rtc_slow_reserved_seg
+
+  _rtc_slow_reserved_length = _rtc_slow_reserved_end - _rtc_slow_reserved_start;
+  _rtc_reserved_length = _rtc_slow_reserved_length;
+
+  /* Get size of rtc slow data */
+
+  _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
 }

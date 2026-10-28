@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/arch.h>
@@ -722,13 +722,13 @@ static int bl602_i2c_transfer(struct i2c_master_s *dev,
       priv->msgid = i;
       bl602_i2c_start_transfer(priv);
 
-      /* wait for transter finished */
+      /* wait for transfer finished */
 
       ret = nxsem_wait_uninterruptible(&priv->sem_isr);
 
       if (ret < 0)
         {
-          i2cerr("transter error\n");
+          i2cerr("transfer error\n");
           return ret;
         }
 

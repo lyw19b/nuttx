@@ -29,7 +29,7 @@
 #include <nuttx/power/pm.h>
 #endif
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdio.h>
 #include <sys/boardctl.h>
 
@@ -663,7 +663,7 @@ void thermal_cooling_device_update(FAR struct thermal_cooling_device_s *cdev)
  * Input Parameters:
  *   name    - Name of zone.
  *   devdata - Device driver data.
- *   ops     - Operations of zone deivce.
+ *   ops     - Operations of zone device.
  *   params  - Parameter of zone device.
  *
  * Returned Value:
@@ -961,8 +961,10 @@ int thermal_init(void)
     }
 #endif
 
-#ifdef CONFIG_THERMAL_CDEV_CPUFREQ
-  if (NULL == thermal_cpufreq_cooling_register())
+#ifdef CONFIG_THERMAL_CDEV_DEVFREQ
+  if (NULL == thermal_devfreq_cooling_register(
+                                     CONFIG_THERMAL_CDEV_DEVFREQ_NAME,
+                                     CONFIG_THERMAL_CDEV_DEVFREQ_NAME))
     {
       return -ENOTSUP;
     }

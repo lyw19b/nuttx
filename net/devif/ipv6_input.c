@@ -30,7 +30,7 @@
 #include <sys/ioctl.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <string.h>
 
 #include <net/if.h>
@@ -151,6 +151,36 @@ static bool check_destipaddr(FAR struct net_driver_s *dev,
   return false;
 }
 
+#if defined(CONFIG_NET_IPFRAG) || defined(CONFIG_NET_NAT66) || defined(CONFIG_NET_IPFILTER)
+/****************************************************************************
+ * Name: ipv6_fragin_or_drop
+ *
+ * Description:
+ *   Reassemble an incoming IPv6 fragment for NAT or local processing or drop
+ *   it if fragment reassembly is not available.
+ *
+ ****************************************************************************/
+
+static int ipv6_fragin_or_drop(FAR struct net_driver_s *dev)
+{
+#ifdef CONFIG_NET_IPFRAG
+  if (ipv6_fragin(dev) == OK)
+    {
+      return OK;
+    }
+#endif
+
+#ifdef CONFIG_NET_STATISTICS
+  g_netstats.ipv6.drop++;
+  g_netstats.ipv6.fragerr++;
+#endif
+  nwarn("WARNING: IPv6 fragment dropped\n");
+
+  dev->d_len = 0;
+  return OK;
+}
+#endif
+
 /****************************************************************************
  * Name: ipv6_in
  *
@@ -195,9 +225,20 @@ static int ipv6_in(FAR struct net_driver_s *dev)
 #ifdef CONFIG_NET_IPFORWARD
   int ret;
 #endif
-#ifdef CONFIG_NET_IPFRAG
+#if defined(CONFIG_NET_IPFRAG) || defined(CONFIG_NET_NAT66) || defined(CONFIG_NET_IPFILTER)
   bool isfrag = false;
 #endif
+
+  /* Storing reception timestamp provided by realtime
+   * if timestamp no provided by hardware.
+   */
+
+#ifdef CONFIG_NET_TIMESTAMP
+  if ((dev->d_features & NETDEV_RX_STAMP) == 0)
+    {
+      clock_gettime(CLOCK_REALTIME, &dev->d_iob->io_time);
+    }
+#endif /* CONFIG_NET_TIMESTAMP */
 
   /* This is where the input processing starts. */
 
@@ -223,6 +264,8 @@ static int ipv6_in(FAR struct net_driver_s *dev)
     }
 
   /* Get the size of the packet minus the size of link layer header */
+
+  dev->d_len -= NET_LL_HDRLEN(dev);
 
   if (IPv6_HDRLEN > dev->d_len)
     {
@@ -285,7 +328,7 @@ static int ipv6_in(FAR struct net_driver_s *dev)
       if (nxthdr == NEXT_FRAGMENT_EH)
         {
           extlen    = EXTHDR_FRAG_LEN;
-#ifdef CONFIG_NET_IPFRAG
+#if defined(CONFIG_NET_IPFRAG) || defined(CONFIG_NET_NAT66) || defined(CONFIG_NET_IPFILTER)
           isfrag    = true;
 #endif
         }
@@ -298,6 +341,13 @@ static int ipv6_in(FAR struct net_driver_s *dev)
       iphdrlen += extlen;
       nxthdr    = exthdr->nxthdr;
     }
+
+#if defined(CONFIG_NET_NAT66) || defined(CONFIG_NET_IPFILTER)
+  if (isfrag)
+    {
+      return ipv6_fragin_or_drop(dev);
+    }
+#endif
 
 #ifdef CONFIG_NET_NAT66
   /* Try NAT inbound, rule matching will be performed in NAT module. */
@@ -408,17 +458,7 @@ static int ipv6_in(FAR struct net_driver_s *dev)
 #ifdef CONFIG_NET_IPFRAG
   if (isfrag)
     {
-      if (ipv6_fragin(dev) == OK)
-        {
-          return OK;
-        }
-      else
-        {
-#ifdef CONFIG_NET_STATISTICS
-          g_netstats.ipv6.fragerr++;
-#endif
-          goto drop;
-        }
+      return ipv6_fragin_or_drop(dev);
     }
 #endif
 
@@ -675,11 +715,7 @@ int ipv6_input(FAR struct net_driver_s *dev)
   FAR uint8_t *buf;
   int ret;
 
-  /* Store reception timestamp if enabled and not provided by hardware. */
-
-#if defined(CONFIG_NET_TIMESTAMP) && !defined(CONFIG_ARCH_HAVE_NETDEV_TIMESTAMP)
-  clock_gettime(CLOCK_REALTIME, &dev->d_rxtime);
-#endif
+  netdev_lock(dev);
 
   if (dev->d_iob != NULL)
     {
@@ -692,9 +728,12 @@ int ipv6_input(FAR struct net_driver_s *dev)
 
       dev->d_buf = buf;
 
+      netdev_unlock(dev);
       return ret;
     }
 
-  return netdev_input(dev, ipv6_in, true);
+  ret = netdev_input(dev, ipv6_in, true);
+  netdev_unlock(dev);
+  return ret;
 }
 #endif /* CONFIG_NET_IPv6 */

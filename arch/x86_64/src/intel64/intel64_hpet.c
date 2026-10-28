@@ -31,7 +31,7 @@
 #include <arch/hpet.h>
 
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 #include <stdint.h>
 
@@ -223,6 +223,7 @@ static void intel64_hpet_cmpset(struct intel64_tim_dev_s *dev, uint8_t timer,
                                 uint64_t cmp)
 {
   struct intel64_hpet_s *hpet = (struct intel64_hpet_s *)dev;
+
   DEBUGASSERT(timer < hpet->timers);
   intel64_hpet_putreg(hpet, HPET_TCOMP_OFFSET(timer), cmp);
 }
@@ -239,6 +240,7 @@ static uint64_t intel64_hpet_cmpget(struct intel64_tim_dev_s *dev,
                                     uint8_t timer)
 {
   struct intel64_hpet_s *hpet = (struct intel64_hpet_s *)dev;
+
   DEBUGASSERT(timer < hpet->timers);
   return intel64_hpet_getreg(hpet, HPET_TCOMP_OFFSET(timer));
 }
@@ -255,6 +257,7 @@ static uint64_t intel64_hpet_intget(struct intel64_tim_dev_s *dev,
                                     uint8_t timer)
 {
   struct intel64_hpet_s *hpet = (struct intel64_hpet_s *)dev;
+
   return (intel64_hpet_getreg(hpet, HPET_GISR_OFFSET) &
           HPET_GISR_TINT(timer));
 }
@@ -271,6 +274,7 @@ static void intel64_hpet_intack(struct intel64_tim_dev_s *dev,
                                 uint8_t timer)
 {
   struct intel64_hpet_s *hpet = (struct intel64_hpet_s *)dev;
+
   intel64_hpet_putreg(hpet, HPET_GISR_OFFSET, HPET_GISR_TINT(timer));
 }
 
@@ -285,6 +289,7 @@ static void intel64_hpet_intack(struct intel64_tim_dev_s *dev,
 static uint64_t intel64_hpet_cntget(struct intel64_tim_dev_s *dev)
 {
   struct intel64_hpet_s *hpet = (struct intel64_hpet_s *)dev;
+
   return intel64_hpet_getreg(hpet, HPET_MCNTR_OFFSET);
 }
 
@@ -300,6 +305,7 @@ static void intel64_hpet_cntset(struct intel64_tim_dev_s *dev,
                                 uint64_t cntr)
 {
   struct intel64_hpet_s *hpet = (struct intel64_hpet_s *)dev;
+
   return intel64_hpet_putreg(hpet, HPET_MCNTR_OFFSET, cntr);
 }
 
@@ -314,6 +320,7 @@ static void intel64_hpet_cntset(struct intel64_tim_dev_s *dev,
 static uint32_t intel64_hpet_perget(struct intel64_tim_dev_s *dev)
 {
   struct intel64_hpet_s *hpet = (struct intel64_hpet_s *)dev;
+
   return hpet->clk_per_fs;
 }
 
@@ -383,9 +390,12 @@ static int intel64_hpet_setisr(struct intel64_tim_dev_s *dev, uint8_t timer,
 
   if (handler == NULL)
     {
-      /* Disable interrupt */
+      /* Disable the interrupt but keep the ISR attached.  Detaching it here
+       * installs irq_unexpected_isr(), and an HPET interrupt that is already
+       * in flight to another CPU then panics the system.  A stray interrupt
+       * is handled as spurious by the oneshot ISR instead.
+       */
 
-      irq_attach(irq, handler, arg);
       up_disable_irq(irq);
     }
   else
@@ -557,7 +567,7 @@ struct intel64_tim_dev_s *intel64_hpet_init(uint64_t base)
           /* Configure legacy mode.
            *
            * There is no way to disable PIT interrupts (?) other than enable
-           * legacy mode for HPET. Otherwise unwanted PIT interupts will
+           * legacy mode for HPET. Otherwise unwanted PIT interrupts will
            * interfere with HPET interrupts, making them useless.
            */
 

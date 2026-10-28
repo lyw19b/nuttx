@@ -20,6 +20,19 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -28,7 +41,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <string.h>
 
 #include <nuttx/arch.h>
@@ -42,7 +55,7 @@
 #if defined(CONFIG_SPI) && defined(CONFIG_LIS3DSH)
 
 /****************************************************************************
- * Private
+ * Private Types
  ****************************************************************************/
 
 struct lis3dsh_sensor_data_s
@@ -212,7 +225,7 @@ static void lis3dsh_read_measurement_data(FAR struct lis3dsh_dev_s *dev)
   uint16_t z_acc = 0;
   int ret;
 
-  /* Read acclerometer data */
+  /* Read accelerometer data */
 
   lis3dsh_read_acclerometer_data(dev, &x_acc, &y_acc, &z_acc);
 
@@ -545,7 +558,7 @@ int lis3dsh_register(FAR const char *devpath, FAR struct spi_dev_s *spi,
 
   /* Register the character driver */
 
-  ret = register_driver(devpath, &g_lis3dsh_fops, 0666, priv);
+  ret = register_driver(devpath, &g_lis3dsh_fops, 0600, priv);
   if (ret < 0)
     {
       snerr("ERROR: Failed to register driver: %d\n", ret);

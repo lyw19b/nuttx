@@ -48,7 +48,7 @@
 #  define CONFIG_DEBUG_GRAPHICS_WARN  1
 #  define CONFIG_DEBUG_GRAPHICS_INFO  1
 #endif
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/queue.h>
 #ifdef VNCSERVER_SEM_DEBUG
@@ -127,8 +127,8 @@ static void vnc_sem_debug(FAR struct vnc_session_s *session,
   nqueued      = sq_count(&session->updqueue);
   nfree        = sq_count(&session->updfree);
 
-  freesem      = session->freesem.semcount;
-  queuesem     = session->queuesem.semcount;
+  nxsem_get_value(&session->freesem, &freesem);
+  nxsem_get_value(&session->queuesem, &queuesem);
 
   freecount    = freesem  > 0 ? freesem   : 0;
   queuecount   = queuesem > 0 ? queuesem  : 0;
@@ -152,7 +152,7 @@ static void vnc_sem_debug(FAR struct vnc_session_s *session,
       syslog(LOG_INFO, "    semcount:     %d\n", freecount);
       syslog(LOG_INFO, "    queued nodes: %u\n", nfree);
       syslog(LOG_INFO, "    waiting:      %u\n", freewaiting);
-      syslog(LOG_INFO, "  Qeued Updates:\n");
+      syslog(LOG_INFO, "  Queued Updates:\n");
       syslog(LOG_INFO, "    semcount:     %d\n", queuecount);
       syslog(LOG_INFO, "    queued nodes: %u\n", nqueued);
       syslog(LOG_INFO, "    waiting:      %u\n", queuewaiting);
@@ -192,15 +192,16 @@ vnc_alloc_update(FAR struct vnc_session_s *session)
    */
 
   vnc_sem_debug(session, "Before alloc", 0);
-  flags = enter_critical_section();
 
   nxsem_wait_uninterruptible(&session->freesem);
+
+  flags = spin_lock_irqsave(&session->lock);
 
   /* It is reserved.. go get it */
 
   update = (FAR struct vnc_fbupdate_s *)sq_remfirst(&session->updfree);
 
-  leave_critical_section(flags);
+  spin_unlock_irqrestore(&session->lock, flags);
   vnc_sem_debug(session, "After alloc", 1);
 
   DEBUGASSERT(update != NULL);
@@ -225,13 +226,14 @@ static void vnc_free_update(FAR struct vnc_session_s *session,
                             FAR struct vnc_fbupdate_s *update)
 {
   irqstate_t flags;
+  int sval;
 
   /* Reserve one element from the free list.  Lock the scheduler to assure
    * that the sq_addlast() and the nxsem_post() are atomic.
    */
 
   vnc_sem_debug(session, "Before free", 1);
-  flags = enter_critical_section();
+  flags = spin_lock_irqsave_nopreempt(&session->lock);
 
   /* Put the entry into the free list */
 
@@ -241,9 +243,11 @@ static void vnc_free_update(FAR struct vnc_session_s *session,
 
   nxsem_post(&session->freesem);
 
-  leave_critical_section(flags);
+  spin_unlock_irqrestore_nopreempt(&session->lock, flags);
   vnc_sem_debug(session, "After free", 0);
-  DEBUGASSERT(session->freesem.semcount <= CONFIG_VNCSERVER_NUPDATES);
+
+  DEBUGASSERT(nxsem_get_value(&session->freesem, &sval) == 0 &&
+              sval <= CONFIG_VNCSERVER_NUPDATES);
 }
 
 /****************************************************************************
@@ -275,9 +279,10 @@ vnc_remove_queue(FAR struct vnc_session_s *session)
    */
 
   vnc_sem_debug(session, "Before remove", 0);
-  flags = enter_critical_section();
 
   nxsem_wait_uninterruptible(&session->queuesem);
+
+  flags = spin_lock_irqsave(&session->lock);
 
   /* It is reserved.. go get it */
 
@@ -299,7 +304,7 @@ vnc_remove_queue(FAR struct vnc_session_s *session)
     }
 
 errout:
-  leave_critical_section(flags);
+  spin_unlock_irqrestore(&session->lock, flags);
   return rect;
 }
 
@@ -322,13 +327,14 @@ static void vnc_add_queue(FAR struct vnc_session_s *session,
                           FAR struct vnc_fbupdate_s *rect)
 {
   irqstate_t flags;
+  int sval;
 
   /* Lock the scheduler to assure that the sq_addlast() and the nxsem_post()
    * are atomic.
    */
 
   vnc_sem_debug(session, "Before add", 1);
-  flags = enter_critical_section();
+  flags = spin_lock_irqsave_nopreempt(&session->lock);
 
   /* Put the entry into the list of queued rectangles. */
 
@@ -340,9 +346,11 @@ static void vnc_add_queue(FAR struct vnc_session_s *session,
 
   nxsem_post(&session->queuesem);
 
-  leave_critical_section(flags);
+  spin_unlock_irqrestore_nopreempt(&session->lock, flags);
   vnc_sem_debug(session, "After add", 0);
-  DEBUGASSERT(session->queuesem.semcount <= CONFIG_VNCSERVER_NUPDATES);
+
+  DEBUGASSERT(nxsem_get_value(&session->queuesem, &sval) == 0 &&
+              sval <= CONFIG_VNCSERVER_NUPDATES);
 }
 
 /****************************************************************************
@@ -605,12 +613,10 @@ int vnc_update_rectangle(FAR struct vnc_session_s *session,
        * the framebuffer since the last whole screen update.
        */
 
-      flags = enter_critical_section();
       if (!change && !session->change)
         {
           /* No.. ignore the client update.  We have nothing new to report. */
 
-          leave_critical_section(flags);
           return OK;
         }
 
@@ -630,9 +636,10 @@ int vnc_update_rectangle(FAR struct vnc_session_s *session,
               FAR struct vnc_fbupdate_s *next;
 
               updinfo("New whole screen update...\n");
-
+              flags = spin_lock_irqsave(&session->lock);
               curr = (FAR struct vnc_fbupdate_s *)session->updqueue.head;
               sq_init(&session->updqueue);
+              spin_unlock_irqrestore(&session->lock, flags);
               nxsem_reset(&session->queuesem, 0);
 
               for (; curr != NULL; curr = next)
@@ -675,8 +682,6 @@ int vnc_update_rectangle(FAR struct vnc_session_s *session,
                   intersection.x, intersection.y,
                   intersection.w, intersection.h);
         }
-
-      leave_critical_section(flags);
     }
 
   /* Since we ignore bad rectangles and wait for update structures, there is

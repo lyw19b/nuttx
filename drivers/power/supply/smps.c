@@ -34,7 +34,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/fs/fs.h>
@@ -243,8 +243,8 @@ static int smps_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
               goto errout;
             }
 
-          /* When constan current mode, then output current must be
-           * provided
+          /* When constant current mode, then output current must be
+           * provided.
            */
 
           if (smps->opmode == SMPS_OPMODE_CC && smps->param.i_out <= 0)
@@ -255,8 +255,8 @@ static int smps_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
               goto errout;
             }
 
-          /* When constan voltage mode, then output voltage must be
-           * provided
+          /* When constant voltage mode, then output voltage must be
+           * provided.
            */
 
           if (smps->opmode == SMPS_OPMODE_CV && smps->param.v_out <= 0)
@@ -267,7 +267,7 @@ static int smps_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
               goto errout;
             }
 
-          /* When constan power mode, then output power must be provided */
+          /* When constant power mode, then output power must be provided */
 
           if (smps->opmode == SMPS_OPMODE_CP && smps->param.p_out <= 0)
             {
@@ -511,7 +511,7 @@ int smps_register(FAR const char *path, FAR struct smps_dev_s *dev,
 
   /* Register the SMPS character driver */
 
-  ret = register_driver(path, &g_smps_fops, 0666, dev);
+  ret = register_driver(path, &g_smps_fops, 0600, dev);
   if (ret < 0)
     {
       nxmutex_destroy(&dev->closelock);

@@ -39,6 +39,7 @@
 #include <nuttx/mutex.h>
 #include <nuttx/semaphore.h>
 #include <nuttx/spi/spi.h>
+#include <nuttx/analog/ioctl.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -59,6 +60,26 @@
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+
+struct dac_dma_start_s
+{
+  uint8_t halfint; /* 0 = transfer complete only, 1 = half + transfer complete */
+};
+
+struct dac_dma_event_s
+{
+  FAR uint16_t *buffer; /* data to write (WRITE_BUF) */
+  int half;             /* 0 = first half, 1 = second half */
+};
+
+struct dac_info_s
+{
+  uint8_t  sample_bits;          /* DAC resolution (12 bits) */
+  uint8_t  dma_enabled;          /* 1 if DMA is running */
+  uint8_t  halfint_enabled;      /* current HTIT state */
+  uint32_t dma_buffer_size;      /* DMA buffer length in samples */
+  uint32_t dma_timer_frequency;  /* timer output frequency in Hz */
+};
 
 begin_packed_struct struct dac_msg_s
 {
@@ -223,6 +244,24 @@ FAR struct dac_dev_s *dac7554_initialize(FAR struct spi_dev_s *spi,
 
 FAR struct dac_dev_s *lmp92001_dac_initialize(FAR struct i2c_master_s *i2c,
                                               uint8_t addr);
+
+/****************************************************************************
+ * Name: mcp47x6_initialize
+ *
+ * Description:
+ *   Initialize DAC
+ *
+ * Input Parameters:
+ *   I2C Port number
+ *   Device address
+ *
+ * Returned Value:
+ *   Valid MCP47X6 device structure reference on success; a NULL on failure
+ *
+ ****************************************************************************/
+
+FAR struct dac_dev_s *mcp47x6_initialize(FAR struct i2c_master_s *i2c,
+                                         uint8_t addr);
 
 /****************************************************************************
  * Name: mcp48xx_initialize

@@ -29,8 +29,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 
@@ -90,6 +90,11 @@ void up_dump_register(void *dumpregs)
              regs[REG_PC0], regs[REG_PC1],
              regs[REG_PC2], regs[REG_SPH],
              regs[REG_SPL], regs[REG_SREG]);
+#endif
+
+#if defined(REG_RAMPZ)
+      _alert("RAMPZ:  %02x\n",
+             regs[REG_RAMPZ]);
 #endif
     }
 }

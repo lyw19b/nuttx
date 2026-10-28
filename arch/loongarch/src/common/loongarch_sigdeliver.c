@@ -31,7 +31,7 @@
 #include <sched.h>
 #include <syscall.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
@@ -72,7 +72,7 @@ void loongarch_sigdeliver(void)
 
   sinfo("rtcb=%p sigpendactionq.head=%p\n",
         rtcb, rtcb->sigpendactionq.head);
-  DEBUGASSERT((rtcb->flags & TCB_FLAG_SIGDELIVER) != 0);
+  DEBUGASSERT(rtcb->sigdeliver != NULL);
 
 retry:
 #ifdef CONFIG_SMP
@@ -101,7 +101,7 @@ retry:
 
   /* Deliver the signals */
 
-  nxsig_deliver(rtcb);
+  rtcb->sigdeliver(rtcb);
 
   sinfo("Resuming EPC: %" PRIxREG " INT_CTX: %" PRIxREG "\n",
         regs[REG_EPC], regs[REG_INT_CTX]);
@@ -131,11 +131,11 @@ retry:
       goto retry;
     }
 
-  /* No signal action remains queued. Clear the delivery flag while
+  /* No signal action remains queued. Clear the delivery callback while
    * interrupts are disabled, before restoring the original context.
    */
 
-  rtcb->flags &= ~TCB_FLAG_SIGDELIVER;
+  rtcb->sigdeliver = NULL;
 
   /* Then restore the correct state for this thread of
    * execution.
@@ -143,11 +143,9 @@ retry:
 
   board_autoled_off(LED_SIGNAL);
 #ifdef CONFIG_SMP
-  /* We need to keep the IRQ lock until task switching */
+  /* Release the extra nesting level with local interrupts masked. */
 
-  rtcb->irqcount++;
-  leave_critical_section(regs[REG_INT_CTX]);
-  rtcb->irqcount--;
+  leave_critical_section(up_irq_save());
 #endif
 
   rtcb->xcp.regs = regs;

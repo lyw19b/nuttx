@@ -60,6 +60,22 @@ static noreturn_function void enter_user(uintptr_t entry, uintptr_t arg0,
   struct tcb_s *tcb = this_task();
   uintreg_t regs[XCPTCONTEXT_REGS] aligned_data(STACKFRAME_ALIGN);
 
+  /* exec swaps the task and group IDs after TLS allocation. Refresh the
+   * cached user IDs at the final entry boundary so libc getpid/gettid and
+   * the semaphore fast paths observe the scheduler's current identities.
+   * Use checked copies because this storage belongs to the user mapping.
+   */
+
+  if (loongarch_copytouser(
+        (char *)tcb->stack_alloc_ptr + offsetof(struct tls_info_s, tl_tid),
+        &tcb->pid, sizeof(tcb->pid)) < 0 ||
+      loongarch_copytouser(&tcb->group->tg_info->ta_pid,
+                          &tcb->group->tg_pid,
+                          sizeof(tcb->group->tg_pid)) < 0)
+    {
+      _exit(SIGSEGV);
+    }
+
   /* Start from a clean frame. No kernel register or stack address is
    * exposed to the user task on its first return to PLV3.
    */

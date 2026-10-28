@@ -116,6 +116,10 @@ static const struct memory_region_s g_memory_region[] =
 };
 #endif
 
+#if defined(CONFIG_SMP) && defined(CONFIG_ARCH_HAVE_DEBUG)
+static struct smp_call_data_s g_call_data;
+#endif
+
 /****************************************************************************
  * Private Functions Prototypes
  ****************************************************************************/
@@ -1043,7 +1047,7 @@ static void gdb_get_registers(FAR struct gdb_state_s *state)
  *   Zero on success.
  *   Negative value on error.
  *
- * Note: Comand Format: g.
+ * Note: Command Format: g.
  *       Response Format: xxxxxxxxyyyyyyyyy...
  ****************************************************************************/
 
@@ -1079,7 +1083,7 @@ static int gdb_read_registers(FAR struct gdb_state_s *state)
  *   Negative value on error.
  *
  *   Note: This function is not really change the register values.
- *         Comand Format: Gxxxxxxxxyyyyyyyyy
+ *         Command Format: Gxxxxxxxxyyyyyyyyy
  *         Response Format: OK
  ****************************************************************************/
 
@@ -1111,7 +1115,7 @@ static int gdb_write_registers(FAR struct gdb_state_s *state)
  *   Zero on success.
  *   Negative value on error.
  *
- * Note: Comand Format: Pn.
+ * Note: Command Format: Pn.
  *       Response Format: OK
  ****************************************************************************/
 
@@ -1158,7 +1162,7 @@ static int gdb_read_register(FAR struct gdb_state_s *state)
  *   The number of bytes read if successful.
  *   Negative value on error.
  *
- * Note: Comand Format: mAAAAAAAAA,LLLLLLLL
+ * Note: Command Format: mAAAAAAAAA,LLLLLLLL
  *       Response Format: XXXXXXXXYYYYYYYYY...
  ****************************************************************************/
 
@@ -1201,7 +1205,7 @@ static int gdb_read_memory(FAR struct gdb_state_s *state)
  *   The number of bytes read if successful.
  *   Negative value on error.
  *
- * Note : Comand Format: MAAAAAAAAA,LLLLLLLL
+ * Note : Command Format: MAAAAAAAAA,LLLLLLLL
  *        Response Format: bXXXXXXXXYYYYYYYYY...
  ****************************************************************************/
 
@@ -1244,7 +1248,7 @@ static int gdb_read_bin_memory(FAR struct gdb_state_s *state)
  *   The number of bytes written if successful.
  *   Negative value on error.
  *
- * Note : Comand Format: MAAAAAAAAA,LLLLLLLL:XXXXXXXXX...
+ * Note : Command Format: MAAAAAAAAA,LLLLLLLL:XXXXXXXXX...
  *        Response Format: OK
  ****************************************************************************/
 
@@ -1285,7 +1289,7 @@ static int gdb_write_memory(FAR struct gdb_state_s *state)
  *   The number of bytes written if successful.
  *   Negative value on error.
  *
- * Note : Comand Format: XAAAAAAAAA,LLLLLLLL:XXXXXXXXX...
+ * Note : Command Format: XAAAAAAAAA,LLLLLLLL:XXXXXXXXX...
  *        Response Format: OK
  ****************************************************************************/
 
@@ -1353,7 +1357,7 @@ static void gdb_get_thread(FAR struct tcb_s *tcb, FAR void *arg)
  *   0  if successful.
  *   Negative value on error.
  *
- * Note : Comand Format: qSTRING
+ * Note : Command Format: qSTRING
  *        STRING:is the query string.
  ****************************************************************************/
 
@@ -1476,7 +1480,7 @@ static int gdb_query(FAR struct gdb_state_s *state)
  *   0  if successful.
  *   Negative value on error.
  *
- * Note : Comand Format: T<id>
+ * Note : Command Format: T<id>
  *        id:is the thread id.
  *        Response Format: OK
  ****************************************************************************/
@@ -1519,7 +1523,7 @@ static int gdb_is_thread_active(FAR struct gdb_state_s *state)
  *   0  if successful.
  *   Negative value on error.
  *
- * Note : Comand Format: Hg<id>
+ * Note : Command Format: Hg<id>
  *                       Hc-<id>
  *        Response Format: OK
  ****************************************************************************/
@@ -1718,7 +1722,7 @@ static void gdb_debugpoint_callback(int type, FAR void *addr,
  *   0  if successful.
  *   Negative value on error.
  *
- * Note : Comand Format: Z/z type,addr,length
+ * Note : Command Format: Z/z type,addr,length
  *        Response Format: OK
  *   Z is set breakpoint.
  *   z is clear breakpoint.
@@ -1820,7 +1824,7 @@ static int gdb_debugpoint(FAR struct gdb_state_s *state, bool enable)
  *   0  if successful.
  *   Negative value on error.
  *
- * Note : Comand Format: s
+ * Note : Command Format: s
  *        Response Format: OK
  *
  ****************************************************************************/
@@ -1851,7 +1855,7 @@ static int gdb_step(FAR struct gdb_state_s *state)
  *   0  if successful.
  *   Negative value on error.
  *
- * Note : Comand Format: c
+ * Note : Command Format: c
  *        Response Format: OK
  *
  ****************************************************************************/
@@ -1889,8 +1893,9 @@ int gdb_debugpoint_add(int type, FAR void *addr, size_t size,
   point.size = size;
   point.callback = callback;
   point.arg = arg;
-  return nxsched_smp_call((1 << CONFIG_SMP_NCPUS) - 1,
-                          gdb_smp_debugpoint_add, &point);
+
+  nxsched_smp_call_init(&g_call_data, gdb_smp_debugpoint_add, &point);
+  return nxsched_smp_call_async((1 << CONFIG_SMP_NCPUS) - 1, &g_call_data);
 #else
   return up_debugpoint_add(type, addr, size, callback, arg);
 #endif
@@ -1908,8 +1913,8 @@ int gdb_debugpoint_remove(int type, FAR void *addr, size_t size)
   point.addr = addr;
   point.size = size;
 
-  return nxsched_smp_call((1 << CONFIG_SMP_NCPUS) - 1,
-                          gdb_smp_debugpoint_remove, &point);
+  nxsched_smp_call_init(&g_call_data, gdb_smp_debugpoint_remove, &point);
+  return nxsched_smp_call_async((1 << CONFIG_SMP_NCPUS) - 1, &g_call_data);
 #else
   return up_debugpoint_remove(type, addr, size);
 #endif

@@ -32,7 +32,7 @@
 #include <nuttx/crypto/crypto.h>
 #include <nuttx/mutex.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <semaphore.h>
 
 #include "hardware/tlsr82_aes.h"
@@ -109,7 +109,7 @@ int tlsr82_aes_encrypt(const uint8_t *key, const uint8_t *data,
 
   while ((AES_CTRL_REG & AES_CTRL_CODEC_FINISHED) == 0);
 
-  /* Asign the result */
+  /* Assign the result */
 
   for (i = 0; i < 4; i++)
     {

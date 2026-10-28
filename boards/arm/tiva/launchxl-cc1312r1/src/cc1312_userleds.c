@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <arch/board/board.h>
 
@@ -62,7 +62,7 @@ void board_userled(int led, bool ledon)
     {
       pinconfig = &g_gpio_gled;
     }
-  else if (led = BOARD_RLED)
+  else if (led == BOARD_RLED)
     {
       pinconfig = &g_gpio_rled;
     }

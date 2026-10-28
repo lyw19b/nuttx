@@ -20,6 +20,19 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -28,7 +41,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/fs/fs.h>
@@ -37,14 +50,6 @@
 #include <nuttx/random.h>
 
 #if defined(CONFIG_I2C) && defined(CONFIG_SENSORS_MCP9844)
-
-/****************************************************************************
- * Pre-process Definitions
- ****************************************************************************/
-
-#ifndef CONFIG_MCP9844_I2C_FREQUENCY
-#  define CONFIG_MCP9844_I2C_FREQUENCY 400000
-#endif
 
 /****************************************************************************
  * Private Types
@@ -99,7 +104,7 @@ static const struct file_operations g_mcp9844_fops =
  * Name: mcp9844_read_u16
  *
  * Description:
- *  Read a 16 bit valie from the MCP9844 at the address regaddr.
+ *  Read a 16 bit value from the MCP9844 at the address regaddr.
  *
  ****************************************************************************/
 
@@ -377,7 +382,7 @@ int mcp9844_register(FAR const char *devpath, FAR struct i2c_master_s *i2c,
 
   /* Register the character driver */
 
-  int ret = register_driver(devpath, &g_mcp9844_fops, 0666, priv);
+  int ret = register_driver(devpath, &g_mcp9844_fops, 0600, priv);
   if (ret < 0)
     {
       snerr("ERROR: Failed to register driver: %d\n", ret);

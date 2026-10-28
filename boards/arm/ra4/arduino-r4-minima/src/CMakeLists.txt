@@ -1,5 +1,5 @@
 # ##############################################################################
-# boards/arm/nrf52/thingy91-nrf52/src/CMakeLists.txt
+# boards/arm/ra4/arduino-r4-minima/src/CMakeLists.txt
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more contributor
 # license agreements.  See the NOTICE file distributed with this work for
@@ -18,12 +18,16 @@
 #
 # ##############################################################################
 
-set(SRCS ra4m1_boot.c ra4m1_bringup.c ra4m1_appinit.c)
+set(SRCS ra4m1_boot.c ra4m1_bringup.c)
 
 if(CONFIG_ARCH_LEDS)
   list(APPEND SRCS ra4m1_autoleds.c)
 else()
   list(APPEND SRCS ra4m1_userleds.c)
+endif()
+
+if(CONFIG_PWM)
+  list(APPEND SRCS ra4m1_pwm.c)
 endif()
 
 target_sources(board PRIVATE ${SRCS})

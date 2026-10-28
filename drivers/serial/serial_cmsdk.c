@@ -32,7 +32,7 @@
 #include <semaphore.h>
 #include <string.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdio.h>
 
 #include <nuttx/irq.h>
@@ -703,7 +703,7 @@ static void uart_cmsdk_putc(FAR struct uart_cmsdk_s *priv, int ch)
 #endif
 
 /****************************************************************************
- * Public Funtions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
@@ -711,7 +711,7 @@ static void uart_cmsdk_putc(FAR struct uart_cmsdk_s *priv, int ch)
  *
  * Description:
  *   Performs the low level UART initialization early in debug so that the
- *   serial console will be available during bootup.  This must be called
+ *   serial console will be available during boot up.  This must be called
  *   before uart_serialinit.
  *
  *   NOTE: Configuration of the CONSOLE UART was performed by uart_lowsetup()

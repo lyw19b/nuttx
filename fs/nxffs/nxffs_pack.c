@@ -30,7 +30,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/crc32.h>
 #include <nuttx/kmalloc.h>
@@ -785,7 +785,7 @@ static void nxffs_packtransfer(FAR struct nxffs_volume_s *volume,
 
   uint16_t destlen = volume->geo.blocksize - pack->iooffset;
 
-  /* Dermined how much data is available in the src data block */
+  /* Determined how much data is available in the src data block */
 
   uint16_t srclen = pack->src.blklen - pack->src.blkpos;
 

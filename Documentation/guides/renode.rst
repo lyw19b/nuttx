@@ -2,7 +2,7 @@
 Run NuttX on Renode
 ===================
 
-Renode (https://renode.io/) is and open source virutal development
+Renode (https://renode.io/) is and open source virtual development
 framework dedicated for complex embedded systems.
 
 This page contains notes on running some of NuttX boards on Renode.
@@ -119,7 +119,7 @@ nucleo-h743zi
 =============
 
 Renode doesn't support ``PWR_CSR1_ACTVOSRDY`` bit so we have to disable
-it with ``CONFIG_STM32H7_PWR_IGNORE_ACTVOSRDY=y``.
+it with ``CONFIG_STM32_PWR_IGNORE_ACTVOSRDY=y``.
 
 Renode script::
 
@@ -138,4 +138,4 @@ Renode script::
 
   runMacro $reset
 
-Tested wtih ``nucleo-h743zi/nsh``.
+Tested with ``nucleo-h743zi/nsh``.

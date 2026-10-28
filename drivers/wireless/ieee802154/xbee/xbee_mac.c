@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/mm/iob.h>
@@ -121,7 +121,7 @@ static void xbee_assoctimer(wdparm_t arg)
  * Name: xbee_assocworker
  *
  * Description:
- *   Poll the device for the assosciation status. This function is indirectly
+ *   Poll the device for the association status. This function is indirectly
  *   scheduled rom xbee_req_associate in order to poll the device for
  *   association progress.
  *

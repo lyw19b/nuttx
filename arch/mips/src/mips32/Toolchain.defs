@@ -122,9 +122,11 @@ endif
 ifeq ($(CONFIG_ARCH_MIPS_M5150),y)
   MIPS_MARCH = mips32r2
   MIPS_MPROCESSOR = elf32pic32mz
-else ifeq ($(CONFIG_ARCH_MIPS_MICROAPTIV), y)
+else ifeq ($(CONFIG_ARCH_MIPS_MICROAPTIV),y)
   MIPS_MARCH = mips32r2
   MIPS_MPROCESSOR = elf32pic32mz
+else ifeq ($(CONFIG_ARCH_MIPS_XBURST1),y)
+  MIPS_MARCH = mips32r2
 else
   MIPS_MARCH = m4k
   MIPS_MPROCESSOR = elf32pic32mx
@@ -299,6 +301,7 @@ CPP = $(CROSSDEV)gcc -E -P -x c
 LD = $(CROSSDEV)ld
 STRIP = $(CROSSDEV)strip --strip-unneeded
 AR = $(CROSSDEV)ar rcs
+UNAR = $(CROSSDEV)ar x
 NM = $(CROSSDEV)nm
 OBJCOPY = $(CROSSDEV)objcopy
 OBJDUMP = $(CROSSDEV)objdump
@@ -315,15 +318,23 @@ ifeq ($(CONFIG_LIBSUPCXX_TOOLCHAIN),y)
   EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libsupc++.a))
 endif
 
+ifeq ($(CONFIG_LIBCXXTOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libstdc++.a))
+endif
+
 # Loadable module definitions
 
 CMODULEFLAGS = $(CFLAGS) -fvisibility=hidden
-LDMODULEFLAGS = -r -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/modlib/gnu-elf.ld)
+LDMODULEFLAGS = -EL -r -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/elf/gnu-elf.ld)
 
 # ELF module definitions
 
 CELFFLAGS = $(CFLAGS) -fvisibility=hidden
 CXXELFFLAGS = $(CXXFLAGS) -fvisibility=hidden
 
-LDELFFLAGS = -r -e main
-LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)$(DELIM)libs$(DELIM)libc$(DELIM)modlib$(DELIM)gnu-elf.ld)
+# __dso_handle comes from crtbegin, which a module does not link
+
+CXXELFFLAGS += -fno-use-cxa-atexit
+
+LDELFFLAGS = -r -e _start
+LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)$(DELIM)libs$(DELIM)libc$(DELIM)elf$(DELIM)gnu-elf.ld)

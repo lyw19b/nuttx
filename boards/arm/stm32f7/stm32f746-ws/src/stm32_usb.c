@@ -32,7 +32,7 @@
 #include <sched.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kthread.h>
 #include <nuttx/usb/usbdev.h>
@@ -44,7 +44,7 @@
 #include "stm32_gpio.h"
 #include "stm32f746-ws.h"
 
-#ifdef CONFIG_STM32F7_OTGFS
+#ifdef CONFIG_STM32_OTGFS
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -53,7 +53,7 @@
 #if defined(CONFIG_USBDEV) || defined(CONFIG_USBHOST)
 #  define HAVE_USB 1
 #else
-#  warning "CONFIG_STM32F7_OTGFS is enabled but neither CONFIG_USBDEV nor CONFIG_USBHOST"
+#  warning "CONFIG_STM32_OTGFS is enabled but neither CONFIG_USBDEV nor CONFIG_USBHOST"
 #  undef HAVE_USB
 #endif
 
@@ -122,7 +122,7 @@ static int usbhost_waiter(int argc, char *argv[])
  * Name: stm32_usbinitialize
  *
  * Description:
- *   Called from stm32_usbinitialize very early in inialization to setup
+ *   Called from stm32_usbinitialize very early in initialization to setup
  *   USB-related GPIO pins for the STM32F4Discovery board.
  *
  ****************************************************************************/
@@ -137,7 +137,7 @@ void stm32_usbinitialize(void)
    * Power On, and Overcurrent GPIOs
    */
 
-#ifdef CONFIG_STM32F7_OTGFS
+#ifdef CONFIG_STM32_OTGFS
   stm32_configgpio(GPIO_OTGFS_VBUS);
 
 #ifdef CONFIG_USBHOST
@@ -330,4 +330,4 @@ void stm32_usbsuspend(struct usbdev_s *dev, bool resume)
 }
 #endif
 
-#endif /* CONFIG_STM32F7_OTGFS */
+#endif /* CONFIG_STM32_OTGFS */

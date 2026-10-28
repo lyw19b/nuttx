@@ -33,7 +33,7 @@
 
 #endif
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -518,7 +518,9 @@ int bl_os_msleep(long msec)
 {
   useconds_t usec = msec * 1000;
 
-  return nxsig_usleep(usec);
+  nxsched_usleep(usec);
+
+  return 0;
 }
 
 /****************************************************************************
@@ -534,7 +536,9 @@ int bl_os_msleep(long msec)
 
 int bl_os_sleep(unsigned int seconds)
 {
-  return nxsig_sleep(seconds);
+  nxsched_sleep(seconds);
+
+  return 0;
 }
 
 /****************************************************************************
@@ -934,6 +938,7 @@ static void bl_os_timer_callback(wdparm_t arg)
 void *bl_os_timer_create(void *func, void *argv)
 {
   struct timer_adpt *timer = kmm_malloc(sizeof(struct timer_adpt));
+
   if (!timer)
     {
       ASSERT(0);
@@ -1061,6 +1066,7 @@ int bl_os_timer_start_periodic(void *timerid, long t_sec, long t_nsec)
 void *bl_os_workqueue_create(void)
 {
   struct work_s *work = kmm_calloc(1, sizeof(struct work_s));
+
   if (!work)
     {
       ASSERT(0);
@@ -1141,6 +1147,7 @@ int bl_os_workqueue_submit_lpwork(void *work,
 uint64_t bl_os_clock_gettime_ms(void)
 {
   struct timespec ts;
+
   clock_systime_timespec(&ts);
   return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
@@ -1272,7 +1279,6 @@ void bl_os_irq_disable(int32_t n)
 
 void *bl_os_mutex_create(void)
 {
-  int ret;
   mutex_t *mutex;
   int tmp;
 
@@ -1284,13 +1290,7 @@ void *bl_os_mutex_create(void)
       return NULL;
     }
 
-  ret = nxmutex_init(mutex);
-  if (ret)
-    {
-      wlerr("ERROR: Failed to initialize mutex error=%d\n", ret);
-      kmm_free(mutex);
-      return NULL;
-    }
+  nxmutex_init(mutex);
 
   return mutex;
 }
@@ -1390,7 +1390,6 @@ int32_t bl_os_mutex_unlock(void *mutex_data)
 
 void *bl_os_sem_create(uint32_t init)
 {
-  int ret;
   sem_t *sem;
   int tmp;
 
@@ -1402,13 +1401,7 @@ void *bl_os_sem_create(uint32_t init)
       return NULL;
     }
 
-  ret = nxsem_init(sem, 0, init);
-  if (ret)
-    {
-      wlerr("ERROR: Failed to initialize sem error=%d\n", ret);
-      kmm_free(sem);
-      return NULL;
-    }
+  nxsem_init(sem, 0, init);
 
   return sem;
 }
@@ -1531,23 +1524,23 @@ static void bl_os_log_writev(uint32_t level,
 {
   switch (level)
     {
-    case LOG_LEVEL_ERROR:
-      {
-        vsyslog(LOG_ERR, format, args);
-        break;
-      }
+      case LOG_LEVEL_ERROR:
+        {
+          vsyslog(LOG_ERR, format, args);
+          break;
+        }
 
-    case LOG_LEVEL_WARN:
-      {
-        vsyslog(LOG_WARNING, format, args);
-        break;
-      }
+      case LOG_LEVEL_WARN:
+        {
+          vsyslog(LOG_WARNING, format, args);
+          break;
+        }
 
-    case LOG_LEVEL_INFO:
-      {
-        vsyslog(LOG_INFO, format, args);
-        break;
-      }
+      case LOG_LEVEL_INFO:
+        {
+          vsyslog(LOG_INFO, format, args);
+          break;
+        }
     }
 }
 
@@ -1579,6 +1572,7 @@ void bl_os_log_write(uint32_t level,
   if (&_wifi_log_flag)
     {
       va_list list;
+
       va_start(list, format);
       bl_os_log_writev(level, tag, NULL, 0, format, list);
       va_end(list);

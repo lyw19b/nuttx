@@ -43,12 +43,14 @@
 
 #ifdef CONFIG_PIC
 
-/* This identifies the register the is used by the processor as the PIC base
- * register.  It is usually r9 or r10
+/* This identifies the register that is used by the processor as the PIC base
+ * register.  r9 is the AAPCS platform register (the "static base"), which is
+ * also what GCC picks for -msingle-pic-base on an EABI target, so the whole
+ * of PIC uses it: NXFLAT, ELF PIC, and CONFIG_BUILD_PIC alike.
  */
 
-#define PIC_REG         r10
-#define PIC_REG_STRING "r10"
+#define PIC_REG         r9
+#define PIC_REG_STRING "r9"
 
 /* Macros to get and set the PIC base register.  picbase is assumed to be
  * of type (void*) and that it will fit into a uint32_t.  These must be
@@ -133,15 +135,15 @@ do { \
 
 struct arch_addrenv_s
 {
-  /* Level 1 page table entries for each group section */
+  /* Alloc whole l1table to make better context switch performance */
 
-  uintptr_t *text[ARCH_TEXT_NSECTS];
-  uintptr_t *data[ARCH_DATA_NSECTS];
-#ifdef CONFIG_BUILD_KERNEL
-  uintptr_t *heap[ARCH_HEAP_NSECTS];
-#ifdef CONFIG_ARCH_VMA_MAPPING
-  uintptr_t *shm[ARCH_SHM_NSECTS];
-#endif
+  uintptr_t *l1table;
+
+  /* The text, data, heap bases and heap size here */
+
+  uintptr_t textvbase;
+  uintptr_t datavbase;
+  uintptr_t heapvbase;
 
   /* Initial heap allocation (in bytes).  This exists only provide an
    * indirect path for passing the size of the initial heap to the heap
@@ -150,6 +152,9 @@ struct arch_addrenv_s
    */
 
   size_t heapsize;
+
+#ifdef CONFIG_ARCH_VMA_MAPPING
+  uintptr_t shmvbase;
 #endif
 };
 

@@ -219,7 +219,7 @@ static inline void notesnap_common(FAR struct note_driver_s *drv,
 
   /* Atomic operation, equivalent to snap.index++; */
 
-  index = atomic_fetch_add(&snap->index, 1);
+  index = atomic_add(&snap->index, 1);
   note = &snap->buffer[index % CONFIG_DRIVERS_NOTESNAP_NBUFFERS];
 
   note->type = type;
@@ -398,13 +398,13 @@ void notesnap_dump_with_stream(FAR struct lib_outstream_s *stream)
 
       perf_convert(note->count, &time);
       lib_sprintf(stream,
-                  "snapshoot: [%" PRIu64 ".%09u] "
+                  "snapshoot: [%" PRIu64 ".%09ld] "
 #ifdef CONFIG_SMP
                   "[CPU%d] "
 #endif
                   "[%d] %-16s %#" PRIxPTR "\n",
-                  (uint64_t)time.tv_sec,
-                  (unsigned)time.tv_nsec,
+                  time.tv_sec,
+                  time.tv_nsec,
 #ifdef CONFIG_SMP
                   note->cpu,
 #endif

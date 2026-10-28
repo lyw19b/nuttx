@@ -37,8 +37,7 @@ function(nuttx_add_library_internal target)
 
   # add main include directories
   target_include_directories(
-    ${target} SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/include
-                             ${CMAKE_BINARY_DIR}/include)
+    ${target} SYSTEM PRIVATE ${NUTTX_DIR}/include ${NUTTX_BINARY_DIR}/include)
 
   # Set global compile options & definitions We use the "nuttx" target to hold
   # these properties so that libraries added after this property is set can read
@@ -56,12 +55,18 @@ function(nuttx_add_library_internal target)
   # add extra flags into command line
 
   if(DEFINED EXTRAFLAGS)
-    string(REPLACE " " ";" eflags "${EXTRAFLAGS}")
-    target_compile_options(${target} PRIVATE ${eflags})
+    separate_arguments(EXTRAFLAGS_LIST UNIX_COMMAND "${EXTRAFLAGS}")
+    target_compile_options(${target} PRIVATE ${EXTRAFLAGS_LIST})
   endif()
 
   # Set install config for all library
   install(TARGETS ${target})
+  # Set target information for debug and dump
+  set_property(
+    TARGET nuttx_target_interface
+    APPEND
+    PROPERTY ALL_TARGETS ${target})
+  file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/targets "${target}\n")
 endfunction()
 
 # Auxiliary libraries
@@ -75,7 +80,9 @@ endfunction()
 function(nuttx_add_aux_library target)
   # declare target
   add_library(${target} OBJECT ${ARGN})
-
+  # make sure context and post time ordering
+  add_dependencies(${target} apps_context)
+  add_dependencies(apps_post ${target})
   nuttx_add_library_internal(${target} ${ARGN})
 endfunction()
 
@@ -87,7 +94,10 @@ endfunction()
 function(nuttx_add_user_library target)
   # declare target
   add_library(${target} OBJECT ${ARGN})
+  # make sure context and post time ordering
   add_dependencies(${target} apps_context)
+  add_dependencies(apps_post ${target})
+
   nuttx_add_library_internal(${target} ${ARGN})
 
   # link to final libapps
@@ -106,12 +116,21 @@ endfunction()
 function(nuttx_add_system_library target)
   # declare target
   add_library(${target} ${ARGN})
+  # make sure context and post time ordering
+  add_dependencies(${target} apps_context)
+  add_dependencies(apps_post ${target})
 
   # add library to build
   nuttx_add_library_internal(${target} ${ARGN})
 
   # add to list of libraries to link to final nuttx binary
   set_property(GLOBAL APPEND PROPERTY NUTTX_SYSTEM_LIBRARIES ${target})
+
+  set_property(
+    TARGET nuttx_global
+    APPEND
+    PROPERTY NUTTX_ELF_LINK_LIBRARIES $<TARGET_FILE:${target}>)
+
 endfunction()
 
 # Kernel Libraries
@@ -188,8 +207,16 @@ define_property(
 #
 function(nuttx_add_library target)
   add_library(${target} ${ARGN})
+  # make sure context and post time ordering
   add_dependencies(${target} apps_context)
+  add_dependencies(apps_post ${target})
   set_property(GLOBAL APPEND PROPERTY NUTTX_SYSTEM_LIBRARIES ${target})
+
+  set_property(
+    TARGET nuttx_global
+    APPEND
+    PROPERTY NUTTX_ELF_LINK_LIBRARIES $<TARGET_FILE:${target}>)
+
   # Set apps global compile options & definitions hold by nuttx_apps_interface
   target_compile_options(
     ${target}
@@ -230,6 +257,10 @@ function(nuttx_add_extra_library)
         set_property(GLOBAL APPEND PROPERTY NUTTX_USER_EXTRA_LIBRARIES
                                             ${extra_target})
       endif()
+      set_property(
+        TARGET nuttx_global
+        APPEND
+        PROPERTY NUTTX_ELF_LINK_EXTRA_LIBRARIES $<TARGET_FILE:${extra_target}>)
     endif()
   endforeach()
 endfunction()
@@ -252,7 +283,15 @@ endfunction()
 function(nuttx_add_external_library target)
   cmake_parse_arguments(ARGS "" MODE "" ${ARGN})
   if(NOT ARGS_MODE)
+    # if we add external library as system lib, make sure context and post time
+    # ordering
+    add_dependencies(${target} apps_context)
+    add_dependencies(apps_post ${target})
     set_property(GLOBAL APPEND PROPERTY NUTTX_SYSTEM_LIBRARIES ${target})
+    set_property(
+      TARGET nuttx_global
+      APPEND
+      PROPERTY NUTTX_ELF_LINK_LIBRARIES $<TARGET_FILE:${target}>)
   elseif("${ARGS_MODE}" STREQUAL "APPS")
     set_property(GLOBAL APPEND PROPERTY NUTTX_APPS_LIBRARIES ${target})
   elseif("${ARGS_MODE}" STREQUAL "KERNEL")

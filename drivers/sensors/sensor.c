@@ -32,7 +32,8 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
+#include <libgen.h>
 
 #include <poll.h>
 #include <fcntl.h>
@@ -42,6 +43,7 @@
 #include <nuttx/mutex.h>
 #include <nuttx/sensors/sensor.h>
 #include <nuttx/lib/lib.h>
+#include <nuttx/wdog.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -95,12 +97,13 @@ struct sensor_user_s
   struct list_node node;       /* Node of users list */
   struct pollfd   *fds;        /* The poll structure of thread waiting events */
   sensor_role_t    role;       /* The is used to indicate user's role based on open flags */
+  struct wdog_s    wdog;       /* Paces POLLIN at the requested interval */
+  uint64_t         fetched;    /* When POLLIN was last reported, in usec */
   bool             changed;    /* This is used to indicate event happens and need to
                                 * asynchronous notify other users
                                 */
   unsigned int     event;      /* The event of this sensor, eg: SENSOR_EVENT_FLUSH_COMPLETE. */
   bool             flushing;   /* The is used to indicate user is flushing */
-  sem_t            buffersem;  /* Wakeup user waiting for data in circular buffer */
   size_t           bufferpos;  /* The index of user generation in buffer */
 
   /* The subscriber info
@@ -121,6 +124,7 @@ struct sensor_upperhalf_s
   struct circbuf_s   buffer;             /* The circular buffer of data */
   rmutex_t           lock;               /* Manages exclusive access to file operations */
   struct list_node   userlist;           /* List of users */
+  char               name[NAME_MAX];     /* Upper topic name */
 };
 
 /****************************************************************************
@@ -141,6 +145,7 @@ static int     sensor_poll(FAR struct file *filep, FAR struct pollfd *fds,
                            bool setup);
 static ssize_t sensor_push_event(FAR void *priv, FAR const void *data,
                                  size_t bytes);
+static void    sensor_fetch_expired(wdparm_t arg);
 
 /****************************************************************************
  * Private Data
@@ -174,9 +179,9 @@ static const struct sensor_meta_s g_sensor_meta[] =
   {sizeof(struct sensor_rotation),            "rotation"},
   {sizeof(struct sensor_humi),                "humi"},
   {sizeof(struct sensor_temp),                "ambient_temp"},
-  {sizeof(struct sensor_mag),                 "mag_uncal"},
+  {sizeof(struct sensor_mag_uncal),           "mag_uncal"},
   {sizeof(struct sensor_pm1p0),               "pm1p0"},
-  {sizeof(struct sensor_gyro),                "gyro_uncal"},
+  {sizeof(struct sensor_gyro_uncal),          "gyro_uncal"},
   {sizeof(struct sensor_event),               "motion_detect"},
   {sizeof(struct sensor_event),               "step_detector"},
   {sizeof(struct sensor_step_counter),        "step_counter"},
@@ -195,7 +200,7 @@ static const struct sensor_meta_s g_sensor_meta[] =
   {sizeof(struct sensor_force),               "force"},
   {sizeof(struct sensor_hall),                "hall"},
   {sizeof(struct sensor_event),               "offbody_detector"},
-  {sizeof(struct sensor_accel),               "accel_uncal"},
+  {sizeof(struct sensor_accel_uncal),         "accel_uncal"},
   {sizeof(struct sensor_angle),               "hinge_angle"},
   {sizeof(struct sensor_ir),                  "ir"},
   {sizeof(struct sensor_hcho),                "hcho"},
@@ -218,6 +223,7 @@ static const struct sensor_meta_s g_sensor_meta[] =
   {sizeof(struct sensor_pm25),                "pm25"},
   {sizeof(struct sensor_pm10),                "pm10"},
   {sizeof(struct sensor_uv),                  "uv"},
+  {sizeof(struct sensor_eng),                 "eng"},
 };
 
 static const struct file_operations g_sensor_fops =
@@ -259,6 +265,8 @@ static int sensor_update_interval(FAR struct file *filep,
   uint32_t min_interval = interval;
   uint32_t min_latency = interval != UINT32_MAX ?
                          user->state.latency : UINT32_MAX;
+  uint32_t orig_min_interval;
+  uint32_t orig_min_latency;
   int ret = 0;
 
   if (interval == user->state.interval)
@@ -266,6 +274,8 @@ static int sensor_update_interval(FAR struct file *filep,
       return 0;
     }
 
+  nxrmutex_lock(&upper->lock);
+again:
   list_for_every_entry(&upper->userlist, tmp, struct sensor_user_s, node)
     {
       if (tmp == user || tmp->state.interval == UINT32_MAX)
@@ -290,6 +300,8 @@ static int sensor_update_interval(FAR struct file *filep,
           min_interval != upper->state.min_interval)
         {
           uint32_t expected_interval = min_interval;
+          orig_min_interval = upper->state.min_interval;
+          nxrmutex_unlock(&upper->lock);
           ret = lower->ops->set_interval(lower, filep, &min_interval);
           if (ret < 0)
             {
@@ -298,6 +310,18 @@ static int sensor_update_interval(FAR struct file *filep,
           else if (min_interval > expected_interval)
             {
               return -EINVAL;
+            }
+
+          nxrmutex_lock(&upper->lock);
+          sminfo(upper->name, "update interval %" PRIu32, min_interval);
+
+          /* The upper min_interval is updated by other threads, set to
+           * driver again to avoid race condition.
+           */
+
+          if (orig_min_interval != upper->state.min_interval)
+            {
+              goto again;
             }
         }
 
@@ -310,9 +334,23 @@ static int sensor_update_interval(FAR struct file *filep,
           (min_latency != upper->state.min_latency ||
           (min_interval != upper->state.min_interval && min_latency)))
         {
+          orig_min_latency = upper->state.min_latency;
+          nxrmutex_unlock(&upper->lock);
           ret = lower->ops->batch(lower, filep, &min_latency);
+          nxrmutex_lock(&upper->lock);
+
+          /* The upper min_latency is updated by other threads, set to
+           * driver again to avoid race condition.
+           */
+
+          if (orig_min_latency != upper->state.min_latency)
+            {
+              goto again;
+            }
+
           if (ret >= 0)
             {
+              sminfo(upper->name, "update batch %" PRIu32, min_latency);
               upper->state.min_latency = min_latency;
             }
         }
@@ -321,6 +359,7 @@ static int sensor_update_interval(FAR struct file *filep,
   upper->state.min_interval = min_interval;
   user->state.interval = interval;
   sensor_pollnotify(upper, POLLPRI, SENSOR_ROLE_WR);
+  nxrmutex_unlock(&upper->lock);
   return ret;
 }
 
@@ -332,6 +371,7 @@ static int sensor_update_latency(FAR struct file *filep,
   FAR struct sensor_lowerhalf_s *lower = upper->lower;
   FAR struct sensor_user_s *tmp;
   uint32_t min_latency = latency;
+  uint32_t orig_min_latency;
   int ret = 0;
 
   if (latency == user->state.latency)
@@ -345,6 +385,8 @@ static int sensor_update_latency(FAR struct file *filep,
       return 0;
     }
 
+  nxrmutex_lock(&upper->lock);
+again:
   if (latency <= upper->state.min_latency)
     {
       goto update;
@@ -372,22 +414,78 @@ update:
   if (min_latency == upper->state.min_latency)
     {
       user->state.latency = latency;
+      nxrmutex_unlock(&upper->lock);
       return ret;
     }
 
   if (lower->ops->batch)
     {
+      orig_min_latency = upper->state.min_latency;
+      nxrmutex_unlock(&upper->lock);
       ret = lower->ops->batch(lower, filep, &min_latency);
       if (ret < 0)
         {
           return ret;
+        }
+
+      sminfo(upper->name, "update batch %" PRIu32, min_latency);
+      nxrmutex_lock(&upper->lock);
+
+      /* The upper min_latency is updated by other threads, set to
+       * driver again to avoid race condition.
+       */
+
+      if (orig_min_latency != upper->state.min_latency)
+        {
+          goto again;
         }
     }
 
   upper->state.min_latency = min_latency;
   user->state.latency = latency;
   sensor_pollnotify(upper, POLLPRI, SENSOR_ROLE_WR);
+  nxrmutex_unlock(&upper->lock);
   return ret;
+}
+
+static void sensor_update_nonwakeup(FAR struct file *filep,
+                                    FAR struct sensor_upperhalf_s *upper,
+                                    FAR struct sensor_user_s *user,
+                                    bool nonwakeup)
+{
+  FAR struct sensor_lowerhalf_s *lower = upper->lower;
+
+  if (nonwakeup == user->state.nonwakeup)
+    {
+      return;
+    }
+
+  user->state.nonwakeup = nonwakeup;
+  nxrmutex_lock(&upper->lock);
+  list_for_every_entry(&upper->userlist, user, struct sensor_user_s,
+                       node)
+    {
+      if (!user->state.nonwakeup)
+        {
+          nonwakeup = false;
+          break;
+        }
+    }
+
+  if (nonwakeup != upper->state.nonwakeup)
+    {
+      upper->state.nonwakeup = nonwakeup;
+      sminfo(upper->name, "update nonwakeup %d", nonwakeup);
+      nxrmutex_unlock(&upper->lock);
+      if (lower->ops->set_nonwakeup)
+        {
+          lower->ops->set_nonwakeup(lower, filep, nonwakeup);
+        }
+    }
+  else
+    {
+      nxrmutex_unlock(&upper->lock);
+    }
 }
 
 static void sensor_generate_timing(FAR struct sensor_upperhalf_s *upper,
@@ -493,6 +591,9 @@ static ssize_t sensor_do_samples(FAR struct sensor_upperhalf_s *upper,
       circbuf_peekat(&upper->timing,
                      (user->bufferpos - 1) * TIMING_BUF_ESIZE,
                      &user->state.generation, TIMING_BUF_ESIZE);
+      smdebug(upper->name, "do sample interval:%" PRIu32 ", "
+              "user.generation:%" PRIu32 ", ret:%zd",
+              upper->state.generation, user->state.generation, ret);
       return ret;
     }
 
@@ -534,6 +635,10 @@ static ssize_t sensor_do_samples(FAR struct sensor_upperhalf_s *upper,
 
       delta = next_generation + generation -
               ((user->state.generation + user->state.interval) << 1);
+      smdebug(upper->name, "do sample interval:%" PRIu32 ", "
+              "generation:%" PRIu32 ", user generation:% "PRIu32 ", "
+              "next generation:%" PRIu32, user->state.interval,
+              generation, user->state.generation, next_generation);
       if (delta >= 0)
         {
           if (buffer != NULL)
@@ -586,6 +691,23 @@ static void sensor_pollnotify_one(FAR struct sensor_user_s *user,
   poll_notify(&user->fds, 1, eventset);
 }
 
+static void sensor_fetch_expired(wdparm_t arg)
+{
+  FAR struct sensor_user_s *user = (FAR struct sensor_user_s *)arg;
+
+  /* Timer context, so no lock: a teardown that raced us cleared fds, which
+   * makes both the notify and the re-arm below no-ops.
+   */
+
+  if (user->fds != NULL)
+    {
+      user->fetched = sensor_get_timestamp();
+      sensor_pollnotify_one(user, POLLIN, SENSOR_ROLE_RD);
+      wd_start(&user->wdog, USEC2TICK(user->state.interval),
+               sensor_fetch_expired, arg);
+    }
+}
+
 static void sensor_pollnotify(FAR struct sensor_upperhalf_s *upper,
                               pollevent_t eventset, sensor_role_t role)
 {
@@ -613,7 +735,7 @@ static int sensor_open(FAR struct file *filep)
       goto errout_with_lock;
     }
 
-  if (lower->ops->open)
+  if ((filep->f_oflags & O_DIRECT) == 0 && lower->ops->open)
     {
       ret = lower->ops->open(lower, filep);
       if (ret < 0)
@@ -622,31 +744,32 @@ static int sensor_open(FAR struct file *filep)
         }
     }
 
-  if ((filep->f_oflags & O_DIRECT) == 0)
-    {
-      if (filep->f_oflags & O_RDOK)
-        {
-          if (upper->state.nsubscribers == 0 && lower->ops->activate)
-            {
-              ret = lower->ops->activate(lower, filep, true);
-              if (ret < 0)
-                {
-                  goto errout_with_open;
-                }
-            }
+  /* Using the O_DIRECT flag will prevent cross-core operations,
+   * allowing for direct I/O operations.
+   */
 
-          user->role |= SENSOR_ROLE_RD;
-          upper->state.nsubscribers++;
+  if ((filep->f_oflags & O_ACCMODE) != O_WRONLY)
+    {
+      if (upper->state.nsubscribers == 0 && lower->ops->activate)
+        {
+          ret = lower->ops->activate(lower, filep, true);
+          if (ret < 0)
+            {
+              goto errout_with_open;
+            }
         }
 
-      if (filep->f_oflags & O_WROK)
+      user->role |= SENSOR_ROLE_RD;
+      upper->state.nsubscribers++;
+    }
+
+  if ((filep->f_oflags & O_ACCMODE) != O_RDONLY)
+    {
+      user->role |= SENSOR_ROLE_WR;
+      upper->state.nadvertisers++;
+      if (filep->f_oflags & SENSOR_PERSIST)
         {
-          user->role |= SENSOR_ROLE_WR;
-          upper->state.nadvertisers++;
-          if (filep->f_oflags & SENSOR_PERSIST)
-            {
-              lower->persist = true;
-            }
+          lower->persist = true;
         }
     }
 
@@ -661,9 +784,16 @@ static int sensor_open(FAR struct file *filep)
       user->bufferpos = upper->timing.head / TIMING_BUF_ESIZE;
     }
 
+  sminfo(upper->name, "user address: %p, role type: %d, "
+         "user generation: %" PRIu32 ", upper generation: %" PRIu32 ", "
+         "nsubscribers: %" PRIu32 ", nadvertisers: %" PRIu32 ", persist: %d",
+         user, user->role, user->state.generation,
+         upper->state.generation, upper->state.nsubscribers,
+         upper->state.nadvertisers, lower->persist);
+
   user->state.interval = UINT32_MAX;
   user->state.esize = upper->state.esize;
-  nxsem_init(&user->buffersem, 0, 0);
+  user->state.nonwakeup = true;
   list_add_tail(&upper->userlist, &user->node);
 
   /* The new user generation, notify to other users */
@@ -694,41 +824,44 @@ static int sensor_close(FAR struct file *filep)
   FAR struct sensor_user_s *user = filep->f_priv;
   int ret = 0;
 
+  sensor_update_interval(filep, upper, user, UINT32_MAX);
+  sensor_update_latency(filep, upper, user, UINT32_MAX);
+  sensor_update_nonwakeup(filep, upper, user, true);
+
   nxrmutex_lock(&upper->lock);
-  if (lower->ops->close)
+
+  if ((filep->f_oflags & O_DIRECT) == 0 && lower->ops->close)
     {
-      ret = lower->ops->close(lower, filep);
-      if (ret < 0)
+      lower->ops->close(lower, filep);
+    }
+
+  /* Using the O_DIRECT flag will prevent cross-core operations,
+   * allowing for direct I/O operations.
+   */
+
+  if ((filep->f_oflags & O_ACCMODE) != O_WRONLY)
+    {
+      upper->state.nsubscribers--;
+      if (upper->state.nsubscribers == 0 && lower->ops->activate)
         {
-          nxrmutex_unlock(&upper->lock);
-          return ret;
+          lower->ops->activate(lower, filep, false);
         }
     }
 
-  if ((filep->f_oflags & O_DIRECT) == 0)
+  if ((filep->f_oflags & O_ACCMODE) != O_RDONLY)
     {
-      if (filep->f_oflags & O_RDOK)
-        {
-          upper->state.nsubscribers--;
-          if (upper->state.nsubscribers == 0 && lower->ops->activate)
-            {
-              lower->ops->activate(lower, filep, false);
-            }
-        }
-
-      if (filep->f_oflags & O_WROK)
-        {
-          upper->state.nadvertisers--;
-        }
+      upper->state.nadvertisers--;
     }
 
   list_delete(&user->node);
-  sensor_update_latency(filep, upper, user, UINT32_MAX);
-  sensor_update_interval(filep, upper, user, UINT32_MAX);
-  nxsem_destroy(&user->buffersem);
+  user->fds = NULL;
+  wd_cancel(&user->wdog);
 
   /* The user is closed, notify to other users */
 
+  sminfo(upper->name, "user address: %p, "
+         "close subscriber: %" PRIu32 ", close advertiser:%" PRIu32,
+         user, upper->state.nsubscribers, upper->state.nadvertisers);
   sensor_pollnotify(upper, POLLPRI, SENSOR_ROLE_WR);
   nxrmutex_unlock(&upper->lock);
 
@@ -758,24 +891,15 @@ static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer,
           return -EINVAL;
         }
 
-      if (!(filep->f_oflags & O_NONBLOCK))
-        {
-          nxrmutex_unlock(&upper->lock);
-          ret = nxsem_wait_uninterruptible(&user->buffersem);
-          if (ret < 0)
-            {
-              return ret;
-            }
+      /* Read the device directly, there is nothing to wait for */
 
-          nxrmutex_lock(&upper->lock);
-        }
-      else if (!upper->state.nsubscribers)
+      if (!upper->state.nsubscribers)
         {
           ret = -EAGAIN;
           goto out;
         }
 
-        ret = lower->ops->fetch(lower, filep, buffer, len);
+      ret = lower->ops->fetch(lower, filep, buffer, len);
     }
   else if (circbuf_is_empty(&upper->buffer))
     {
@@ -805,6 +929,12 @@ static ssize_t sensor_read(FAR struct file *filep, FAR char *buffer,
       ret = -ENODATA;
     }
 
+  if (ret > 0)
+    {
+      smdebug(upper->name, "the number of read event is:%zd",
+              ret / upper->state.esize);
+    }
+
 out:
   nxrmutex_unlock(&upper->lock);
   return ret;
@@ -829,6 +959,7 @@ static int sensor_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
   uint32_t arg1 = (uint32_t)arg;
   int ret = 0;
 
+  smdebug(upper->name, "sensor ioctl start, cmd:%d", cmd);
   switch (cmd)
     {
       case SNIOC_GET_STATE:
@@ -852,18 +983,14 @@ static int sensor_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
       case SNIOC_SET_INTERVAL:
         {
-          nxrmutex_lock(&upper->lock);
           ret = sensor_update_interval(filep, upper, user,
                                        arg1 ? arg1 : UINT32_MAX);
-          nxrmutex_unlock(&upper->lock);
         }
         break;
 
       case SNIOC_BATCH:
         {
-          nxrmutex_lock(&upper->lock);
           ret = sensor_update_latency(filep, upper, user, arg1);
-          nxrmutex_unlock(&upper->lock);
         }
         break;
 
@@ -908,6 +1035,12 @@ static int sensor_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           nxrmutex_lock(&upper->lock);
           upper->state.priv = (uint64_t)arg;
           nxrmutex_unlock(&upper->lock);
+        }
+        break;
+
+      case SNIOC_SET_NONWAKEUP:
+        {
+          sensor_update_nonwakeup(filep, upper, user, (bool)arg);
         }
         break;
 
@@ -968,16 +1101,15 @@ static int sensor_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
      case SNIOC_FLUSH:
         {
-          nxrmutex_lock(&upper->lock);
-
           /* If the sensor is not activated, return -EINVAL. */
 
           if (upper->state.nsubscribers == 0)
             {
-              nxrmutex_unlock(&upper->lock);
+              sminfo(upper->name, "sensor not activated");
               return -EINVAL;
             }
 
+          ret = -ENOTSUP;
           if (lower->ops->flush != NULL)
             {
               /* Lower half driver will do flush in asynchronous mode,
@@ -988,18 +1120,32 @@ static int sensor_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
               ret = lower->ops->flush(lower, filep);
               if (ret >= 0)
                 {
+                  sminfo(upper->name, "flushing start");
                   user->flushing = true;
                 }
             }
-          else
+
+          if (ret == -ENOTSUP)
             {
               /* If flush is not supported, complete immediately */
 
+              user->flushing = false;
               user->event |= SENSOR_EVENT_FLUSH_COMPLETE;
               sensor_pollnotify_one(user, POLLPRI, user->role);
-            }
 
-          nxrmutex_unlock(&upper->lock);
+              /* If caller isn't from remote core, convert ENOTSUP
+               * to zero return, indicating the flush is completed.
+               * If it's from remote core, need to inform the remote
+               * core the flush is not supported for driver.
+               */
+
+              if ((filep->f_oflags & SENSOR_REMOTE) == 0)
+                {
+                  ret = 0;
+                }
+
+              sminfo(upper->name, "flush complete with result:%d", ret);
+            }
         }
         break;
 
@@ -1019,6 +1165,7 @@ static int sensor_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
         break;
     }
 
+  smdebug(upper->name, "sensor ioctl end, ret:%d", ret);
   return ret;
 }
 
@@ -1030,7 +1177,6 @@ static int sensor_poll(FAR struct file *filep,
   FAR struct sensor_lowerhalf_s *lower = upper->lower;
   FAR struct sensor_user_s *user = filep->f_priv;
   pollevent_t eventset = 0;
-  int semcount;
   int ret = 0;
 
   nxrmutex_lock(&upper->lock);
@@ -1048,18 +1194,29 @@ static int sensor_poll(FAR struct file *filep,
       fds->priv = filep;
       if (lower->ops->fetch)
         {
-          /* Always return POLLIN for fetch data directly(non-block) */
+          /* Always ready, unless a rate was requested: then once per
+           * interval, woken by sensor_fetch_expired().
+           */
 
-          if (filep->f_oflags & O_NONBLOCK)
+          if (user->state.interval == UINT32_MAX)
             {
               eventset |= POLLIN;
             }
           else
             {
-              nxsem_get_value(&user->buffersem, &semcount);
-              if (semcount > 0)
+              uint64_t now = sensor_get_timestamp();
+              uint64_t elapsed = now - user->fetched;
+
+              if (elapsed >= user->state.interval)
                 {
+                  user->fetched = now;
                   eventset |= POLLIN;
+                }
+              else
+                {
+                  wd_start(&user->wdog,
+                           USEC2TICK(user->state.interval - elapsed),
+                           sensor_fetch_expired, (wdparm_t)user);
                 }
             }
         }
@@ -1079,6 +1236,7 @@ static int sensor_poll(FAR struct file *filep,
     {
       user->fds = NULL;
       fds->priv = NULL;
+      wd_cancel(&user->wdog);
     }
 
 errout:
@@ -1093,7 +1251,6 @@ static ssize_t sensor_push_event(FAR void *priv, FAR const void *data,
   FAR struct sensor_lowerhalf_s *lower = upper->lower;
   FAR struct sensor_user_s *user;
   unsigned long envcount;
-  int semcount;
   int ret;
 
   nxrmutex_lock(&upper->lock);
@@ -1107,6 +1264,7 @@ static ssize_t sensor_push_event(FAR void *priv, FAR const void *data,
               user->flushing = false;
               user->event |= SENSOR_EVENT_FLUSH_COMPLETE;
               sensor_pollnotify_one(user, POLLPRI, user->role);
+              sminfo(upper->name, "flush complete, poll notify");
             }
         }
 
@@ -1143,18 +1301,13 @@ static ssize_t sensor_push_event(FAR void *priv, FAR const void *data,
         }
     }
 
+  smdebug(upper->name, "the number of write event is:%lu", envcount);
   circbuf_overwrite(&upper->buffer, data, bytes);
   sensor_generate_timing(upper, envcount);
   list_for_every_entry(&upper->userlist, user, struct sensor_user_s, node)
     {
       if (sensor_is_updated(upper, user))
         {
-          nxsem_get_value(&user->buffersem, &semcount);
-          if (semcount < 1)
-            {
-              nxsem_post(&user->buffersem);
-            }
-
           sensor_pollnotify_one(user, POLLIN, SENSOR_ROLE_RD);
         }
     }
@@ -1167,17 +1320,10 @@ static void sensor_notify_event(FAR void *priv)
 {
   FAR struct sensor_upperhalf_s *upper = priv;
   FAR struct sensor_user_s *user;
-  int semcount;
 
   nxrmutex_lock(&upper->lock);
   list_for_every_entry(&upper->userlist, user, struct sensor_user_s, node)
     {
-      nxsem_get_value(&user->buffersem, &semcount);
-      if (semcount < 1)
-        {
-          nxsem_post(&user->buffersem);
-        }
-
       sensor_pollnotify_one(user, POLLIN, SENSOR_ROLE_RD);
     }
 
@@ -1235,10 +1381,10 @@ void sensor_remap_vector_raw16(FAR const int16_t *in, FAR int16_t *out,
  *           instance is bound to the sensor driver and must persists as long
  *           as the driver persists.
  *   devno - The user specifies which device of this type, from 0. If the
- *           devno alerady exists, -EEXIST will be returned.
+ *           devno already exists, -EEXIST will be returned.
  *
  * Returned Value:
- *   OK if the driver was successfully register; A negated errno value is
+ *   OK if the driver was successfully registered; A negated errno value is
  *   returned on any failure.
  *
  ****************************************************************************/
@@ -1284,7 +1430,7 @@ int sensor_register(FAR struct sensor_lowerhalf_s *lower, int devno)
  *   esize - The element size of intermediate circular buffer.
  *
  * Returned Value:
- *   OK if the driver was successfully register; A negated errno value is
+ *   OK if the driver was successfully registered; A negated errno value is
  *   returned on any failure.
  *
  ****************************************************************************/
@@ -1317,6 +1463,7 @@ int sensor_custom_register(FAR struct sensor_lowerhalf_s *lower,
   list_initialize(&upper->userlist);
   upper->state.esize = esize;
   upper->state.min_interval = UINT32_MAX;
+  upper->state.nonwakeup = true;
   if (lower->ops->activate)
     {
       upper->state.nadvertisers = 1;
@@ -1354,10 +1501,11 @@ int sensor_custom_register(FAR struct sensor_lowerhalf_s *lower,
     }
 #endif
 
+  strlcpy(upper->name, basename((char *)path), sizeof(upper->name));
   upper->state.nbuffer = lower->nbuffer;
   upper->lower = lower;
-  sninfo("Registering %s\n", path);
-  ret = register_driver(path, &g_sensor_fops, 0666, upper);
+  sminfo(upper->name, "Registering %s", path);
+  ret = register_driver(path, &g_sensor_fops, 0600, upper);
   if (ret)
     {
       goto drv_err;
@@ -1435,7 +1583,7 @@ void sensor_custom_unregister(FAR struct sensor_lowerhalf_s *lower,
 
   upper = lower->priv;
 
-  sninfo("UnRegistering %s\n", path);
+  sminfo(upper->name, "UnRegistering");
   unregister_driver(path);
 
 #ifdef CONFIG_SENSORS_RPMSG

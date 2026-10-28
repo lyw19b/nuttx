@@ -24,6 +24,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -94,6 +95,8 @@ static void restoremode(void)
 
 void host_uart_start(void)
 {
+  int nonblock = 1;
+
   /* Get the current stdin terminal mode */
 
   tcgetattr(0, &g_cooked);
@@ -101,6 +104,14 @@ void host_uart_start(void)
   /* Put stdin into raw mode */
 
   setrawmode(0);
+
+  host_uninterruptible_no_return(ioctl, 0, FIONBIO, &nonblock);
+
+  /* Set stdout to non-blocking to prevent write(1, ...) from blocking
+   * the entire sim process when the host pipe buffer is full.
+   */
+
+  host_uninterruptible_no_return(ioctl, 1, FIONBIO, &nonblock);
 
   /* Restore the original terminal mode before exit */
 
@@ -128,6 +139,58 @@ int host_uart_open(const char *pathname)
     }
 
   return fd;
+}
+
+/****************************************************************************
+ * Name: host_uart_openpty
+ ****************************************************************************/
+
+int host_uart_openpty(const char *name)
+{
+#ifdef CONFIG_HOST_LINUX
+  unsigned int ptyno;
+  int lock = 0;
+  int oflags;
+  int ret;
+  int fd;
+
+  oflags = O_RDWR | O_NOCTTY | O_NONBLOCK;
+#ifdef O_CLOEXEC
+  oflags |= O_CLOEXEC;
+#endif
+  fd = open("/dev/ptmx", oflags);
+  if (fd < 0)
+    {
+      return -errno;
+    }
+
+  ret = ioctl(fd, TIOCGPTN, &ptyno);
+  if (ret < 0)
+    {
+      ret = -errno;
+      goto errout;
+    }
+
+  ret = ioctl(fd, TIOCSPTLCK, &lock);
+  if (ret < 0)
+    {
+      ret = -errno;
+      goto errout;
+    }
+
+  setrawmode(fd);
+
+  printf("%s connected to pseudotty: /dev/pts/%u\n", name, ptyno);
+
+  return fd;
+
+errout:
+  close(fd);
+  return ret;
+#else
+  (void)name;
+  return -ENOSYS;
+#endif
 }
 
 /****************************************************************************
@@ -229,7 +292,7 @@ bool host_uart_checkin(int fd)
 
   pfd.fd     = fd;
   pfd.events = POLLIN;
-  return poll(&pfd, 1, 0) == 1;
+  return poll(&pfd, 1, 0) == 1 && (pfd.revents & POLLIN) != 0;
 }
 
 /****************************************************************************
@@ -242,7 +305,7 @@ bool host_uart_checkout(int fd)
 
   pfd.fd     = fd;
   pfd.events = POLLOUT;
-  return poll(&pfd, 1, 0) == 1;
+  return poll(&pfd, 1, 0) == 1 && (pfd.revents & POLLOUT) != 0;
 }
 
 /****************************************************************************

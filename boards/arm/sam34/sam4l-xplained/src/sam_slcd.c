@@ -38,7 +38,7 @@
 #include <poll.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/ascii.h>
 #include <nuttx/streams.h>
@@ -216,7 +216,7 @@
 #define SLCD_AM          (&g_einfo[7])
 
 /****************************************************************************
- * Private Type Definition
+ * Private Types
  ****************************************************************************/
 
 /* Global SLCD state */
@@ -1267,7 +1267,7 @@ int sam_slcd_initialize(void)
 
       /* Register the LCD device driver */
 
-      ret = register_driver("/dev/slcd0", &g_slcdops, 0644, &g_slcdstate);
+      ret = register_driver("/dev/slcd0", &g_slcdops, 0640, &g_slcdstate);
       g_slcdstate.initialized = true;
 
       /* Turn on the backlight */

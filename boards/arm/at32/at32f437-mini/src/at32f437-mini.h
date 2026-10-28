@@ -144,7 +144,7 @@
 #elif defined(CONFIG_AT32_UART8_HCIUART)
 #  define HCIUART_SERDEV HCIUART8
 #else
-#  error No HCI UART specifified
+#  error No HCI UART specified
 #endif
 
 /* AT32F4 Mini GPIOs ********************************************************/
@@ -215,9 +215,6 @@
  *
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
- *
- *   CONFIG_BOARD_LATE_INITIALIZE=y && CONFIG_BOARDCTL=y :
- *     Called from the NSH library
  *
  ****************************************************************************/
 

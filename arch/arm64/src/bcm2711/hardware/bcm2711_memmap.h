@@ -53,14 +53,14 @@
 
 #define BCM_PERIPHERAL_BASEADDR 0x47e000000
 
-#endif // defined(CONFIG_BCM2711_LOW_PERIPHERAL)
+#endif /* defined(CONFIG_BCM2711_LOW_PERIPHERAL) */
 
 /* Base addresses for chip registers */
 
 #define BCM_ARMT_BASEADDR                                                    \
   (BCM_PERIPHERAL_BASEADDR + 0x0000b000) /* ARM timer */
 #define BCM_AUX_BASEADDR                                                     \
-  (BCM_PERIPHERAL_BASEADDR + 0x000215000) /* Auxilliary */
+  (BCM_PERIPHERAL_BASEADDR + 0x000215000) /* Auxiliary */
 #define BCM_GPCLK_BASEADDR                                                   \
   (BCM_PERIPHERAL_BASEADDR + 0x000101000) /* General purpose clock */
 #define BCM_GPIO_BASEADDR                                                    \
@@ -69,6 +69,10 @@
   (BCM_PERIPHERAL_BASEADDR + 0x000203000) /* PCM */
 #define BCM_SYST_BASEADDR                                                    \
   (BCM_PERIPHERAL_BASEADDR + 0x000003000) /* System timer */
+#define BCM_PWM0_BASEADDR                                                    \
+  (BCM_PERIPHERAL_BASEADDR + 0x00020c000) /* PWM0 */
+#define BCM_PWM1_BASEADDR                                                    \
+  (BCM_PERIPHERAL_BASEADDR + 0x00020c800) /* PWM1 */
 
 /* SPI interface register base addresses */
 
@@ -103,6 +107,16 @@
 #define BCM_DMA15_BASE                                                       \
   (BCM_PERIPHERAL_BASEADDR + 0x000e05000) /* DMA Channel 15 */
 
+/* PACTL register address */
+
+#define BCM_PACTL_CS (BCM_PERIPHERAL_BASEADDR + 0x204e00)
+
+/* EMMC interface base addresses */
+
+#define BCM_SDHOST_BASEADDR (BCM_PERIPHERAL_BASEADDR + 0x202000) /* SDHost */
+#define BCM_EMMC1_BASEADDR (BCM_PERIPHERAL_BASEADDR + 0x300000)  /* EMMC1 */
+#define BCM_EMMC2_BASEADDR (BCM_PERIPHERAL_BASEADDR + 0x340000)  /* EMMC2 */
+
 /* ARM_LOCAL base address */
 
 #if defined(CONFIG_BCM2711_LOW_PERIPHERAL)
@@ -110,5 +124,15 @@
 #else
 #define BCM_ARMLOCAL_BASEADDR 0x4c0000000
 #endif /* defined(CONFIG_BCM2711_LOW_PERIPHERAL) */
+
+/* VideoCore mailbox base address */
+
+#define BCM_VC_MBOX_BASEADDR (BCM_PERIPHERAL_BASEADDR + 0xb880)
+
+/* Spin table addresses
+ * https://huangweiliang.github.io/2026/02/03/QNX-Startup/
+ */
+
+#define BCM_SPINTBL_CPU(cpu) (0xd8L + (cpu) * 8)
 
 #endif /* __ARCH_ARM64_SRC_BCM2711_MM_H */

@@ -28,8 +28,8 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <arch/board/board.h>
@@ -185,7 +185,7 @@ int lpc43_gpio_config(uint16_t gpiocfg)
 #endif
         break;
 
-      default :
+      default:
         serr("ERROR: Unrecognized pin mode: %04x\n", gpiocfg);
         ret = -EINVAL;
         break;

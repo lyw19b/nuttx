@@ -1,5 +1,5 @@
 # ##############################################################################
-# boards/arm/n23x/frdm-mcxn236/src/CMakeLists.txt
+# boards/arm/mcx-nxxx/frdm-mcxn236/src/CMakeLists.txt
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -21,10 +21,6 @@
 # ##############################################################################
 
 set(SRCS n23x_boardinit.c n23x_bringup.c)
-
-if(CONFIG_BOARDCTL)
-  list(APPEND SRCS n23x_appinit.c)
-endif()
 
 target_sources(board PRIVATE ${SRCS})
 

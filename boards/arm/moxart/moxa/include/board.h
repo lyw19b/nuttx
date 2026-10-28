@@ -64,7 +64,7 @@
 /* PLLA configuration.
  *
  *   Divider = 1
- *   Multipler = 14
+ *   Multiplier = 14
  */
 
 #define BOARD_CKGR_PLLAR_MUL       (13 << PMC_CKGR_PLLAR_MUL_SHIFT)
@@ -175,7 +175,7 @@
 #define LED_SIGNAL        2 /* In a signal handler     N/C  GLOW  OFF      */
 #define LED_ASSERTION     2 /* An assertion failed     N/C  GLOW  OFF      */
 #define LED_PANIC         3 /* The system has crashed  N/C  N/C   Blinking */
-#define LED_PANIC         3 /* MCU is is sleep mode    ---- Not used ----  */
+#define LED_PANIC         3 /* MCU is in sleep mode    ---- Not used ----  */
 
 #undef CONFIG_SUPPRESS_SERIAL_INTS
 

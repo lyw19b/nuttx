@@ -25,7 +25,7 @@ config ARCH_CHIP
 config ARCH_LOONGARCH64
 	bool
 	default y
-	select ARCH_HAVE_FORK if BUILD_FLAT
+	select ARCH_HAVE_VFORK if BUILD_FLAT
 	select ARCH_HAVE_STACKCHECK
 	select ARCH_HAVE_SETJMP
 	select ARCH_SETJMP_H
@@ -112,7 +112,7 @@ config LOONGARCH_INITIAL_HEAP_SIZE
 	---help---
 		Keep this page-aligned bootstrap heap resident for the ELF loader,
 		which initializes allocator metadata and the initial user stack
-		with interrupts masked. Later heap extensions are demand-zero.
+		before user entry. Later heap extensions are demand-zero.
 		This must accommodate the initial stack and allocator overhead.
 
 config LOONGARCH_ASID_TEST

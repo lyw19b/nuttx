@@ -49,7 +49,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/sdio.h>
@@ -141,7 +141,7 @@ static int k64_cdinterrupt(int irq, void *context, void *arg)
  * Name: k64_sdhc_initialize
  *
  * Description:
- *   Inititialize the SDHC SD card slot
+ *   Initialize the SDHC SD card slot
  *
  ****************************************************************************/
 

@@ -41,6 +41,10 @@ list(
   binfmt_copyactions.c
   binfmt_dumpmodule.c)
 
+if(CONFIG_SCHED_USER_IDENTITY)
+  list(APPEND SRCS binfmt_checkexec.c)
+endif()
+
 if(CONFIG_BINFMT_LOADABLE)
   list(APPEND SRCS binfmt_exit.c)
 endif()
@@ -65,4 +69,4 @@ endif()
 
 target_sources(binfmt PRIVATE ${SRCS})
 target_include_directories(binfmt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(binfmt PRIVATE ${CMAKE_SOURCE_DIR}/sched)
+target_include_directories(binfmt PRIVATE ${NUTTX_DIR}/sched)

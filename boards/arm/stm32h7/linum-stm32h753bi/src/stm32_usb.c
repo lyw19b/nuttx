@@ -32,7 +32,7 @@
 #include <sched.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kthread.h>
 #include <nuttx/usb/usbdev.h>
@@ -45,7 +45,7 @@
 #include "stm32_otg.h"
 #include "linum-stm32h753bi.h"
 
-#ifdef CONFIG_STM32H7_OTGFS
+#ifdef CONFIG_STM32_OTGFS
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -63,7 +63,7 @@
 #endif
 
 #ifndef CONFIG_LINUM_STM32H753BI_USBHOST_STACKSIZE
-#  define CONFIG_LINUM_STM32H753BI_USBHOST_STACKSIZE 1024
+#  define CONFIG_LINUM_STM32H753BI_USBHOST_STACKSIZE 2048
 #endif
 
 /****************************************************************************
@@ -123,7 +123,7 @@ static int usbhost_waiter(int argc, char *argv[])
  * Name: stm32_usbinitialize
  *
  * Description:
- *   Called from stm32_usbinitialize very early in inialization to setup
+ *   Called from stm32_usbinitialize very early in initialization to setup
  *   USB-related GPIO pins for the linum-stm32h753bi board.
  *
  ****************************************************************************/
@@ -138,7 +138,7 @@ void stm32_usbinitialize(void)
    * Power On, and Overcurrent GPIOs
    */
 
-#ifdef CONFIG_STM32H7_OTGFS
+#ifdef CONFIG_STM32_OTGFS
   stm32_configgpio(GPIO_OTGFS_VBUS);
   stm32_configgpio(GPIO_OTGFS_PWRON);
   stm32_configgpio(GPIO_OTGFS_OVER);
@@ -271,9 +271,11 @@ void stm32_usbhost_vbusdrive(int iface, bool enable)
 {
   DEBUGASSERT(iface == 0);
 
-  /* Set the Power Switch by driving the active high enable pin */
+  /* Set the Power Switch by driving the enable pin.  On the Linum board the
+   * USB power switch enable (PI12) is active low, so invert the request.
+   */
 
-  stm32_gpiowrite(GPIO_OTGFS_PWRON, enable);
+  stm32_gpiowrite(GPIO_OTGFS_PWRON, !enable);
 }
 #endif
 

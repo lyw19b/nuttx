@@ -29,7 +29,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <unistd.h>
 
 #include <nuttx/sched.h>
@@ -37,6 +37,14 @@
 #include <nuttx/queue.h>
 
 #include "local/local.h"
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/* Global protection lock for local socket */
+
+mutex_t g_local_lock = NXMUTEX_INITIALIZER;
 
 /****************************************************************************
  * Private Data
@@ -168,6 +176,7 @@ FAR struct local_conn_s *local_alloc(void)
 
       nxmutex_init(&conn->lc_sendlock);
       nxmutex_init(&conn->lc_polllock);
+      nxrmutex_init(&conn->lc_conn.s_lock);
 
 #ifdef CONFIG_NET_LOCAL_SCM
       conn->lc_cred.pid = nxsched_getpid();
@@ -329,24 +338,24 @@ void local_free(FAR struct local_conn_s *conn)
     {
       if (conn->lc_cfps[i])
         {
-          file_close(conn->lc_cfps[i]);
-          kmm_free(conn->lc_cfps[i]);
+          file_put(conn->lc_cfps[i]);
           conn->lc_cfps[i] = NULL;
         }
     }
 #endif /* CONFIG_NET_LOCAL_SCM */
 
-  /* Destroy all FIFOs associted with the connection */
+  /* Destroy all FIFOs associated with the connection */
 
   local_release_fifos(conn);
 #ifdef CONFIG_NET_LOCAL_STREAM
   nxsem_destroy(&conn->lc_waitsem);
 #endif
 
-  /* Destory sem associated with the connection */
+  /* Destroy sem associated with the connection */
 
   nxmutex_destroy(&conn->lc_sendlock);
   nxmutex_destroy(&conn->lc_polllock);
+  nxrmutex_destroy(&conn->lc_conn.s_lock);
 
   /* And free the connection structure */
 

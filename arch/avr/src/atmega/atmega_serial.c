@@ -33,8 +33,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/serial/serial.h>
@@ -345,7 +345,7 @@ static void usart1_shutdown(struct uart_dev_s *dev)
  * Description:
  *   Configure the USART to operation in interrupt driven mode.  This method
  *   is called when the serial port is opened.  Normally, this is just after
- *   the the setup() method is called, however, the serial console may
+ *   the setup() method is called, however, the serial console may
  *   operate in a non-interrupt driven mode during the boot phase.
  *
  *   RX and TX interrupts are not enabled when by the attach method (unless
@@ -799,7 +799,7 @@ static bool usart1_txready(struct uart_dev_s *dev)
  * Name: usart0/1_txempty
  *
  * Description:
- *   Return true if the tranmsit data register and shift reqister are both
+ *   Return true if the tranmsit data register and shift register are both
  *   empty
  *
  ****************************************************************************/
@@ -829,7 +829,7 @@ static bool usart1_txempty(struct uart_dev_s *dev)
  *
  * Description:
  *   Performs the low level USART initialization early in debug so that the
- *   serial console will be available during bootup.  This must be called
+ *   serial console will be available during boot up.  This must be called
  *   before avr_serialinit.
  *
  ****************************************************************************/

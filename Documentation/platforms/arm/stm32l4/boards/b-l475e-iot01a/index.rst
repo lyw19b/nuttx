@@ -2,6 +2,8 @@
 ST B-L475E-IOT01A
 =================
 
+.. tags:: chip:stm32, chip:stm32l4, chip:stm32l475
+
 This page discusses the port of NuttX to the STMicro B-L475E-IOT01A
 Discovery kit powered by STM32L475VG Cortex-M4.  This board targets IoT
 nodes with a choice of connectivity options including WiFi, Bluetooth LE,
@@ -255,6 +257,38 @@ nsh:
 Configures the NuttShell (nsh) located at examples/nsh.  This
 configuration is focused on low level, command-line driver testing.
 
+qemu:
+-----
+
+The same NuttShell configuration as 'nsh', but targeted at the QEMU
+``b-l475e-iot01a`` machine instead of real hardware.  QEMU models the
+STM32L4x5 core peripherals (RCC, GPIO, EXTI, SYSCFG, USART) but does
+not model the QUADSPI controller or the on-board MX25R6435F flash, so
+this configuration drops the external flash stack that 'nsh' enables::
+
+    CONFIG_B_L475E_IOT01A_MTD_FLASH  (and the QSPI/MTD/SMARTFS chain it selects)
+
+Without that change the 'nsh' image panics during board bring-up, inside
+``stm32_qspi_initialize()`` -> ``mx25rxx_initialize()``, before the console
+ever produces output.
+
+Build and run it with::
+
+    tools/configure.sh b-l475e-iot01a:qemu
+    make
+    qemu-system-arm -M b-l475e-iot01a -nographic -kernel nuttx
+
+Console output appears on USART1, which the machine wires to the first
+serial port.  Exit QEMU with :kbd:`Ctrl-a x`.
+
+NOTE: QEMU's STM32L4x5 USART model never calls
+``qemu_chr_fe_accept_input()`` after the guest reads RDR.  Once a byte
+arrives while RXNE is still set, the chardev front end throttles and does
+not resume, so pasting or piping a line of input into the console stalls
+after the first character or two.  Typing at human speed works normally;
+scripted input needs a delay of a few hundred milliseconds between
+characters.
+
 spirit-6lowpan
 --------------
 
@@ -280,7 +314,7 @@ NOTES:
             nsh> ifconfig wpan0 hw 37
 
       Where 37 the address is an example.  It should be different for
-      each radio, but in the the range 1..ed and ef..fe (ee and ff are
+      each radio, but in the range 1..ed and ef..fe (ee and ff are
       the reserved for multicast and broadcast addresses, respectively.
       Zero is a valid address but not recommended).
 
@@ -434,7 +468,7 @@ configuration and most of the notes there apply here as well.
    forward those packets appropriately.
 
 3. TCP and UDP Tests:  The same TCP and UDP tests as described for
-   the spirit-6lowpan coniguration are supported on the star
+   the spirit-6lowpan configuration are supported on the star
    endpoints, but NOT on the star hub.  Therefore, all network testing
    is between endpoints with the hub acting, well, only like a hub.
 
@@ -583,7 +617,7 @@ configuration and most of the notes there apply here as well.
         IPHC headers and is unable to uncompress the rest of the packet
         correctly.
 
-        Trying again with HC1 compression, I see other isses.  The first
+        Trying again with HC1 compression, I see other issues.  The first
         frame is received correctly, but the following frames have an incorrect
         packet length and generate RX FIFO errors.  Forcing the send size to
         12 bytes of payload in apps/examples/udp (vs 96), eliminates this

@@ -43,13 +43,15 @@ functions.  So we have::
   inttypes  - inttypes.h
   machine   - Various architecture-specific implementations.
   math      - math.h
-  modlib    - Part of module and shared library logic: nuttx/lib/modlib.h
+  elf    - Part of module and shared library logic: nuttx/lib/elf.h
   net       - Various network-related header files: netinet/ether.h, arpa/inet.h
   pthread   - pthread.h
   pwd       - pwd.h
   queue     - queue.h
   sched     - sched.h
+  search    - search.h
   semaphore - semaphore.h
+  stdbit    - stdbit.h (optional C23)
   stdio     - stdio.h
   stdlib    - stdlib.h
   string    - string.h (and legacy strings.h and non-standard nuttx/b2c.h)
@@ -66,7 +68,7 @@ There is also a ``misc/`` subdirectory that contains various internal functions
 and interfaces from header files that are too few to warrant their own sub-
 directory::
 
-  misc      - Nonstandard "glue" logic, debug.h, crc32.h, dirent.h
+  misc      - Nonstandard "glue" logic, nuttx/debug.h, crc32.h, dirent.h
 
 Library Database
 ================
@@ -92,7 +94,7 @@ Each type field has a format as follows::
   type name:
         For all simpler types
   formal type | actual type:
-        For array types where the form of the formal (eg. int parm[2])
+        For array types where the form of the formal (eg. int param[2])
         differs from the type of actual passed parameter (eg. int*).  This
         is necessary because you cannot do simple casts to array types.
   formal type | union member actual type | union member fieldname:
@@ -153,4 +155,7 @@ Implementation Details
    :maxdepth: 1
    :caption: Contents:
    
+   search.rst
+   stdbit.rst
+   stream.rst
    zoneinfo.rst

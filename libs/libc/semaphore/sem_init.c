@@ -57,20 +57,23 @@
  *
  * Returned Value:
  *   This is an internal OS interface and should not be used by applications.
- *   It follows the NuttX internal error return policy:  Zero (OK) is
- *   returned on success.  A negated errno value is returned on failure.
+ *   Zero (OK) is always returned.
  *
  ****************************************************************************/
 
-int nxsem_init(FAR sem_t *sem, int pshared, unsigned int value)
+int nxsem_init(FAR sem_t *sem, int pshared, int32_t value)
 {
   UNUSED(pshared);
 
-  DEBUGASSERT(sem != NULL && value <= SEM_VALUE_MAX);
+  DEBUGASSERT(sem != NULL);
 
-  /* Initialize the semaphore count */
+  /* Initialize the semaphore count or mutex holder */
 
-  sem->semcount = (int32_t)value;
+  sem->val.semcount = (int32_t)value;
+
+#ifdef CONFIG_CUSTOM_SEMAPHORE_MAXVALUE
+  sem->maxvalue = SEM_VALUE_MAX;
+#endif
 
   /* Initialize semaphore wait list */
 
@@ -116,8 +119,6 @@ int nxsem_init(FAR sem_t *sem, int pshared, unsigned int value)
 
 int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 {
-  int ret;
-
   /* Verify that a semaphore was provided and the count is within the valid
    * range.
    */
@@ -128,12 +129,6 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
       return ERROR;
     }
 
-  ret = nxsem_init(sem, pshared, value);
-  if (ret < 0)
-    {
-      set_errno(-ret);
-      ret = ERROR;
-    }
-
-  return ret;
+  nxsem_init(sem, pshared, value);
+  return OK;
 }

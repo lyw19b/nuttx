@@ -20,6 +20,19 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -33,7 +46,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <time.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/mutex.h>
@@ -55,10 +68,6 @@
 #  define sps30_dbg(x, ...)    sninfo(x, ##__VA_ARGS__)
 #endif
 
-#ifndef CONFIG_SPS30_I2C_FREQUENCY
-#  define CONFIG_SPS30_I2C_FREQUENCY 100000
-#endif
-
 #define SPS30_MEASUREMENT_INTERVAL 1      /* one second, fixed in hw */
 #define SPS30_MEASUREMENT_MODE     0x0300
 
@@ -77,7 +86,7 @@
 #define SPS30_CMD_SOFT_RESET                 0xd304
 
 /****************************************************************************
- * Private
+ * Private Types
  ****************************************************************************/
 
 struct sps30_dev_s
@@ -443,12 +452,12 @@ static bool has_time_passed(struct timespec curr,
                             struct timespec start,
                             unsigned int secs_since_start)
 {
-  if ((long)((start.tv_sec + secs_since_start) - curr.tv_sec) == 0)
+  if ((start.tv_sec + secs_since_start) - curr.tv_sec == 0)
     {
       return start.tv_nsec <= curr.tv_nsec;
     }
 
-  return (long)((start.tv_sec + secs_since_start) - curr.tv_sec) <= 0;
+  return (start.tv_sec + secs_since_start) - curr.tv_sec <= 0;
 }
 
 /****************************************************************************
@@ -494,11 +503,7 @@ static int sps30_read_values(FAR struct sps30_dev_s *priv,
                   return ret;
                 }
 
-              ret = nxsig_usleep(500 * 1000);
-              if (ret == -EINTR)
-                {
-                  return ret;
-                }
+              nxsched_usleep(500 * 1000);
             }
           else
             {
@@ -1084,7 +1089,7 @@ int sps30_register_i2c(FAR const char *devpath, FAR struct i2c_master_s *i2c,
 
   /* Register the character driver */
 
-  ret = register_driver(devpath, &g_sps30fops, 0666, priv);
+  ret = register_driver(devpath, &g_sps30fops, 0600, priv);
   if (ret < 0)
     {
       sps30_dbg("ERROR: Failed to register driver: %d\n", ret);

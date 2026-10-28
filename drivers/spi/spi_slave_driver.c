@@ -34,7 +34,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <fcntl.h>
 #include <poll.h>
 
@@ -72,7 +72,7 @@ struct spi_slave_driver_s
 
   FAR struct pollfd *fds;
 
-  /* The semphore reader */
+  /* The semaphore reader */
 
   sem_t wait;
 
@@ -639,7 +639,7 @@ static void spi_slave_cmddata(FAR struct spi_slave_dev_s *dev, bool data)
  *
  * Input Parameters:
  *   dev  - SPI Slave device interface instance
- *   data - Pointer to the data buffer pointer to be shifed out.
+ *   data - Pointer to the data buffer pointer to be shifted out.
  *          The device will set the data buffer pointer to the actual data
  *
  * Returned Value:
@@ -742,9 +742,12 @@ static void spi_slave_notify(FAR struct spi_slave_dev_s *dev,
       poll_notify(&priv->fds, 1, POLLERR);
     }
 
-  while (nxsem_get_value(&priv->wait, &semcnt) == 0 && semcnt <= 0)
+  if (nxsem_get_value(&priv->wait, &semcnt) >= 0)
     {
-      nxsem_post(&priv->wait);
+      while (semcnt++ <= 0)
+        {
+          nxsem_post(&priv->wait);
+        }
     }
 }
 
@@ -811,7 +814,7 @@ int spi_slave_register(FAR struct spi_slave_ctrlr_s *ctrlr, int bus)
 
   /* Register the character driver */
 
-  ret = register_driver(devname, &g_spislavefops, 0666, priv);
+  ret = register_driver(devname, &g_spislavefops, 0600, priv);
   if (ret < 0)
     {
       spierr("ERROR: Failed to register driver: %d\n", ret);

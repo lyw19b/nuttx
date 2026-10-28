@@ -418,9 +418,9 @@
 /* Align registers to 64-bytes */
 
 #ifdef CONFIG_ARCH_X86_64_AVX512
-#  define XMMAREA_REG_ALIGN         (13)
+#  define XMMAREA_REG_ALIGN         (12)
 #else
-#  define XMMAREA_REG_ALIGN         (7)
+#  define XMMAREA_REG_ALIGN         (6)
 #endif
 
 /* Register offset in XMMAREA */
@@ -434,42 +434,39 @@
 #define REG_GS                      (1 + XMMAREA_REG_OFFSET)
 #define REG_ES                      (2 + XMMAREA_REG_OFFSET)
 #define REG_DS                      (3 + XMMAREA_REG_OFFSET)  /* Data segment selector */
+#define REG_FSBASE                  (4 + XMMAREA_REG_OFFSET)  /* FS base */
 
 /* Remaining regs */
 
-#define REG_RAX                     (4 + XMMAREA_REG_OFFSET)
-#define REG_RBX                     (5 + XMMAREA_REG_OFFSET)
-#define REG_RBP                     (6 + XMMAREA_REG_OFFSET)
-#define REG_R10                     (7 + XMMAREA_REG_OFFSET)
-#define REG_R11                     (8 + XMMAREA_REG_OFFSET)
-#define REG_R12                     (9 + XMMAREA_REG_OFFSET)
-#define REG_R13                     (10 + XMMAREA_REG_OFFSET)
-#define REG_R14                     (11 + XMMAREA_REG_OFFSET)
-#define REG_R15                     (12 + XMMAREA_REG_OFFSET)
+#define REG_RAX                     (5 + XMMAREA_REG_OFFSET)
+#define REG_RBX                     (6 + XMMAREA_REG_OFFSET)
+#define REG_RBP                     (7 + XMMAREA_REG_OFFSET)
+#define REG_R10                     (8 + XMMAREA_REG_OFFSET)
+#define REG_R11                     (9 + XMMAREA_REG_OFFSET)
+#define REG_R12                     (10 + XMMAREA_REG_OFFSET)
+#define REG_R13                     (11 + XMMAREA_REG_OFFSET)
+#define REG_R14                     (12 + XMMAREA_REG_OFFSET)
+#define REG_R15                     (13 + XMMAREA_REG_OFFSET)
 
 /* ABI calling convention */
 
-#define REG_R9                      (13 + XMMAREA_REG_OFFSET)
-#define REG_R8                      (14 + XMMAREA_REG_OFFSET)
-#define REG_RCX                     (15 + XMMAREA_REG_OFFSET)
-#define REG_RDX                     (16 + XMMAREA_REG_OFFSET)
-#define REG_RSI                     (17 + XMMAREA_REG_OFFSET)
-#define REG_RDI                     (18 + XMMAREA_REG_OFFSET)
+#define REG_R9                      (14 + XMMAREA_REG_OFFSET)
+#define REG_R8                      (15 + XMMAREA_REG_OFFSET)
+#define REG_RCX                     (16 + XMMAREA_REG_OFFSET)
+#define REG_RDX                     (17 + XMMAREA_REG_OFFSET)
+#define REG_RSI                     (18 + XMMAREA_REG_OFFSET)
+#define REG_RDI                     (19 + XMMAREA_REG_OFFSET)
 
 /* IRQ saved */
 
-#define REG_ERRCODE                 (19 + XMMAREA_REG_OFFSET)  /* Error code */
-#define REG_RIP                     (20 + XMMAREA_REG_OFFSET)  /* Pushed by process on interrupt processing */
-#define REG_CS                      (21 + XMMAREA_REG_OFFSET)
-#define REG_RFLAGS                  (22 + XMMAREA_REG_OFFSET)
-#define REG_RSP                     (23 + XMMAREA_REG_OFFSET)
-#define REG_SS                      (24 + XMMAREA_REG_OFFSET)
+#define REG_ERRCODE                 (20 + XMMAREA_REG_OFFSET)  /* Error code */
+#define REG_RIP                     (21 + XMMAREA_REG_OFFSET)  /* Pushed by process on interrupt processing */
+#define REG_CS                      (22 + XMMAREA_REG_OFFSET)
+#define REG_RFLAGS                  (23 + XMMAREA_REG_OFFSET)
+#define REG_RSP                     (24 + XMMAREA_REG_OFFSET)
+#define REG_SS                      (25 + XMMAREA_REG_OFFSET)
 
-#define XMMAREA_REGS                (25)
-
-/* Aux register used by implementation */
-
-#define REG_AUX                     (26 + XMMAREA_REG_OFFSET)
+#define XMMAREA_REGS                (26)
 
 /* NOTE 2: This is not really state data.  Rather, this is just a convenient
  *   way to pass parameters from the interrupt handler to C code.
@@ -489,10 +486,6 @@
 #define XCP_ALIGN_DOWN(a)           ((a) & ~XCP_ALIGN_MASK)
 #define XCP_ALIGN_UP(a)             (((a) + XCP_ALIGN_MASK) & ~XCP_ALIGN_MASK)
 
-/* Aux register flags */
-
-#define REG_AUX_FULLCONTEXT         (1 << 0) /* Force full context switch */
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -504,6 +497,7 @@ enum ioapic_trigger_mode
   TRIGGER_FALLING_EDGE      = (1 << 13),
   TRIGGER_LEVEL_ACTIVE_HIGH = (1 << 15),
   TRIGGER_LEVEL_ACTIVE_LOW  = (1 << 15) | (1 << 13),
+  TRIGGER_MODE_MASK         = (1 << 15) | (1 << 13),
 };
 
 /* This structure represents the return state from a system call */
@@ -519,6 +513,7 @@ struct xcpt_syscall_s
 
 struct xcptcontext
 {
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
 #ifdef CONFIG_BUILD_KERNEL
   /* This is the saved address to use when returning from a user-space
    * signal handler.
@@ -534,6 +529,7 @@ struct xcptcontext
   uint64_t saved_rip;
   uint64_t saved_rflags;
   uint64_t saved_rsp;
+#endif /* CONFIG_ENABLE_ALL_SIGNALS */
 
 #ifdef CONFIG_ARCH_KERNEL_STACK
   /* For kernel stack enabled we can't use tcb->xcp.regs[REG_RSP] as it may
@@ -547,6 +543,18 @@ struct xcptcontext
   /* Register save area - allocated from stack in up_initial_state() */
 
   uint64_t *regs;
+
+#ifdef CONFIG_LIB_SYSCALL
+  /* The register context of the user code that is currently in a system
+   * call, as x86_64_syscall_entry() saved it on the kernel stack.  This is
+   * what the caller of a system call was doing, as opposed to xcp.regs,
+   * which during a system call describes the kernel side of it.
+   * x86_64_fork() needs it to build a child from the caller rather than
+   * from the stub.
+   */
+
+  uint64_t *sregs;
+#endif
 
 #ifdef CONFIG_ARCH_ADDRENV
 #  ifdef CONFIG_ARCH_KERNEL_STACK
@@ -666,7 +674,8 @@ static inline_function uint64_t read_fsbase(void)
   return val;
 }
 
-static inline_function void write_fsbase(unsigned long val)
+nostackprotect_function
+static inline void write_fsbase(unsigned long val)
 {
   __asm__ volatile("wrfsbase %0"
                    : /* no output */
@@ -792,7 +801,7 @@ static inline_function uint32_t up_getgs(void)
 
 /* Get the current FLAGS register contents */
 
-static inline_function irqstate_t irqflags()
+static inline_function irqstate_t irqflags(void)
 {
   irqstate_t flags;
 

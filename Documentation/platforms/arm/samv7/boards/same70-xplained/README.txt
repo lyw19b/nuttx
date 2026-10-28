@@ -174,7 +174,6 @@ the SD slots can be enabled with the following settings:
     CONFIG_SCHED_WORKQUEUE=y              : Driver needs work queue support
 
   Application Configuration -> NSH Library
-    CONFIG_NSH_ARCHINIT=y                 : NSH board-initialization, OR
     CONFIG_BOARD_LATE_INITIALIZE=y
 
 Using the SD card
@@ -346,7 +345,7 @@ KSZ8081RNACA Connections
 
   ------ --------- ---------
   SAME70 SAME70    Ethernet
-  Pin    Function  Functio
+  Pin    Function  Function
   ------ --------- ---------
   PD0    GTXCK     REF_CLK
   PD1    GTXEN     TXEN
@@ -1437,7 +1436,7 @@ Configuration sub-directories
        Application Configuration:
          CONFIG_NSH_BUILTIN_APPS=y  : Enable starting apps from NSH command line
 
-    4. The network initialization thread and the NSH network montior are
+    4. The network initialization thread and the NSH network monitor are
        enabled in this configuration. As a result, networking initialization
        is performed asynchronously with NSH bring-up.  For more information,
        see the paragraphs above entitled "Network Initialization Thread" and
@@ -1613,7 +1612,7 @@ Configuration sub-directories
          NOTES:
          o An environment variable like $PATH may be used for any argument.
          o Arguments are "sticky".  For example, once the I2C address is
-           specified, that address will be re-used until it is changed.
+           specified, that address will be reused until it is changed.
 
          WARNING:
          o The I2C dev command may have bad side effects on your I2C devices.
@@ -1744,7 +1743,7 @@ Configuration sub-directories
       CONFIG_INIT_ENTRYPOINT="mcuboot_confirm_main"
 
   pysim:
-    This configuration includes support for pysimCoder appliaction (for further
+    This configuration includes support for pysimCoder application (for further
     information regarding NuttX and pysimCoder please refer to NuttX documentation).
 
     Following peripherals are included:

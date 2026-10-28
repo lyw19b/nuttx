@@ -26,8 +26,10 @@
 
 #include <nuttx/config.h>
 
+#include <errno.h>
+
 #include <nuttx/module.h>
-#include <nuttx/lib/modlib.h>
+#include <nuttx/lib/elf.h>
 
 #ifdef CONFIG_MODULE
 
@@ -42,7 +44,7 @@
  *   Verify that the file is an ELF module binary and, if so, load the
  *   module into kernel memory and initialize it for use.
  *
- *   NOTE: modlib_setsymtab() had to have been called in board-specific OS
+ *   NOTE: libelf_setsymtab() had to have been called in board-specific OS
  *   logic prior to calling this function from application logic (perhaps via
  *   boardctl(BOARDIOC_OS_SYMTAB).  Otherwise, insmod will be unable to
  *   resolve symbols in the OS module.
@@ -63,7 +65,18 @@
 
 FAR void *insmod(FAR const char *filename, FAR const char *modname)
 {
-  return modlib_insert(filename, modname);
+  /* A duplicate name is an error here, where it has always been.
+   * libelf_insert() would take a reference instead, which is what
+   * dlopen() wants and insmod() does not.
+   */
+
+  if (libelf_gethandle(modname) != NULL)
+    {
+      set_errno(EEXIST);
+      return NULL;
+    }
+
+  return libelf_insert(filename, modname);
 }
 
 #endif /* CONFIG_MODULE */

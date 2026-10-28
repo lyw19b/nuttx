@@ -2,6 +2,8 @@
 Olimex STM32-P207
 =================
 
+.. tags:: chip:stm32, chip:stm32f4, chip:stm32f407
+
 The NuttX configuration for the Olimex STM32-P407 is derives more or less
 directly from the Olimex STM32-P207 board support.  The P207 and P407 seem
 to share the same board design.  Other code comes from the STM3240G board
@@ -104,10 +106,6 @@ Device Drivers -> MMC/SD Driver Support::
 Library Routines::
 
       CONFIG_SCHED_WORKQUEUE=y                 : Driver needs work queue support
-
-Application Configuration -> NSH Library::
-
-      CONFIG_NSH_ARCHINIT=y                    : NSH board-initialization
 
 Using the SD card
 -----------------
@@ -288,7 +286,7 @@ must be is one of the following.
 dhtxx
 -----
 
-Configuration added by Abdelatif Guettouche for testing the the DHTxx
+Configuration added by Abdelatif Guettouche for testing the DHTxx
 sensor.  This configuration expects this setup::
 
       DHTXX_PIN_OUTPUT   PG9
@@ -389,11 +387,11 @@ the nsh configuration include these additions to the configuration file::
       CONFIG_FS_ROMFS=y
       CONFIG_LIBC_ARCH_ELF=y
       CONFIG_MODULE=y
-      CONFIG_LIBC_MODLIB=y
-      CONFIG_MODLIB_MAXDEPEND=2
-      CONFIG_MODLIB_ALIGN_LOG2=2
-      CONFIG_MODLIB_BUFFERSIZE=128
-      CONFIG_MODLIB_BUFFERINCR=32
+      CONFIG_LIBC_ELF=y
+      CONFIG_LIBC_ELF_MAXDEPEND=2
+      CONFIG_LIBC_ELF_ALIGN_LOG2=2
+      CONFIG_LIBC_ELF_BUFFERSIZE=128
+      CONFIG_LIBC_ELF_BUFFERINCR=32
 
 The could be followed may be added for testing shared libraries in the
 FLAT build using apps/examples/sotest (assuming that you also have SD
@@ -435,7 +433,7 @@ NOTES:
    reliable.
 
 2. Kernel Modules / Shared Libraries
-   
+
    I used this configuration for testing NuttX kernel modules in the
    FLAT build with the following configuration additions to the
    configuration file::
@@ -448,10 +446,10 @@ NOTES:
          CONFIG_FS_ROMFS=y
          CONFIG_LIBC_ARCH_ELF=y
          CONFIG_MODULE=y
-         CONFIG_LIBC_MODLIB=y
-         CONFIG_MODLIB_ALIGN_LOG2=2
-         CONFIG_MODLIB_BUFFERINCR=32
-         CONFIG_MODLIB_BUFFERSIZE=128
+         CONFIG_LIBC_ELF=y
+         CONFIG_LIBC_ELF_ALIGN_LOG2=2
+         CONFIG_LIBC_ELF_BUFFERINCR=32
+         CONFIG_LIBC_ELF_BUFFERSIZE=128
 
      Add the following for testing shared libraries in the FLAT
      build::

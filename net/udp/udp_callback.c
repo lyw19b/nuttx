@@ -29,7 +29,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <sys/time.h>
 
 #include <nuttx/net/netconfig.h>
@@ -78,9 +78,11 @@ static uint16_t udp_datahandler(FAR struct net_driver_s *dev,
   FAR void *src_addr;
   int offset;
 
+  conn_lock(&conn->sconn);
 #if CONFIG_NET_RECV_BUFSIZE > 0
   if (conn->readahead && conn->readahead->io_pktlen > conn->rcvbufs)
     {
+      conn_unlock(&conn->sconn);
       netdev_iob_release(dev);
       return 0;
     }
@@ -157,22 +159,6 @@ static uint16_t udp_datahandler(FAR struct net_driver_s *dev,
    */
 
   offset = (dev->d_appdata - iob->io_data) - iob->io_offset;
-
-#ifdef CONFIG_NET_TIMESTAMP
-  /* Store timestamp while packet is being queued.
-   * This is done unconditionally to avoid race condition when SO_TIMESTAMP
-   * gets enabled after packet is received but before it is read.
-   */
-
-  offset -= sizeof(struct timespec);
-  ret = iob_trycopyin(iob, (FAR const uint8_t *)&dev->d_rxtime,
-                      sizeof(struct timespec), offset, true);
-  if (ret < 0)
-    {
-      goto errout;
-    }
-#endif
-
   offset -= src_addr_size;
   ret = iob_trycopyin(iob, src_addr, src_addr_size, offset, true);
   if (ret < 0)
@@ -214,6 +200,7 @@ static uint16_t udp_datahandler(FAR struct net_driver_s *dev,
   /* Concat the iob to readahead */
 
   net_iob_concat(&conn->readahead, &iob);
+  conn_unlock(&conn->sconn);
 
 #ifdef CONFIG_NET_UDP_NOTIFIER
   ninfo("Buffered %d bytes\n", buflen);
@@ -230,6 +217,7 @@ static uint16_t udp_datahandler(FAR struct net_driver_s *dev,
 
 errout:
   nerr("ERROR: Failed to queue the I/O buffer chain: %d\n", ret);
+  conn_unlock(&conn->sconn);
 
   netdev_iob_release(dev);
   return 0;
@@ -243,11 +231,11 @@ errout:
  *
  ****************************************************************************/
 
-static inline uint16_t
+static inline uint32_t
 net_dataevent(FAR struct net_driver_s *dev, FAR struct udp_conn_s *conn,
-              uint16_t flags)
+              uint32_t flags)
 {
-  uint16_t ret;
+  uint32_t ret;
   uint8_t *buffer = dev->d_appdata;
   int      buflen = dev->d_len;
   uint16_t recvlen;
@@ -271,7 +259,7 @@ net_dataevent(FAR struct net_driver_s *dev, FAR struct udp_conn_s *conn,
        * read-ahead buffers to retain the data -- drop the packet.
        */
 
-     ninfo("Dropped %d bytes\n", dev->d_len);
+      ninfo("Dropped %d bytes\n", dev->d_len);
 
 #ifdef CONFIG_NET_STATISTICS
       g_netstats.udp.drop++;
@@ -302,10 +290,10 @@ net_dataevent(FAR struct net_driver_s *dev, FAR struct udp_conn_s *conn,
  *
  ****************************************************************************/
 
-uint16_t udp_callback(FAR struct net_driver_s *dev,
-                      FAR struct udp_conn_s *conn, uint16_t flags)
+uint32_t udp_callback(FAR struct net_driver_s *dev,
+                      FAR struct udp_conn_s *conn, uint32_t flags)
 {
-  ninfo("flags: %04x\n", flags);
+  ninfo("flags: %" PRIx32 "\n", flags);
 
   /* Some sanity checking */
 
@@ -313,6 +301,7 @@ uint16_t udp_callback(FAR struct net_driver_s *dev,
     {
       /* Perform the callback */
 
+      conn_lock(&conn->sconn);
       flags = devif_conn_event(dev, flags, conn->sconn.list);
 
       if ((flags & UDP_NEWDATA) != 0)
@@ -321,6 +310,8 @@ uint16_t udp_callback(FAR struct net_driver_s *dev,
 
           flags = net_dataevent(dev, conn, flags);
         }
+
+      conn_unlock(&conn->sconn);
     }
 
   return flags;
@@ -343,11 +334,13 @@ void udp_callback_cleanup(FAR void *arg)
 
   nerr("ERROR: pthread is being canceled, need to cleanup cb\n");
 
-  udp_callback_free(cb->dev, cb->conn, cb->udp_cb);
+  conn_dev_lock(&cb->conn->sconn, cb->dev);
   if (cb->sem)
     {
       nxsem_destroy(cb->sem);
     }
+
+  conn_dev_unlock(&cb->conn->sconn, cb->dev);
 }
 
 #endif /* CONFIG_NET && CONFIG_NET_UDP */

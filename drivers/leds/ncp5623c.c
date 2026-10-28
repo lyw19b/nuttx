@@ -28,7 +28,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/signal.h>
@@ -38,7 +38,7 @@
 #if defined(CONFIG_I2C) && defined(CONFIG_NCP5623C)
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Types
  ****************************************************************************/
 
 struct ncp5623c_dev_s
@@ -159,7 +159,7 @@ static int ncp5623c_open(FAR struct file *filep)
 
   /* Let the chip settle a bit */
 
-  nxsig_usleep(1);
+  nxsched_usleep(1);
   return OK;
 }
 
@@ -284,7 +284,7 @@ int ncp5623c_register(FAR const char *devpath, FAR struct i2c_master_s *i2c,
 
   /* Register the character driver */
 
-  int const ret = register_driver(devpath, &g_ncp5623c_fileops, 0666, priv);
+  int const ret = register_driver(devpath, &g_ncp5623c_fileops, 0600, priv);
   if (ret != OK)
     {
       lcderr("ERROR: Failed to register driver: %d\n", ret);

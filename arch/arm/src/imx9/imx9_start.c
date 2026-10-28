@@ -29,7 +29,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/cache.h>
 #include <nuttx/init.h>
@@ -144,6 +144,7 @@ static inline void imx9_tcmenable(void)
  *
  ****************************************************************************/
 
+osentry_function
 void __start(void)
 {
   register const uint32_t *src;

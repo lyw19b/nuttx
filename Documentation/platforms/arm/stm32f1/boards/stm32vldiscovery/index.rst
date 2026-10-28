@@ -2,6 +2,8 @@
 ST STM32VLDiscovery
 ===================
 
+.. tags:: chip:stm32, chip:stm32f1, chip:stm32f100
+
 This page discusses issues unique to NuttX configurations for the STMicro
 STM32VLDiscovery (Value Line Discovery) board.
 
@@ -10,7 +12,7 @@ LEDs
 
 It is assumed that STMicro STM32F100RB generic board board has one LED on PA0.
 You should configure the port and pin number in
-boards/arm/stm32/stm32vldiscovery/src/stm32vldiscovery.h. This LED is not used by
+boards/arm/stm32f1/stm32vldiscovery/src/stm32vldiscovery.h. This LED is not used by
 the board port unless CONFIG_ARCH_LEDS is defined.  In that case, the usage by
 the board port is defined in include/board.h and src/up_leds.c. The LED is used
 to encode OS-related events as follows::

@@ -2,6 +2,8 @@
 ST B-U585I-IOT02A
 =================
 
+.. tags:: chip:stm32, chip:stm32u5, chip:stm32u585
+
 This page discusses the port of NuttX to the STMicroelectronics
 B-U585I-IOT02A board.  That board features the STM32U585AII6QU MCU with 2MiB
 of Flash and 768KiB of SRAM.
@@ -100,9 +102,9 @@ NOTES:
    output on USART3, as described above under "Serial Console".  The
    elevant configuration settings are listed below::
 
-         CONFIG_STM32L5_USART3=y
-         CONFIG_STM32L5_USART3_SERIALDRIVER=y
-         CONFIG_STM32L5_USART=y
+         CONFIG_STM32_USART3=y
+         CONFIG_STM32_USART3_SERIALDRIVER=y
+         CONFIG_STM32_USART=y
 
          CONFIG_USART3_SERIALDRIVER=y
          CONFIG_USART3_SERIAL_CONSOLE=y

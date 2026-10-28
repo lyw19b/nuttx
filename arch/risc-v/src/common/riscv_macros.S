@@ -384,7 +384,7 @@
  * Name: riscv_set_inital_sp
  *
  * Description:
- *   Set inital sp for riscv core. This function should be only called
+ *   Set initial sp for riscv core. This function should be only called
  *   when initing.
  *
  *   sp (stack top) = sp base + idle stack size * hart id
@@ -411,11 +411,11 @@
   /* ensure the last XCPTCONTEXT_SIZE is reserved for non boot CPU */
 
   bnez \hartid, 998f
-  li   t1, STACK_ALIGN_DOWN(\size)
+  li   t1, STACKFRAME_ALIGN_DOWN(\size)
   j    999f
 
 998:
-  li   t1, STACK_ALIGN_DOWN(\size - XCPTCONTEXT_SIZE)
+  li   t1, STACKFRAME_ALIGN_DOWN(\size - XCPTCONTEXT_SIZE)
 
 999:
   add  t0, t0, t1

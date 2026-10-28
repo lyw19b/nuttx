@@ -122,7 +122,7 @@ enum nxmsg_e
   NX_SVRMSG_OPENWINDOW,       /* Create a new window */
   NX_SVRMSG_CLOSEWINDOW,      /* Close an existing window */
   NX_SVRMSG_BLOCKED,          /* The window is blocked */
-  NX_SVRMSG_SYNCH,            /* Window syncrhonization request */
+  NX_SVRMSG_SYNCH,            /* Window synchronization request */
   NX_SVRMSG_CURSOR_ENABLE,    /* Enable/disablel cursor presentation */
   NX_SVRMSG_CURSOR_IMAGE,     /* Set cursor image */
   NX_SVRMSG_CURSOR_SETPOS,    /* Set cursor position */
@@ -300,7 +300,7 @@ struct nxsvrmsg_curenable_s
 struct nxsvrmsg_curimage_s
 {
   uint32_t msgid;                    /* NX_SVRMSG_CURSOR_IMAGE */
-  struct nx_cursorimage_s image      /* Describes the cursor image */
+  struct nx_cursorimage_s image;     /* Describes the cursor image */
 };
 #endif
 

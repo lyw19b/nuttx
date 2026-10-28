@@ -2,6 +2,8 @@
 ST Nucleo L432KC
 ================
 
+.. tags:: chip:stm32, chip:stm32l4, chip:stm32l432
+
 This page discusses issues unique to NuttX configurations for the ST
 Nucleo-l432kc board from ST Micro.  See
 
@@ -104,7 +106,7 @@ Here are a few tips before you start that effort:
    on the command line.
 
 Startup files will probably cause you some headaches.  The NuttX startup file
-is arch/arm/src/stm32/stm32_vectors.S.  With RIDE, I have to build NuttX
+is arch/arm/src/stm32f4/gnu/stm32_vectors.S.  With RIDE, I have to build NuttX
 one time from the Cygwin command line in order to obtain the pre-built
 startup object needed by RIDE.
 

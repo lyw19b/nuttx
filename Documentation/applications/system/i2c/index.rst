@@ -58,7 +58,7 @@ or::
 
   nsh> i2c ?
 
-Here is an example of the help output. I shows the general form of the command
+Here is an example of the help output. It shows the general form of the command
 line, the various I2C commands supported with their unique command line options,
 and a more detailed summary of the command I2C command options::
 
@@ -83,12 +83,13 @@ and a more detailed summary of the command I2C command options::
       [-s|n], send/don't send start between command and data.  Default: -n Current: -n
       [-i|j], Auto increment|don't increment regaddr on repetitions.  Default: NO Current: NO
       [-f freq] I2C frequency.  Default: 100000 Current: 100000
+      [-z] instructs the 'dev' command to scan the I2C bus by sending zero-byte write headers (if the architecture supports it)
 
 **Notes**:
 
 - An environment variable like ``$PATH`` may be used for any argument.
 - Arguments are _sticky_. For example, once the I2C address is specified, that
-  address will be re-used until it is changed.
+  address will be reused until it is changed.
 
 **Warning**:
 

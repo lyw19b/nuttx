@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include "chip.h"
 #include "riscv_internal.h"
@@ -95,7 +95,7 @@ static int bl602_dma_int_handler(int irq, void *context, void *arg)
 {
   /* We need to ack the IRQ or a mess is made */
 
-  /* Itterate over each of the channels checking for and clearing:
+  /* Iterate over each of the channels checking for and clearing:
    * DMA_INTTCSTATUS
    * DMA_INTERRORSTATUS
    */
@@ -240,7 +240,7 @@ int bl602_dma_channel_release(uint8_t channel_id)
 
   if (g_dmach[channel_id].inuse)
     {
-      /* This channel was infact in use, release it and increment the
+      /* This channel was in fact in use, release it and increment the
        * count of free channels for use.
        */
 

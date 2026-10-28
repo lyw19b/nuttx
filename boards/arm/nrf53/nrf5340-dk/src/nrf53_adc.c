@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/analog/adc.h>
 #include <arch/board/board.h>
@@ -40,7 +40,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Only one channel supported if TIMER triger enabled */
+/* Only one channel supported if TIMER trigger enabled */
 
 #ifdef CONFIG_NRF53_SAADC_TIMER
 #  define ADC_NCHANNELS (1)

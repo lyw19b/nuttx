@@ -1019,7 +1019,7 @@ static int altcom_recvthread(int argc, FAR char *argv[])
         }
       else if (ret == ALTMDM_RETURN_RESET_PKT)
         {
-          m_info("recieve ALTMDM_RETURN_RESET_PKT\n");
+          m_info("receive ALTMDM_RETURN_RESET_PKT\n");
           set_senddisable(dev, true);
         }
       else if (ret == ALTMDM_RETURN_RESET_V1 ||
@@ -1027,7 +1027,7 @@ static int altcom_recvthread(int argc, FAR char *argv[])
         {
           reason = altmdm_get_reset_reason();
 
-          m_info("recieve ALTMDM_RETURN_RESET_V%s reason: %d\n",
+          m_info("receive ALTMDM_RETURN_RESET_V%s reason: %d\n",
                  (ret == ALTMDM_RETURN_RESET_V1) ? "1" : "4",
                  reason);
 
@@ -1064,7 +1064,7 @@ static int altcom_recvthread(int argc, FAR char *argv[])
         }
       else if (ret == ALTMDM_RETURN_SUSPENDED)
         {
-          m_info("recieve ALTMDM_RETURN_SUSPENDED\n");
+          m_info("receive ALTMDM_RETURN_SUSPENDED\n");
           nxsem_post(&dev->rxthread_sem);
           while (1)
             {
@@ -1072,12 +1072,12 @@ static int altcom_recvthread(int argc, FAR char *argv[])
                * does not accept any requests and must stay alive.
                */
 
-              nxsig_sleep(1);
+              nxsched_sleep(1);
             }
         }
       else if (ret == ALTMDM_RETURN_EXIT)
         {
-          m_info("recieve ALTMDM_RETURN_EXIT\n");
+          m_info("receive ALTMDM_RETURN_EXIT\n");
           is_running = false;
         }
       else
@@ -1511,7 +1511,7 @@ FAR void *alt1250_register(FAR const char *devpath,
   nxsem_init(&g_alt1250_res_s.sem, 0, 0);
 #endif
 
-  ret = register_driver(devpath, &g_alt1250fops, 0666, priv);
+  ret = register_driver(devpath, &g_alt1250fops, 0600, priv);
   if (ret < 0)
     {
       m_err("Failed to register driver: %d\n", ret);

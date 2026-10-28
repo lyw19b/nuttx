@@ -41,8 +41,6 @@
 #include <nuttx/fs/fs.h>
 #include <nuttx/lib/lib.h>
 
-#include "fs_heap.h"
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -65,29 +63,44 @@
     { \
       if ((d)->buffer != NULL) \
         { \
-          fs_heap_free((d)->buffer); \
+          lib_put_tempbuffer((d)->buffer); \
           (d)->buffer  = NULL; \
         } \
     } \
   while (0)
 
 #if CONFIG_FS_BACKTRACE > 0
-#  define FS_ADD_BACKTRACE(filep) \
+#  define FS_ADD_BACKTRACE(fd) \
      do \
        { \
-          int n = sched_backtrace(_SCHED_GETTID(), \
-                                  (filep)->f_backtrace, \
-                                  CONFIG_FS_BACKTRACE, \
-                                  CONFIG_FS_BACKTRACE_SKIP); \
-          if (n < CONFIG_FS_BACKTRACE) \
+          FAR struct tcb_s *tcb = nxsched_get_tcb(nxsched_gettid()); \
+          if (tcb != NULL && tcb->group != NULL && \
+              (tcb->group->tg_flags & GROUP_FLAG_FD_BACKTRACE) != 0) \
             { \
-              (filep)->f_backtrace[n] = NULL; \
+              int n = sched_backtrace(tcb->pid, \
+                                      (fd)->f_backtrace, \
+                                      CONFIG_FS_BACKTRACE, \
+                                      CONFIG_FS_BACKTRACE_SKIP); \
+              if (n < CONFIG_FS_BACKTRACE) \
+                { \
+                  (fd)->f_backtrace[n] = NULL; \
+                } \
+            } \
+          else \
+            { \
+              (fd)->f_backtrace[0] = NULL; \
             } \
        } \
      while (0)
 #else
-#  define FS_ADD_BACKTRACE(filep)
+#  define FS_ADD_BACKTRACE(fd)
 #endif
+
+#define INODE_NLINK_INC  (1u << 16) /* Increment link count */
+#define INODE_CREF_INC   (1u << 0)  /* Increment reference count */
+#define INODE_NLINK_SHIFT 16        /* Shift to get link count */
+#define INODE_GET_NLINK(i) \
+  ((atomic_read(&(i)->i_crefs) >> INODE_NLINK_SHIFT) + 1)
 
 /****************************************************************************
  * Public Types
@@ -106,7 +119,7 @@
  *  relpath  - INPUT:  (not used)
  *             OUTPUT: If the returned inode is a mountpoint, this is the
  *                     relative path from the mountpoint.
- *             OUTPUT: If a symobolic link into a mounted file system is
+ *             OUTPUT: If a symbolic link into a mounted file system is
  *                     detected while traversing the path, then the link
  *                     will be converted to a mountpoint inode if the
  *                     mountpoint link is in an intermediate node of the
@@ -365,6 +378,7 @@ void inode_root_reserve(void);
  *
  *   EINVAL - 'path' is invalid for this operation
  *   EEXIST - An inode already exists at 'path'
+ *   EACCES - Caller lacks permission on the parent directory
  *   ENOMEM - Failed to allocate in-memory resources for the operation
  *
  ****************************************************************************/
@@ -380,6 +394,10 @@ int inode_reserve(FAR const char *path,
  *   path refers to and free all resources related to the inode.  If the
  *   inode is in-use, then it will be unlinked, but will not be freed until
  *   the last reference to the inode is released.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure, including
+ *   -EACCES if the caller lacks write permission on the parent directory.
  *
  * Assumptions/Limitations:
  *   The caller must hold the inode semaphore
@@ -408,6 +426,70 @@ void inode_addref(FAR struct inode *inode);
  ****************************************************************************/
 
 void inode_release(FAR struct inode *inode);
+
+/* Caller already holds the inode tree lock (inode_lock/inode_rlock). */
+
+#define INODE_CHECK_LOCKED  (1 << 0)
+
+/****************************************************************************
+ * Name: inode_checkperm
+ *
+ * Description:
+ *   Check 'inode' for 'amode' access against stored owner/group/mode
+ *   (pseudoFS nodes and mountpoint inodes used as traverse gates).
+ *   Empty macros when CONFIG_FS_PERMISSION is disabled (zero cost).
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: inode_checkpathperm
+ *
+ * Description:
+ *   Enforce directory search (X_OK) on the path leading to 'inode', and
+ *   optionally check 'amode' on 'inode' itself.  Requires X_OK on every
+ *   ancestor, and on 'inode' when it is a pseudo directory or mountpoint.
+ *   If 'amode' is non-zero, also requires that access on 'inode'.
+ *
+ *   Takes the inode tree read lock unless INODE_CHECK_LOCKED is set in
+ *   'flags' (caller already holds inode_lock/inode_rlock).
+ *   Empty macros when CONFIG_FS_PERMISSION is disabled (zero cost).
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_FS_PERMISSION
+int inode_checkperm(FAR struct inode *inode, int amode);
+int inode_checkpathperm(FAR struct inode *inode, int amode, int flags);
+#else
+#  define inode_checkperm(inode, amode)             0
+#  define inode_checkpathperm(inode, amode, flags)  0
+#  define fs_open_amode(oflags)                     0
+#endif
+
+/****************************************************************************
+ * Name: inode_checkopenperm
+ *
+ * Description:
+ *   Validate open access to 'inode' for 'oflags'.  Checks driver operation
+ *   support, then mode bits for non-mountpoint inodes.  Mountpoints skip
+ *   open-mode checks here; callers must use inode_checkpathperm() so
+ *   parent / mountgates still require X_OK to traverse.
+ *
+ * Input Parameters:
+ *   inode  - The inode to check
+ *   oflags - Open flags (O_RDONLY / O_WRONLY / O_RDWR)
+ *
+ * Returned Value:
+ *   Zero (OK) on success, or a negated errno on failure.
+ *
+ ****************************************************************************/
+
+int inode_checkopenperm(FAR struct inode *inode, int oflags);
+
+#ifdef CONFIG_FS_PERMISSION
+int fs_checkmode(uid_t owner, gid_t group, mode_t mode, int amode);
+int fs_open_amode(int oflags);
+int fs_checkopenperm(uid_t owner, gid_t group, mode_t mode, int oflags);
+#endif
 
 /****************************************************************************
  * Name: foreach_inode

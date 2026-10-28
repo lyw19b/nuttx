@@ -32,6 +32,7 @@ CPP = $(CROSSDEV)gcc -E -P -x c
 LD = $(CROSSDEV)ld
 STRIP = $(CROSSDEV)strip --strip-unneeded
 AR = $(CROSSDEV)ar rcs
+UNAR = $(CROSSDEV)ar x
 AS = $(CROSSDEV)as
 NM = $(CROSSDEV)nm
 OBJCOPY = $(CROSSDEV)objcopy
@@ -45,7 +46,6 @@ ifneq ($(CONFIG_DEBUG_NOOPT),y)
   ARCHOPTIMIZATION += -Os -fno-strict-aliasing -fomit-frame-pointer
 endif
 
-ARCHPICFLAGS = -fpic
 ARCHCFLAGS = -fno-common -std=c99
 ARCHCPUFLAGS = -mcpu=rx64m
 ARCHWARNINGS = -Wall -Wstrict-prototypes -Wshadow -Wundef
@@ -56,7 +56,7 @@ CFLAGS := $(ARCHCFLAGS) $(ARCHWARNINGS) $(ARCHOPTIMIZATION) \
 CPPFLAGS := $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) $(ARCHWARNINGSXX)
 AFLAGS := $(CFLAGS) -D__ASSEMBLY__
 
-LDMODULEFLAGS = -r -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/modlib/gnu-elf.ld)
+LDMODULEFLAGS = -r -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/elf/gnu-elf.ld)
 CMODULEFLAGS = $(CFLAGS) -fvisibility=hidden -mlong-calls # --target1-abs
 
 ASMEXT = .asm

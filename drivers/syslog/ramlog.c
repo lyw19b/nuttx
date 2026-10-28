@@ -38,11 +38,12 @@
 #include <poll.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <ctype.h>
 #include <sys/boardctl.h>
 
 #include <nuttx/arch.h>
+#include <nuttx/init.h>
 #include <nuttx/kmalloc.h>
 #include <nuttx/spinlock.h>
 #include <nuttx/semaphore.h>
@@ -65,6 +66,14 @@
  * Private Types
  ****************************************************************************/
 
+struct ramlog_ratelimit_s
+{
+  unsigned int  interval; /* The interval in seconds */
+  unsigned int  burst;    /* The max allowed note number during interval */
+  unsigned int  printed;  /* The number of printed note during interval */
+  unsigned long begin;    /* The timestamp in seconds */
+};
+
 struct ramlog_header_s
 {
   uint32_t          rl_magic;    /* The rl_magic number for ramlog buffer init */
@@ -76,7 +85,7 @@ struct ramlog_user_s
 {
   struct list_node  rl_node;       /* The list_node of reader */
   volatile uint32_t rl_tail;       /* The tail index (where data is removed) */
-  uint32_t          rl_threashold; /* The threashold of the reader to read log */
+  uint32_t          rl_threashold; /* The threshold of the reader to read log */
 #ifndef CONFIG_RAMLOG_NONBLOCKING
   sem_t             rl_waitsem;    /* Used to wait for data */
 #endif
@@ -98,8 +107,9 @@ struct ramlog_dev_s
 
   FAR struct ramlog_header_s *rl_header;
 
-  uint32_t                   rl_bufsize; /* Size of the Circular RAM buffer */
-  struct list_node           rl_list;    /* The head of ramlog_user_s list */
+  uint32_t                   rl_bufsize;   /* Size of the circular buffer */
+  struct list_node           rl_list;      /* The list of ramlog_user_s */
+  struct ramlog_ratelimit_s  rl_ratelimit; /* The ratelimit for ramlog */
 };
 
 /****************************************************************************
@@ -172,6 +182,65 @@ static struct ramlog_dev_s g_sysdev =
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: ramlog_ratelimit
+ *
+ * Description:
+ *   Check whether the log is limited.
+ *
+ * Input Parameters:
+ *   dev - The pointer of ramlog device.
+ *
+ * Returned Value:
+ *   True is returned if the log is limited.
+ *
+ ****************************************************************************/
+
+static bool ramlog_ratelimit(FAR struct ramlog_dev_s *dev)
+{
+  bool ret;
+  clock_t ticks;
+  uint32_t seconds;
+  FAR struct ramlog_ratelimit_s *limit;
+
+  limit = &dev->rl_ratelimit;
+
+  if (limit->interval == 0)
+    {
+      return false;
+    }
+
+  ticks = clock_systime_ticks();
+  seconds = ticks * CONFIG_USEC_PER_TICK / 1000000;
+
+  if (limit->begin == 0)
+    {
+      limit->begin = seconds;
+    }
+
+  /* Reset statistical information */
+
+  if ((seconds - limit->begin) >= limit->interval)
+    {
+      limit->begin = seconds;
+      limit->printed = 0;
+    }
+
+  /* Check if the note is limited */
+
+  if (limit->burst && limit->burst > limit->printed)
+    {
+      limit->printed++;
+      ret = false;
+    }
+  else
+    {
+      ret = true;
+    }
+
+  return ret;
+}
 
 /****************************************************************************
  * Name: ramlog_bufferused
@@ -297,9 +366,36 @@ static ssize_t ramlog_addbuf(FAR struct ramlog_dev_s *priv,
   size_t buflen = len;
   irqstate_t flags;
 
-  /* Disable interrupts (in case we are NOT called from interrupt handler) */
+  /* Disable interrupts (in case we are NOT called from interrupt handler).
+   *
+   * Not enter_critical_section(): it consults the current task, and on
+   * some ports this channel takes syslog output before the task lists
+   * exist.  Masking interrupts protects the buffer just as well while
+   * there is only one thread of control.
+   */
 
-  flags = enter_critical_section();
+  if (OSINIT_TASK_READY())
+    {
+      flags = enter_critical_section();
+    }
+  else
+    {
+      flags = up_irq_save();
+    }
+
+  if (ramlog_ratelimit(priv))
+    {
+      if (OSINIT_TASK_READY())
+        {
+          leave_critical_section(flags);
+        }
+      else
+        {
+          up_irq_restore(flags);
+        }
+
+      return len;
+    }
 
 #ifdef CONFIG_RAMLOG_SYSLOG
   if (header->rl_magic != RAMLOG_MAGIC_NUMBER && priv == &g_sysdev)
@@ -317,9 +413,13 @@ static ssize_t ramlog_addbuf(FAR struct ramlog_dev_s *priv,
 
   ramlog_copybuf(priv, buffer, buflen);
 
-  /* Was anything written? */
+  /* Was anything written?  Notify only once the scheduler exists; early
+   * boot output reaches here long before it does, and locking a scheduler
+   * that is not there yet faults.  The bytes land in the buffer either
+   * way.
+   */
 
-  if (len > 0)
+  if (len > 0 && OSINIT_OS_READY())
     {
       /* Lock the scheduler do NOT switch out */
 
@@ -350,7 +450,15 @@ static ssize_t ramlog_addbuf(FAR struct ramlog_dev_s *priv,
    * probably retry, causing same error condition again.
    */
 
-  leave_critical_section(flags);
+  if (OSINIT_TASK_READY())
+    {
+      leave_critical_section(flags);
+    }
+  else
+    {
+      up_irq_restore(flags);
+    }
+
   return len;
 }
 
@@ -417,7 +525,7 @@ static ssize_t ramlog_file_read(FAR struct file *filep, FAR char *buffer,
               break;
             }
 
-          /* We may now be pre-empted!  But that should be okay because we
+          /* We may now be preempted!  But that should be okay because we
            * have already incremented nwaiters.  Pre-emptions is disabled
            * but will be re-enabled while we are waiting.
            */
@@ -521,6 +629,39 @@ static int ramlog_file_ioctl(FAR struct file *filep, int cmd,
       case BIOC_FLUSH:
         ramlog_bufferflush(priv);
         break;
+
+      case SYSLOGIOC_SETRATELIMIT:
+        if (arg == 0)
+          {
+            ret = -EINVAL;
+          }
+        else
+          {
+            FAR struct syslog_ratelimit_s *limit =
+              (FAR struct syslog_ratelimit_s *)arg;
+
+            priv->rl_ratelimit.interval = limit->interval;
+            priv->rl_ratelimit.burst = limit->burst;
+            ret = 0;
+          }
+        break;
+
+      case SYSLOGIOC_GETRATELIMIT:
+        if (arg == 0)
+          {
+            ret = -EINVAL;
+          }
+        else
+          {
+            FAR struct syslog_ratelimit_s *limit =
+              (FAR struct syslog_ratelimit_s *)arg;
+
+            limit->interval = priv->rl_ratelimit.interval;
+            limit->burst = priv->rl_ratelimit.burst;
+            ret = 0;
+          }
+        break;
+
       default:
         ret = -ENOTTY;
         break;
@@ -679,7 +820,7 @@ int ramlog_register(FAR const char *devpath, FAR char *buffer, size_t buflen)
 
       /* Register the character driver */
 
-      ret = register_driver(devpath, &g_ramlogfops, 0666, priv);
+      ret = register_driver(devpath, &g_ramlogfops, 0600, priv);
       if (ret < 0)
         {
           kmm_free(priv);
@@ -703,7 +844,7 @@ void ramlog_syslog_register(void)
 {
   /* Register the syslog character driver */
 
-  register_driver(CONFIG_SYSLOG_DEVPATH, &g_ramlogfops, 0666, &g_sysdev);
+  register_driver(CONFIG_SYSLOG_DEVPATH, &g_ramlogfops, 0600, &g_sysdev);
 }
 #endif
 

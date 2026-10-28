@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fixedmath.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/lib/lib.h>
 #include <nuttx/fs/fs.h>
@@ -84,7 +84,7 @@ struct unionfs_inode_s
   bool ui_unmounted;                 /* File system has been unmounted */
 };
 
-/* This structure descries one opened file */
+/* This structure describes one opened file */
 
 struct unionfs_file_s
 {

@@ -740,7 +740,7 @@ Load NuttX with U-Boot on AT91 boards
 
           saveenv
 
-     4. If Ethernet Phy has not been detected during former bootup, reset
+     4. If Ethernet Phy has not been detected during former boot up, reset
         the board to reload U-Boot : the Ethernet address and Phy
         initialization shall be ok, now
 
@@ -1176,9 +1176,6 @@ AT25 Serial FLASH
   a lot, but at 20MHz, the behavior is not the same with all CM modules.  This
   lower rate gives more predictable performance.
 
-    Application Configuration -> NSH Library
-      CONFIG_NSH_ARCHINIT=y                 : NSH board-initialization
-
     Board Selection
       CONFIG_SAMA5D3XEK_AT25_BLOCKMOUNT=y   : Mounts AT25 for NSH
       CONFIG_SAMA5D3XEK_AT25_FTL=y          : Create block driver for FAT
@@ -1275,9 +1272,6 @@ HSMCI Card Slots
 
     Library Routines
       CONFIG_SCHED_WORKQUEUE=y              : Driver needs work queue support
-
-    Application Configuration -> NSH Library
-      CONFIG_NSH_ARCHINIT=y                 : NSH board-initialization
 
     Using the SD card
     -----------------
@@ -1418,9 +1412,6 @@ USB High-Speed Device
     System Type -> ATSAMA5 Peripheral Support
       CONFIG_SAMA5_UDPHS=y                  : Enable UDPHS High Speed USB device
 
-    Application Configuration -> NSH Library
-      CONFIG_NSH_ARCHINIT=y                 : NSH board-initialization
-
   Mass Storage Class
   ------------------
 
@@ -1508,7 +1499,6 @@ USB High-Speed Device
 
     Application Configuration -> NSH LIbrary:
       CONFIG_NSH_USBDEV_TRACE=n               : No builtin tracing from NSH
-      CONFIG_NSH_ARCHINIT=y                   : Automatically start the USB monitor
 
     Application Configuration -> System NSH Add-Ons:
       CONFIG_USBMONITOR=y              : Enable the USB monitor daemon
@@ -1552,9 +1542,6 @@ USB High-Speed Host
       CONFIG_SCHED_WORKQUEUE=y             : High priority worker thread support is required
       CONFIG_SCHED_HPWORK=y                :
 
-    Application Configuration -> NSH Library
-      CONFIG_NSH_ARCHINIT=y                 : NSH board-initialization
-
   EHCI
   ----
 
@@ -1583,9 +1570,6 @@ USB High-Speed Host
     RTOS Features -> Work Queue Support
       CONFIG_SCHED_WORKQUEUE=y             : High priority worker thread support is required
       CONFIG_SCHED_HPWORK=y                :
-
-    Application Configuration -> NSH Library
-      CONFIG_NSH_ARCHINIT=y                 : NSH board-initialization
 
   USB Hub Support
   ----------------
@@ -1692,7 +1676,6 @@ USB High-Speed Host
 
     Application Configuration -> NSH LIbrary:
       CONFIG_NSH_USBDEV_TRACE=n               : No builtin tracing from NSH
-      CONFIG_NSH_ARCHINIT=y                   : Automatically start the USB monitor
 
     Application Configuration -> System NSH Add-Ons:
       CONFIG_USBMONITOR=y              : Enable the USB monitor daemon
@@ -1882,9 +1865,6 @@ NAND Support
       CONFIG_SAMA5_EBICS3_SWECC=y       : Use S/W ECC calculation
 
       Defaults for ROM page table addresses should be okay
-
-    Application Configuration -> NSH Library
-      CONFIG_NSH_ARCHINIT=y             : Use architecture-specific initialization
 
     NOTES:
 
@@ -2119,7 +2099,7 @@ NAND Support
     2. First, each NAND write access will cause a 256KB data transfer:  It
        will read the entire 128KB erase block, modify it and write it back
        to memory.  There is some caching logic so that this cached erase
-       block can be re-used if possible and writes will be deferred as long
+       block can be reused if possible and writes will be deferred as long
        as possible.
 
     3. If you hit a bad block, then FAT is finished.  There is no mechanism
@@ -2224,9 +2204,6 @@ AT24 Serial EEPROM
       CONFIG_AT24XX_SIZE=512                : Specifies the AT 24C512 part
       CONFIG_AT24XX_ADDR=0x53               : AT24 I2C address
 
-    Application Configuration -> NSH Library
-      CONFIG_NSH_ARCHINIT=y                 : NSH board-initialization
-
     File systems
       CONFIG_NXFFS=y                        : Enables the NXFFS file system
       CONFIG_NXFFS_PREALLOCATED=y           : Required
@@ -2302,7 +2279,7 @@ I2C Tool
 
     NOTES:
     o Arguments are "sticky".  For example, once the I2C address is
-      specified, that address will be re-used until it is changed.
+      specified, that address will be reused until it is changed.
 
     WARNING:
     o The I2C dev command may have bad side effects on your I2C devices.
@@ -2601,7 +2578,7 @@ SAMA5 PWM Support
     Usage: pwm [OPTIONS]
 
     Arguments are "sticky".  For example, once the PWM frequency is
-    specified, that frequency will be re-used until it is changed.
+    specified, that frequency will be reused until it is changed.
 
     "sticky" OPTIONS include:
       [-p devpath] selects the PWM device.  Default: /dev/pwm0 Current: /dev/pwm0

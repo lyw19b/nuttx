@@ -25,7 +25,7 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdint.h>
 
 #include <nuttx/bits.h>
@@ -542,9 +542,13 @@ static bool pci_ep_test_free_irq(FAR struct pci_ep_test_s *test)
 {
   up_disable_irq(test->irq);
   irq_detach(test->irq);
-  if (test->irq_type != PCI_EP_TEST_IRQ_TYPE_LEGACY)
+  if (test->irq_type >= PCI_EP_TEST_IRQ_TYPE_MSI)
     {
       pci_release_irq(test->pdev, &test->irq, 1);
+    }
+  else if (test->irq_type == PCI_EP_TEST_IRQ_TYPE_LEGACY)
+    {
+      pci_disable_irq(test->pdev);
     }
 
   return true;
@@ -625,6 +629,10 @@ static int pci_ep_test_alloc_irq(FAR struct pci_ep_test_s *test,
           return ret;
         }
     }
+  else if (irq_type == PCI_EP_TEST_IRQ_TYPE_LEGACY)
+    {
+      pci_enable_irq(pdev, test->irq);
+    }
 
   ret = irq_attach(test->irq, pci_ep_test_handler, test);
   if (ret >= 0)
@@ -656,7 +664,7 @@ pci_ep_test_set_irq(struct pci_ep_test_s *test, int req_irq_type)
   if (req_irq_type < PCI_EP_TEST_IRQ_TYPE_LEGACY ||
       req_irq_type > PCI_EP_TEST_COMMAND_MSIX_IRQ)
     {
-      pcierr("invaild irq option\n");
+      pcierr("invalid irq option\n");
       return false;
     }
 
@@ -702,7 +710,7 @@ static int pci_ep_test_ioctl(FAR struct file *filep,
         bar = arg;
         if (bar > PCI_STD_NUM_BARS || bar < 0)
           {
-            pcierr("bar num %d is invaild\n", bar);
+            pcierr("bar num %d is invalid\n", bar);
             break;
           }
 
@@ -775,7 +783,7 @@ static int pci_ep_test_probe(FAR struct pci_device_s *dev)
   test = kmm_zalloc(sizeof(*test));
   if (NULL == test)
     {
-      pcierr("malloc ptest memory faild\n");
+      pcierr("malloc ptest memory failed\n");
       return -ENOMEM;
     }
 
@@ -819,7 +827,7 @@ static int pci_ep_test_probe(FAR struct pci_device_s *dev)
 
   snprintf(test->name, sizeof(test->name),
            PCI_EP_TEST_DEVICE_NAME ".%d", g_pci_ep_idr++);
-  register_driver(test->name, &g_pci_ep_test_fops, 0666, test);
+  register_driver(test->name, &g_pci_ep_test_fops, 0600, test);
   pciinfo("pci ep test device register success.\n");
 
   return 0;

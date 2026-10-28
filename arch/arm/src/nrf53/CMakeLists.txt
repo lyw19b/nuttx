@@ -107,6 +107,14 @@ if(CONFIG_NRF53_QSPI)
   list(APPEND SRCS nrf53_qspi.c)
 endif()
 
+if(CONFIG_NRF53_QDEC)
+  list(APPEND SRCS nrf53_qdec.c)
+endif()
+
+if(CONFIG_SENSORS_QENCODER)
+  list(APPEND SRCS nrf53_qdec.c)
+endif()
+
 if(CONFIG_NRF53_SOFTDEVICE_CONTROLLER)
 
   set(NRFXLIB_VER "2.3.0")
@@ -121,7 +129,7 @@ if(CONFIG_NRF53_SOFTDEVICE_CONTROLLER)
           SOURCE_DIR
           ${CMAKE_CURRENT_LIST_DIR}/sdk-nrfxlib
           BINARY_DIR
-          ${CMAKE_BINARY_DIR}/arch/sdk-nrfxlib
+          ${NUTTX_BINARY_DIR}/arch/sdk-nrfxlib
           CONFIGURE_COMMAND
           ""
           BUILD_COMMAND

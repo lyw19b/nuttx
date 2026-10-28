@@ -266,7 +266,7 @@
 /* LCD_CAM_CAM_VH_DE_MODE_EN : R/W; bitpos: [28]; default: 0;
  * 1: Input control signals are CAM_DE CAM_HSYNC and CAM_VSYNC is 1. 0:
  * Input control signals are CAM_DE and CAM_VSYNC. CAM_HSYNC and CAM_DE are
- * all 1 the the same time.
+ * all 1 the same time.
  */
 
 #define LCD_CAM_CAM_VH_DE_MODE_EN    (BIT(28))
@@ -763,7 +763,7 @@
 #define LCD_CAM_LCD_VFK_CYCLELEN_S  6
 
 /* LCD_CAM_LCD_AFIFO_THRESHOLD_NUM : R/W; bitpos: [5:1]; default: 11;
- * The awfull threshold number of lcd_afifo.
+ * The awful threshold number of lcd_afifo.
  */
 
 #define LCD_CAM_LCD_AFIFO_THRESHOLD_NUM    0x0000001f

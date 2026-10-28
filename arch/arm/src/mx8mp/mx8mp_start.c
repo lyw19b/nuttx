@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/init.h>
 #include <arch/board/board.h>
@@ -79,6 +79,7 @@ void __start(void) noinstrument_function;
  *
  ****************************************************************************/
 
+osentry_function
 void __start(void)
 {
   const uint32_t *src;

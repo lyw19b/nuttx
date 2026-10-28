@@ -35,6 +35,19 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -43,7 +56,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -59,10 +72,6 @@
 /****************************************************************************
  * Pre-process Definitions
  ****************************************************************************/
-
-#ifndef CONFIG_AS726X_I2C_FREQUENCY
-#  define CONFIG_AS726X_I2C_FREQUENCY 100000
-#endif
 
 #define AS726X_INTEGRATION_TIME 50
 #define AS726X_GAIN             0b01   /* Set gain to 64x */
@@ -218,7 +227,7 @@ static uint8_t as726x_read8(FAR struct as726x_dev_s *priv, uint8_t regaddr)
           break;  /* If TX bit is clear, it is ok to write */
         }
 
-      nxsig_usleep(AS726X_POLLING_DELAY);
+      nxsched_usleep(AS726X_POLLING_DELAY);
     }
 
   /* Send the virtual register address (bit 7 should be 0 to indicate we are
@@ -237,7 +246,7 @@ static uint8_t as726x_read8(FAR struct as726x_dev_s *priv, uint8_t regaddr)
           break;  /* Read data is ready. */
         }
 
-      nxsig_usleep(AS726X_POLLING_DELAY);
+      nxsched_usleep(AS726X_POLLING_DELAY);
     }
 
   uint8_t incoming = read_register(priv, AS72XX_SLAVE_READ_REG);
@@ -293,7 +302,7 @@ static void as726x_write8(FAR struct as726x_dev_s *priv, uint8_t regaddr,
           break;
         }
 
-      nxsig_usleep(AS726X_POLLING_DELAY);
+      nxsched_usleep(AS726X_POLLING_DELAY);
     }
 
   /* Send the virtual register address (setting bit 7 to indicate we are
@@ -314,7 +323,7 @@ static void as726x_write8(FAR struct as726x_dev_s *priv, uint8_t regaddr,
           break;
         }
 
-      nxsig_usleep(AS726X_POLLING_DELAY);
+      nxsched_usleep(AS726X_POLLING_DELAY);
     }
 
   /* Send the data to complete the operation. */
@@ -467,7 +476,7 @@ int as726x_register(FAR const char *devpath, FAR struct i2c_master_s *i2c)
 
   /* Register the character driver */
 
-  ret = register_driver(devpath, &g_as726x_fops, 0666, priv);
+  ret = register_driver(devpath, &g_as726x_fops, 0600, priv);
   if (ret < 0)
     {
       snerr("ERROR: Failed to register driver: %d\n", ret);

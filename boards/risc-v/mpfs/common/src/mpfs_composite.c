@@ -32,7 +32,7 @@
 #include <nuttx/usb/usbmsc.h>
 #include <nuttx/usb/composite.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include "mpfs.h"
 
@@ -132,7 +132,7 @@ static int board_mscclassobject(int minor,
  *   composite device logic.
  *
  * Input Parameters:
- *   classdev - The class driver instrance previously give to the composite
+ *   classdev - The class driver instance previously given to the composite
  *     driver by board_mscclassobject().
  *
  * Returned Value:

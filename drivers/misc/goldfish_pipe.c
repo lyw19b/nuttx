@@ -537,9 +537,12 @@ static void goldfish_pipe_wake(FAR struct goldfish_pipe_s *pipe,
   FAR sem_t *sem = is_write ? &pipe->wait_for_write : &pipe->wait_for_read;
   int sval;
 
-  while (nxsem_get_value(sem, &sval) >= 0 && sval <= 0)
+  if (nxsem_get_value(sem, &sval) >= 0)
     {
-      nxsem_post(sem);
+      while (sval++ <= 0)
+        {
+          nxsem_post(sem);
+        }
     }
 }
 
@@ -678,7 +681,7 @@ int goldfish_pipe_register(FAR void *base, int irq)
   /* Register the pipe device */
 
   return register_driver("/dev/goldfish_pipe",
-                         &g_goldfish_pipe_fops, 0666, dev);
+                         &g_goldfish_pipe_fops, 0600, dev);
 
 out:
   kmm_free(dev);

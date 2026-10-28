@@ -28,6 +28,7 @@
  ****************************************************************************/
 
 #include <nuttx/fs/fs.h>
+#include <nuttx/sensors/sensor.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -100,6 +101,28 @@ struct gnss_ops_s
                            FAR uint32_t *period_us);
 
   /**************************************************************************
+   * Name: get_info
+   *
+   * With this method, the user can obtain information about the current
+   * device. The name and vendor information cannot exceed
+   * SENSOR_INFO_NAME_SIZE.
+   *
+   * Input Parameters:
+   *   lower   - The instance of lower half sensor driver.
+   *   filep   - The pointer of file, represents each user using sensor.
+   *   info    - Device information structure pointer.
+   *
+   * Returned Value:
+   *   Zero (OK) on success; a negated errno value on failure.
+   *   -ENOTTY - The cmd don't support.
+   *
+   **************************************************************************/
+
+  CODE int (*get_info)(FAR struct gnss_lowerhalf_s *lower,
+                       FAR struct file *filep,
+                       FAR struct sensor_device_info_s *info);
+
+  /**************************************************************************
    * Name: control
    *
    * With this method, the user can set some special config for the GNSS,
@@ -163,7 +186,7 @@ struct gnss_lowerhalf_s
 
   /* Lower half driver pushes raw data by calling this function.
    * It is provided by upper half driver to lower half driver,
-   * if paramenter is_nmea is true, the data includes nmea message.
+   * if parameter is_nmea is true, the data includes nmea message.
    */
 
   gnss_push_data_t push_data;
@@ -207,7 +230,7 @@ extern "C"
  *             instance is bound to the GNSS driver and must persist as long
  *             as the driver persists.
  *   devno   - The user specifies which device of this type, from 0. If the
- *             devno alerady exists, -EEXIST will be returned.
+ *             devno already exists, -EEXIST will be returned.
  *   nbuffer - The number of events that the circular buffer can hold.
  *   count   - The array size of nbuffer.
  *

@@ -2,6 +2,8 @@
 ST STM32L4R9AI-DISCO
 ====================
 
+.. tags:: chip:stm32, chip:stm32l4, chip:stm32l4r9
+
 This page discusses issues unique to NuttX configurations for the ST
 STM32L4R9AI Discovery board from ST Micro.  See
 
@@ -128,7 +130,7 @@ Pins and Connectors::
 
   To configure USART1 as the console::
 
-    CONFIG_STM32L4_USART1=y
+    CONFIG_STM32_USART1=y
     CONFIG_USART1_SERIALDRIVER=y
     CONFIG_USART1_SERIAL_CONSOLE=y
     CONFIG_USART1_RXBUFSIZE=256
@@ -170,7 +172,7 @@ Pins and Connectors::
 
   To configure USART2 as the console::
 
-    CONFIG_STM32L4_USART2=y
+    CONFIG_STM32_USART2=y
     CONFIG_USART2_SERIALDRIVER=y
     CONFIG_USART2_SERIAL_CONSOLE=y
     CONFIG_USART2_RXBUFSIZE=256
@@ -190,7 +192,7 @@ Pins and Connectors::
 
 To configure USART4 as the console::
 
-    CONFIG_STM32L4_UART4=y
+    CONFIG_STM32_UART4=y
     CONFIG_USART4_SERIALDRIVER=y
     CONFIG_USART4_SERIAL_CONSOLE=y
     CONFIG_USART4_RXBUFSIZE=512
@@ -280,7 +282,7 @@ NOTES:
          nuttx.hex         - The pass2 Intel HEX file (selected in defconfig)
          System.map        - Symbols in the kernel-space ELF file
 
-       The J-Link programmer will except files in .hex, .mot, .srec, and .bin
+       The J-Link programmer will accept files in .hex, .mot, .srec, and .bin
        formats.
 
 2. Combining .hex files.  If you plan to use the .hex files with your
@@ -355,7 +357,7 @@ NOTES:
    not enabled in the default configuration but can be enabled with the
    following settings: (TODO: need to test!)::
 
-         CONFIG_STM32L4_OTGFS=y
+         CONFIG_STM32_OTGFS=y
 
          CONFIG_USBDEV=y
          CONFIG_USBDEV_SELFPOWERED=y

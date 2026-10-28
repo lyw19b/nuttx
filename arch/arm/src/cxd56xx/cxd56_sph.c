@@ -35,7 +35,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include "arm_internal.h"
@@ -226,7 +226,7 @@ static inline int cxd56_sphdevinit(const char *devname, int num)
 
   snprintf(fullpath, sizeof(fullpath), "/dev/%s%d", devname, num);
 
-  ret = register_driver(fullpath, &g_sph_fops, 0666, (void *)priv);
+  ret = register_driver(fullpath, &g_sph_fops, 0600, (void *)priv);
   if (ret != 0)
     {
       return ERROR;
@@ -270,9 +270,11 @@ int cxd56_sphinitialize(const char *devname)
   int ret;
   int i;
 
-  /* No. 0-2 and (14)-15 semaphores are reserved by other system. */
+  /* No. 0-2 and (13)-15 semaphores are reserved by other system. */
 
-#ifdef CONFIG_CXD56_TESTSET
+#if defined(CONFIG_CXD56_ATOMIC_WITH_HWSEM)
+  for (i = 3; i < 13; i++)
+#elif defined(CONFIG_CXD56_TESTSET_WITH_HWSEM)
   for (i = 3; i < 14; i++)
 #else
   for (i = 3; i < 15; i++)

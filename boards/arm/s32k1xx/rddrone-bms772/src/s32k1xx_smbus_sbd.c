@@ -33,7 +33,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/fs/fs.h>
@@ -53,7 +53,7 @@
 #define HIBYTE(n) ((uint8_t)(((n) & 0xff00) >> 8))
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Types
  ****************************************************************************/
 
 /* Private data of the SMBus Smart Battery Data slave device */
@@ -86,7 +86,7 @@ static ssize_t smbus_sbd_write(struct file *filep, const char *buffer,
  * Private Data
  ****************************************************************************/
 
-/* Valid operations that can be performed on the the SMBus Smart Battery Data
+/* Valid operations that can be performed on the SMBus Smart Battery Data
  * slave character device:
  */
 
@@ -723,7 +723,7 @@ static int smbus_sbd_callback(void *arg, i2c_slave_complete_t state,
     }
 
   /* Install the (re)filled write buffer.  Technically this buffer needs to
-   * be constant, but we want to be able to re-use the same buffer for the
+   * be constant, but we want to be able to reuse the same buffer for the
    * next request, so we just cast the buffer to const.  This should not
    * cause any problems, because the write buffer is only changed when the
    * I2C slave driver invokes this callback, which only happens when a new

@@ -32,6 +32,7 @@
 #include <stdint.h>
 
 #include <nuttx/mutex.h>
+#include <nuttx/spinlock.h>
 #include <nuttx/fs/fs.h>
 #include <nuttx/nx/nx.h>
 #include <nuttx/nx/nxtk.h>
@@ -60,7 +61,7 @@
 
 /* VT100 escape sequence processing */
 
-#define VT100_MAX_SEQUENCE 3
+#define VT100_MAX_SEQUENCE 32
 
 /****************************************************************************
  * Public Types
@@ -161,6 +162,10 @@ struct nxterm_state_s
 
   FAR struct pollfd *fds[CONFIG_NXTERM_NPOLLWAITERS];
 #endif /* CONFIG_NXTERM_NXKBDIN */
+
+  /* Spinlock */
+
+  spinlock_t spinlock;
 };
 
 /****************************************************************************

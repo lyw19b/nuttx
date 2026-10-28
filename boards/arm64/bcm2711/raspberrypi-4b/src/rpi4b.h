@@ -45,6 +45,31 @@
 int rpi4b_bringup(void);
 #endif
 
+/****************************************************************************
+ * Name: rpi4b_sdmmc_initialize
+ *
+ * Description:
+ *   Initialize uSD card on EMMC2 as an MMCSD device.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_RPI4B_SDMMC)
+int rpi4b_sdmmc_initialize(void);
+#endif
+
+/****************************************************************************
+ * Name: rpi4b_pwm_initialize
+ *
+ * Description:
+ *   Initialize PWM interfaces on the RPi4B.
+ *   Also initializes PWM-audio driver if that was selected
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_BCM2711_PWM)
+int rpi4b_pwm_initialize(void);
+#endif
+
 #if defined(CONFIG_DEV_GPIO)
 int bcm2711_dev_gpio_init(void);
 #endif /* defined(CONFIG_DEV_GPIO) */

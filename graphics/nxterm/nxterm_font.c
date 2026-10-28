@@ -29,7 +29,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 
@@ -131,7 +131,7 @@ static void nxterm_fillspace(FAR struct nxterm_state_s *priv,
  *
  * Description:
  *   This is part of the nxterm_putc logic.  It creates and positions a
- *   the character and renders (or re-uses) a glyph for font.
+ *   the character and renders (or reuses) a glyph for font.
  *
  ****************************************************************************/
 

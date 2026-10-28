@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/irq.h>
@@ -1535,7 +1535,7 @@ static int sam_txbuffer(struct sam_xdmach_s *xdmach, uint32_t paddr,
 {
   uint32_t cubc;
 
-  /* If we are appending a buffer to a linklist, then re-use the previously
+  /* If we are appending a buffer to a linklist, then reuse the previously
    * calculated CC register value.  Otherwise, create the CC register value
    * from the properties of the transfer.
    */
@@ -1575,7 +1575,7 @@ static int sam_rxbuffer(struct sam_xdmach_s *xdmach, uint32_t paddr,
 {
   uint32_t cubc;
 
-  /* If we are appending a buffer to a linklist, then re-use the previously
+  /* If we are appending a buffer to a linklist, then reuse the previously
    * calculated CC register value.  Otherwise, create the CC register value
    * from the properties of the transfer.
    */

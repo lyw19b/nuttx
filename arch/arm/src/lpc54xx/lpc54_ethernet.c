@@ -66,7 +66,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <arpa/inet.h>
 
@@ -1971,6 +1971,9 @@ static int lpc54_eth_ifup(struct net_driver_s *dev)
 
   priv->eth_bifup = 1;
   up_enable_irq(LPC54_IRQ_ETHERNET);
+
+  netdev_carrier_on(dev);
+
   return OK;
 }
 
@@ -2048,6 +2051,9 @@ static int lpc54_eth_ifdown(struct net_driver_s *dev)
 
   priv->eth_bifup = 0;
   leave_critical_section(flags);
+
+  netdev_carrier_off(dev);
+
   return OK;
 }
 
@@ -2651,7 +2657,7 @@ static void lpc54_phy_write(struct lpc54_ethdriver_s *priv,
  * Name: lpc54_phy_linkstatus
  *
  * Description:
- *   Read the MII status register and return tru if the link is up.
+ *   Read the MII status register and return true if the link is up.
  *
  * Input Parameters:
  *   priv - Reference to the driver state structure
@@ -2663,7 +2669,7 @@ static void lpc54_phy_write(struct lpc54_ethdriver_s *priv,
 
 static inline bool lpc54_phy_linkstatus(struct lpc54_ethdriver_s *priv)
 {
-  /* Read the status register and return tru of the linkstatus bit is set. */
+  /* Read the status register and return true if the linkstatus bit is set. */
 
   return ((lpc54_phy_read(priv, MII_MSR) & MII_MSR_LINKSTATUS) != 0);
 }

@@ -35,13 +35,16 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/fs/fs.h>
 #include <nuttx/fs/ioctl.h>
 #include <nuttx/fs/loopmtd.h>
 #include <nuttx/mtd/mtd.h>
+#ifndef CONFIG_MTD_CONFIG_NONE
+#  include <nuttx/mtd/configdata.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -504,6 +507,7 @@ static int filemtd_ioctl(FAR struct mtd_dev_s *dev, int cmd,
         {
           FAR struct partition_info_s *info =
             (FAR struct partition_info_s *)arg;
+
           if (info != NULL)
             {
               info->numsectors  = priv->nblocks *
@@ -527,6 +531,7 @@ static int filemtd_ioctl(FAR struct mtd_dev_s *dev, int cmd,
       case MTDIOC_ERASESTATE:
         {
           FAR uint8_t *result = (FAR uint8_t *)arg;
+
           *result = CONFIG_FILEMTD_ERASESTATE;
 
           ret = OK;
@@ -551,8 +556,14 @@ static int filemtd_ioctl(FAR struct mtd_dev_s *dev, int cmd,
  ****************************************************************************/
 
 #ifdef CONFIG_MTD_LOOP
+#  ifndef CONFIG_MTD_CONFIG_NONE
+static int mtd_loop_setup(FAR const char *devname, FAR const char *filename,
+                          int sectsize, int erasesize, off_t offset,
+                          int configdata)
+#  else
 static int mtd_loop_setup(FAR const char *devname, FAR const char *filename,
                           int sectsize, int erasesize, off_t offset)
+#  endif
 {
   FAR struct mtd_dev_s *mtd;
   int ret;
@@ -563,7 +574,30 @@ static int mtd_loop_setup(FAR const char *devname, FAR const char *filename,
       return -ENOENT;
     }
 
-  ret = register_mtddriver(devname, mtd, 0755, NULL);
+#  ifndef CONFIG_MTD_CONFIG_NONE
+  if (configdata)
+    {
+      if (configdata == 2)
+        {
+          /* Try to erase the entire device, before register */
+
+          FAR struct file_dev_s *fdev = (FAR struct file_dev_s *)mtd;
+
+          mtd->erase(mtd, offset / erasesize, fdev->nblocks);
+        }
+
+      ret = mtdconfig_register_by_path(mtd, devname);
+      if (ret == -EDEADLK)
+        {
+          ferr("ERROR: mtdconfig_register_by_path failed: %d\n", ret);
+        }
+    }
+  else
+#  endif
+    {
+      ret = register_mtddriver(devname, mtd, 0755, NULL);
+    }
+
   if (ret != OK)
     {
       filemtd_teardown(mtd);
@@ -615,7 +649,17 @@ static int mtd_loop_teardown(FAR const char *devname)
   /* Now teardown the filemtd */
 
   filemtd_teardown(&dev->mtd);
-  unregister_mtddriver(devname);
+
+#  ifndef CONFIG_MTD_CONFIG_NONE
+  if (inode->i_private)
+    {
+      mtdconfig_unregister_by_path(devname);
+    }
+  else
+#  endif
+    {
+      unregister_mtddriver(devname);
+    }
 
   return OK;
 }
@@ -657,55 +701,61 @@ static int mtd_loop_ioctl(FAR struct file *filep, int cmd,
 
   switch (cmd)
     {
-    /* Command:      LOOPIOC_SETUP
-     * Description:  Setup the loop device
-     * Argument:     A pointer to a read-only instance of struct losetup_s.
-     * Dependencies: The loop device must be enabled (CONFIG_MTD_LOOP=y)
-     */
+      /* Command:      LOOPIOC_SETUP
+       * Description:  Setup the loop device
+       * Argument:     A pointer to a read-only instance of struct losetup_s.
+       * Dependencies: The loop device must be enabled (CONFIG_MTD_LOOP=y)
+       */
 
-    case MTD_LOOPIOC_SETUP:
-      {
-        FAR struct mtd_losetup_s *setup =
-          (FAR struct mtd_losetup_s *)((uintptr_t)arg);
+      case MTD_LOOPIOC_SETUP:
+        {
+          FAR struct mtd_losetup_s *setup =
+            (FAR struct mtd_losetup_s *)((uintptr_t)arg);
 
-        if (setup == NULL)
-          {
-            ret = -EINVAL;
-          }
-        else
-          {
-            ret = mtd_loop_setup(setup->devname, setup->filename,
-                                 setup->sectsize, setup->erasesize,
-                                 setup->offset);
-          }
-      }
-      break;
+          if (setup == NULL)
+            {
+              ret = -EINVAL;
+            }
+          else
+            {
+#  ifndef CONFIG_MTD_CONFIG_NONE
+              ret = mtd_loop_setup(setup->devname, setup->filename,
+                                   setup->sectsize, setup->erasesize,
+                                   setup->offset, setup->configdata);
+#  else
+              ret = mtd_loop_setup(setup->devname, setup->filename,
+                                   setup->sectsize, setup->erasesize,
+                                   setup->offset);
+#  endif
+            }
+        }
+        break;
 
-    /* Command:      LOOPIOC_TEARDOWN
-     * Description:  Teardown a loop device previously setup via
-     *               LOOPIOC_SETUP
-     * Argument:     A read-able pointer to the path of the device to be
-     *               torn down
-     * Dependencies: The loop device must be enabled (CONFIG_MTD_LOOP=y)
-     */
+      /* Command:      LOOPIOC_TEARDOWN
+       * Description:  Teardown a loop device previously setup via
+       *               LOOPIOC_SETUP
+       * Argument:     A read-able pointer to the path of the device to be
+       *               torn down
+       * Dependencies: The loop device must be enabled (CONFIG_MTD_LOOP=y)
+       */
 
-    case MTD_LOOPIOC_TEARDOWN:
-      {
-        FAR const char *devname = (FAR const char *)((uintptr_t)arg);
+      case MTD_LOOPIOC_TEARDOWN:
+        {
+          FAR const char *devname = (FAR const char *)((uintptr_t)arg);
 
-        if (devname == NULL)
-          {
-            ret = -EINVAL;
-          }
-        else
-          {
-            ret = mtd_loop_teardown(devname);
-          }
-       }
-       break;
+          if (devname == NULL)
+            {
+              ret = -EINVAL;
+            }
+          else
+            {
+              ret = mtd_loop_teardown(devname);
+            }
+        }
+        break;
 
-     default:
-       ret = -ENOTTY;
+      default:
+        ret = -ENOTTY;
     }
 
   return ret;
@@ -766,7 +816,7 @@ FAR struct mtd_dev_s *filemtd_initialize(FAR const char *path, off_t offset,
 
   /* Set the file open mode. */
 
-  mode = O_RDOK | O_WROK | O_CLOEXEC;
+  mode = O_RDWR | O_CLOEXEC;
 
   /* Try to open the file.  NOTE that block devices will use a character
    * driver proxy.
@@ -901,6 +951,6 @@ bool filemtd_isfilemtd(FAR struct mtd_dev_s *dev)
 #ifdef CONFIG_MTD_LOOP
 int mtd_loop_register(void)
 {
-  return register_driver("/dev/loopmtd", &g_fops, 0666, NULL);
+  return register_driver("/dev/loopmtd", &g_fops, 0600, NULL);
 }
 #endif

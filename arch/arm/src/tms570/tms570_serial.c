@@ -33,7 +33,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #ifdef CONFIG_SERIAL_TERMIOS
 #  include <termios.h>
@@ -469,7 +469,7 @@ static int tms570_interrupt(int irq, void *context, void *arg)
             }
             break;
 
-          case SCI_INTVECT_TX:      /* Tranmit interrupt */
+          case SCI_INTVECT_TX:      /* Transmit interrupt */
             {
               /* Transmit data register available ...
                * process outgoing bytes

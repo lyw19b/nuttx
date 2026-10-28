@@ -20,6 +20,19 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -29,7 +42,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/mutex.h>
@@ -44,10 +57,6 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifndef CONFIG_AHT10_I2C_FREQUENCY
-#  define CONFIG_AHT10_I2C_FREQUENCY 400000
-#endif
-
 /* I2C command bytes */
 
 #define AHT10_SOFT_INIT              0xe1
@@ -56,7 +65,7 @@
 #define AHT10_NORMAL_CMD             0xa8
 
 /****************************************************************************
- * Private
+ * Private Types
  ****************************************************************************/
 
 struct aht10_dev_s
@@ -212,7 +221,7 @@ static int aht10_initialize(FAR struct aht10_dev_s *priv)
 
   /* wait at least 300ms */
 
-  nxsig_usleep(300000);
+  nxsched_usleep(300000);
 
   buf[0] = 0x08;
   buf[1] = 0x00;
@@ -226,7 +235,7 @@ static int aht10_initialize(FAR struct aht10_dev_s *priv)
 
   /* wait at least 300ms */
 
-  nxsig_usleep(300000);
+  nxsched_usleep(300000);
 
   return ret;
 }
@@ -619,7 +628,7 @@ int aht10_register(FAR const char *devpath, FAR struct i2c_master_s *i2c,
 
   /* Register the character driver */
 
-  ret = register_driver(devpath, &g_aht10fops, 0666, priv);
+  ret = register_driver(devpath, &g_aht10fops, 0400, priv);
   if (ret < 0)
     {
       snerr("ERROR: Failed to register driver: %d\n", ret);

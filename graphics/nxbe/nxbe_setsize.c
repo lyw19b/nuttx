@@ -27,7 +27,7 @@
 #include <nuttx/config.h>
 
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <sys/param.h>
 
 #ifdef CONFIG_NX_RAMBACKED
@@ -284,7 +284,7 @@ void nxbe_setsize(FAR struct nxbe_window_s *wnd,
   nxgl_rectunion(&bounds, &bounds, &wnd->bounds);
 
   /* Then redraw this window AND all windows below it. Having resized the
-   * window, we may have exposed previoulsy obscured portions of windows
+   * window, we may have exposed previously obscured portions of windows
    * below this one.
    */
 

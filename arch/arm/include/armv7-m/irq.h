@@ -180,11 +180,11 @@
 #define REG_LR              REG_R14
 #define REG_PC              REG_R15
 
-/* The PIC register is usually R10. It can be R9 is stack checking is enabled
- * or if the user changes it with -mpic-register on the GCC command line.
+/* The PIC base register is R9, the AAPCS platform register.  See PIC_REG
+ * in arch/arm/include/arch.h; every PIC binary format uses the same one.
  */
 
-#define REG_PIC             REG_R10
+#define REG_PIC             REG_R9
 
 /* CONTROL register */
 
@@ -214,6 +214,7 @@ struct xcpt_syscall_s
 
 struct xcptcontext
 {
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
   /* These are saved copies of the context used during
    * signal processing.
    */
@@ -228,6 +229,7 @@ struct xcptcontext
   uint32_t sigreturn;
 
 #endif
+#endif /* CONFIG_ENABLE_ALL_SIGNALS */
 
 #ifdef CONFIG_LIB_SYSCALL
   /* The following array holds the return address and the exc_return value

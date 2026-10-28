@@ -107,6 +107,11 @@ static int usertest(int argc, char **argv)
   children[0] = exec_spawn("/test/user", fault, NULL, NULL, 0, NULL, NULL);
   ASSERT(children[0] > 0);
   ASSERT(waitpid(children[0], &status, 0) == children[0]);
+  if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+    {
+      printf("Exec regression failed: status=%#x\n", status);
+    }
+
   ASSERT(WIFEXITED(status) && WEXITSTATUS(status) == 0);
 
   for (i = 0; i < sizeof(modes) - 1; i++)

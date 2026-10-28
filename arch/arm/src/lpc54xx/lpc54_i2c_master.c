@@ -51,7 +51,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/wdog.h>
@@ -905,7 +905,7 @@ struct i2c_master_s *lpc54_i2cbus_initialize(int port)
 
   flags = enter_critical_section();
 
-  /* Configure the requestin I2C peripheral */
+  /* Configure the requesting I2C peripheral */
 
   /* NOTE:  The basic FLEXCOMM initialization was performed in
    * lpc54_lowputc.c.

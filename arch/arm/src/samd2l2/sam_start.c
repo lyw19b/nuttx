@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/init.h>
 
@@ -48,7 +48,7 @@
  * 0x0000:0000 - Beginning of FLASH. Address of exception vectors.
  * 0x0003:ffff - End of flash (assuming 256KB of FLASH)
  * 0x2000:0000 - Start of SRAM and start of .data (_sdata)
- *             - End of .data (_edata) abd start of .bss (_sbss)
+ *             - End of .data (_edata) and start of .bss (_sbss)
  *             - End of .bss (_ebss) and bottom of idle stack
  *             - _ebss + CONFIG_IDLETHREAD_STACKSIZE = end of idle stack,
  *               start of heap

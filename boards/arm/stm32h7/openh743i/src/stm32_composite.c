@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 #include <sys/types.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <assert.h>
 
 #include <nuttx/usb/usbdev.h>
@@ -141,7 +141,7 @@ static int board_mscclassobject(int minor,
  *   that is called form the composite device logic.
  *
  * Input Parameters:
- *   classdev - The class driver instrance previously give to the composite
+ *   classdev - The class driver instance previously given to the composite
  *     driver by board_mscclassobject().
  *
  * Returned Value:

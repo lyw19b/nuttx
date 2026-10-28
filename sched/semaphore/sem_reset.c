@@ -34,47 +34,36 @@
 #include "semaphore/semaphore.h"
 
 /****************************************************************************
- * Public Functions
+ * Private Functions
  ****************************************************************************/
 
-/****************************************************************************
- * Name: nxsem_reset
- *
- * Description:
- *   Reset a semaphore count to a specific value.  This is similar to part
- *   of the operation of nxsem_init().  But nxsem_reset() may need to wake up
- *   tasks waiting on a count.  This kind of operation is sometimes required
- *   within the OS (only) for certain error handling conditions.
- *
- * Input Parameters:
- *   sem   - Semaphore descriptor to be reset
- *   count - The requested semaphore count
- *
- * Returned Value:
- *   This is an internal OS interface, not available to applications, and
- *   hence follows the NuttX internal error return policy:  Zero (OK) is
- *   returned on success.  A negated errno value is returned on failure.
- *
- ****************************************************************************/
-
-int nxsem_reset(FAR sem_t *sem, int16_t count)
+static inline_function void reset_mutex(FAR sem_t *sem, int16_t count)
 {
-  irqstate_t flags;
+  /* Support only resetting mutex by removing one waiter */
+
+  DEBUGASSERT(count == 1);
+
+  /* Post the mutex once with holder value set to RESET | BLOCKS
+   * so we know that it is ok in this case to call the post from
+   * another thread.
+   */
+
+  atomic_set(NXSEM_MHOLDER(sem),
+              NXSEM_MRESET | NXSEM_MBLOCKING_BIT);
+
+  if (!dq_empty(SEM_WAITLIST(sem)))
+    {
+      DEBUGVERIFY(nxsem_post(sem));
+    }
+  else
+    {
+      atomic_set(NXSEM_MHOLDER(sem), NXSEM_MRESET);
+    }
+}
+
+static inline_function void reset_sem(FAR sem_t *sem, int16_t count)
+{
   int32_t semcount;
-
-  DEBUGASSERT(sem != NULL && count >= 0);
-
-  /* Don't allow any context switches that may result from the following
-   * nxsem_post() operations.
-   */
-
-  sched_lock();
-
-  /* Prevent any access to the semaphore by interrupt handlers while we are
-   * performing this operation.
-   */
-
-  flags = enter_critical_section();
 
   /* A negative count indicates that the negated number of threads are
    * waiting to take a count from the semaphore.  Loop here, handing
@@ -107,7 +96,65 @@ int nxsem_reset(FAR sem_t *sem, int16_t count)
           break;
         }
     }
-  while (!atomic_try_cmpxchg_release(NXSEM_COUNT(sem), &semcount, count));
+  while (!atomic_try_cmpxchg_release(NXSEM_COUNT(sem), &semcount,
+                                    count));
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: nxsem_reset
+ *
+ * Description:
+ *   Reset a semaphore count to a specific value.  This is similar to part
+ *   of the operation of nxsem_init().  But nxsem_reset() may need to wake up
+ *   tasks waiting on a count.  This kind of operation is sometimes required
+ *   within the OS (only) for certain error handling conditions.
+ *
+ *   Mutex is simply posted until it is not blocking any tasks. If the
+ *   requested count is 0, a single running holder is left. If the requested
+ *   count is 1, the mutex is set to "reset". Other requested counts are not
+ *   allowed for mutex.
+ *
+ * Input Parameters:
+ *   sem   - Semaphore descriptor to be reset
+ *   count - The requested semaphore count
+ *
+ * Returned Value:
+ *   This is an internal OS interface, not available to applications, and
+ *   hence follows the NuttX internal error return policy:  Zero (OK) is
+ *   returned on success.  A negated errno value is returned on failure.
+ *
+ ****************************************************************************/
+
+int nxsem_reset(FAR sem_t *sem, int16_t count)
+{
+  irqstate_t flags;
+
+  DEBUGASSERT(sem != NULL && count >= 0);
+
+  /* Don't allow any context switches that may result from the following
+   * nxsem_post() operations.
+   */
+
+  sched_lock();
+
+  /* Prevent any access to the semaphore by interrupt handlers while we are
+   * performing this operation.
+   */
+
+  flags = enter_critical_section();
+
+  if (NXSEM_IS_MUTEX(sem))
+    {
+      reset_mutex(sem, count);
+    }
+  else
+    {
+      reset_sem(sem, count);
+    }
 
   /* Allow any pending context switches to occur now */
 

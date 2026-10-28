@@ -62,25 +62,25 @@ int setegid(gid_t gid)
   FAR struct tcb_s *rtcb;
   FAR struct task_group_s *rgroup;
 
-  /* Verify that the GID is in the valid range of 0 through INT16_MAX.
-   * OpenGroup.org does not specify a GID_MAX or GID_MIN.  Instead we use a
-   * priori knowledge that gid_t is type int16_t.
-   */
-
-  if ((uint16_t)gid > INT16_MAX)
-    {
-      set_errno(EINVAL);
-      return ERROR;
-    }
-
   /* Get the currently executing thread's task group. */
 
   rtcb   = this_task();
   rgroup = rtcb->group;
 
-  /* Set the task group's group identity. */
-
   DEBUGASSERT(rgroup != NULL);
-  rgroup->tg_egid = gid;
+
+  if (rgroup->tg_egid == 0 ||
+      gid == rgroup->tg_gid || gid == rgroup->tg_sgid)
+    {
+      /* Root may set any value; non-root may only set to real or saved. */
+
+      rgroup->tg_egid = gid;
+    }
+  else
+    {
+      set_errno(EPERM);
+      return ERROR;
+    }
+
   return OK;
 }

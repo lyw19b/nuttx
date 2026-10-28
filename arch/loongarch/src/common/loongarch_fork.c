@@ -37,16 +37,16 @@
  * Public Functions
  ****************************************************************************/
 
-/* NuttX flat-build fork duplicates the active stack. It does not create
+/* NuttX flat-build vfork duplicates the active stack. It does not create
  * an isolated process address space; pointers into the old stack remain
- * subject to the restrictions documented by the NuttX fork interface.
+ * subject to the restrictions documented by the NuttX vfork interface.
  */
 
 /****************************************************************************
  * Name: loongarch_fork
  *
  * Description:
- *   Create a flat-build child by copying the active stack and saved
+ *   Create a flat-build vfork child by copying the active stack and saved
  *   registers. Adjust the stack and frame pointers and arrange a zero
  *   return in the child. This does not create an independent process
  *   address space.
@@ -56,20 +56,20 @@
 pid_t loongarch_fork(const uintreg_t *context)
 {
   struct tcb_s *parent = this_task();
-  struct task_tcb_s *child;
+  struct tcb_s *child;
   struct tcb_s *tcb;
   uintptr_t top;
   uintptr_t sp;
   uintptr_t tp;
   size_t used;
 
-  child = nxtask_setup_fork((start_t)context[REG_RA]);
+  child = nxtask_setup_fork((start_t)context[REG_RA], true);
   if (child == NULL)
     {
       return ERROR;
     }
 
-  tcb = &child->cmn;
+  tcb = child;
   top = (uintptr_t)parent->stack_base_ptr + parent->adj_stack_size;
   used = top - context[REG_SP];
   if (used + XCPTCONTEXT_SIZE > tcb->adj_stack_size)
@@ -96,5 +96,5 @@ pid_t loongarch_fork(const uintreg_t *context)
       tcb->xcp.regs[REG_R22] = sp + context[REG_R22] - context[REG_SP];
     }
 
-  return nxtask_start_fork(child);
+  return nxtask_start_fork(child, true);
 }

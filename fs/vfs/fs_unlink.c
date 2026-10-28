@@ -33,8 +33,8 @@
 
 #include <nuttx/fs/fs.h>
 
-#include "notify/notify.h"
 #include "inode/inode.h"
+#include "vfs.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -88,6 +88,12 @@ int nx_unlink(FAR const char *pathname)
 
   if (INODE_IS_MOUNTPT(inode) && inode->u.i_mops)
     {
+      ret = inode_checkpathperm(inode, 0, 0);
+      if (ret < 0)
+        {
+          goto errout_with_inode;
+        }
+
       /* Perform the unlink operation using the relative path at the
        * mountpoint.
        */
@@ -149,11 +155,11 @@ int nx_unlink(FAR const char *pathname)
             }
         }
 #endif
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
-      else if (INODE_IS_PSEUDODIR(inode) || INODE_IS_SOFTLINK(inode))
-#else
-      else if (INODE_IS_PSEUDODIR(inode))
+      else if (
+#ifdef CONFIG_FS_LINKS
+      INODE_IS_SOFTLINK(inode) || INODE_IS_HARDLINK(inode) ||
 #endif
+      INODE_IS_PSEUDODIR(inode))
         {
           /* If this is a "dangling" pseudo-file node
            * (i.e., it has no operations) or a soft link,

@@ -28,7 +28,8 @@
 
 #include <stdint.h>
 #include <time.h>
-#include <debug.h>
+
+#include <nuttx/debug.h>
 #include <nuttx/arch.h>
 #include <arch/board/board.h>
 
@@ -110,6 +111,7 @@ static int sam_timerisr(int irq, uint32_t *regs, void *arg)
  *
  * Assumptions:
  *   Called from within critical section or interrupt context.
+ *
  ****************************************************************************/
 
 #ifdef CONFIG_CLOCK_ADJTIME

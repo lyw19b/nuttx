@@ -1052,7 +1052,6 @@ config AT32_TIM
 config AT32_PWM
 	bool
 	default n
-	select ARCH_HAVE_PWM_PULSECOUNT
 
 config AT32_CAP
 	bool
@@ -1107,7 +1106,6 @@ config ARCH_BOARD_AT32_CUSTOM_CLOCKCONFIG
 	default n
 	---help---
 		Enables special, board-specific AT32 clock configuration.
-
 
 config AT32_DMACAPABLE
 	bool "Workaround non-DMA capable memory"
@@ -3651,7 +3649,6 @@ config AT32_PWM_MULTICHAN
 	bool "PWM Multiple Output Channels"
 	default n
 	depends on AT32_PWM
-	select ARCH_HAVE_PWM_MULTICHAN
 	---help---
 		Specifies that the PWM driver supports multiple output
 		channels per timer.
@@ -3663,6 +3660,113 @@ config AT32_PWM_TRGO
 	---help---
 		Enable TRGO support for PWM driver
 
+config AT32_PULSECOUNT
+	bool
+	default n
+	select ARCH_HAVE_PULSECOUNT
+	select PULSECOUNT
+
+config AT32_TIM1_PULSECOUNT
+	bool "TIM1 pulse count"
+	default n
+	depends on AT32_TIM1
+	select AT32_PULSECOUNT
+	---help---
+		Reserve timer 1 for pulse count output.
+
+if AT32_TIM1_PULSECOUNT
+
+config AT32_TIM1_PULSECOUNT_TDTS
+	int "TIM1 pulse count clock division"
+	default 0
+	range 0 2
+
+config AT32_TIM1_PULSECOUNT_CHANNEL
+	int "TIM1 pulse count channel"
+	default 1
+	range 1 4
+	---help---
+		Specifies the timer channel {1,..,4}.
+
+config AT32_TIM1_PULSECOUNT_POL
+	int "TIM1 pulse count output polarity"
+	default 0
+	range 0 1
+
+config AT32_TIM1_PULSECOUNT_IDLE
+	int "TIM1 pulse count idle state"
+	default 0
+	range 0 1
+
+endif # AT32_TIM1_PULSECOUNT
+
+config AT32_TIM8_PULSECOUNT
+	bool "TIM8 pulse count"
+	default n
+	depends on AT32_TIM8
+	select AT32_PULSECOUNT
+	---help---
+		Reserve timer 8 for pulse count output.
+
+if AT32_TIM8_PULSECOUNT
+
+config AT32_TIM8_PULSECOUNT_TDTS
+	int "TIM8 pulse count clock division"
+	default 0
+	range 0 2
+
+config AT32_TIM8_PULSECOUNT_CHANNEL
+	int "TIM8 pulse count channel"
+	default 1
+	range 1 4
+	---help---
+		Specifies the timer channel {1,..,4}.
+
+config AT32_TIM8_PULSECOUNT_POL
+	int "TIM8 pulse count output polarity"
+	default 0
+	range 0 1
+
+config AT32_TIM8_PULSECOUNT_IDLE
+	int "TIM8 pulse count idle state"
+	default 0
+	range 0 1
+
+endif # AT32_TIM8_PULSECOUNT
+
+config AT32_TIM20_PULSECOUNT
+	bool "TIM20 pulse count"
+	default n
+	depends on AT32_TIM20
+	select AT32_PULSECOUNT
+	---help---
+		Reserve timer 20 for pulse count output.
+
+if AT32_TIM20_PULSECOUNT
+
+config AT32_TIM20_PULSECOUNT_TDTS
+	int "TIM20 pulse count clock division"
+	default 0
+	range 0 2
+
+config AT32_TIM20_PULSECOUNT_CHANNEL
+	int "TIM20 pulse count channel"
+	default 1
+	range 1 4
+	---help---
+		Specifies the timer channel {1,..,4}.
+
+config AT32_TIM20_PULSECOUNT_POL
+	int "TIM20 pulse count output polarity"
+	default 0
+	range 0 1
+
+config AT32_TIM20_PULSECOUNT_IDLE
+	int "TIM20 pulse count idle state"
+	default 0
+	range 0 1
+
+endif # AT32_TIM20_PULSECOUNT
 config AT32_TIM1_ADC
 	bool "TIM1 ADC"
 	default n
@@ -4431,10 +4535,10 @@ config AT32_TIM1_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM1_CLOCK
-	int "TIM1 work frequence for capture"
+	int "TIM1 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM1_CAP
 
@@ -4460,10 +4564,10 @@ config AT32_TIM2_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM2_CLOCK
-	int "TIM2 work frequence for capture"
+	int "TIM2 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM2_CAP
 
@@ -4489,10 +4593,10 @@ config AT32_TIM3_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM3_CLOCK
-	int "TIM3 work frequence for capture"
+	int "TIM3 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM3_CAP
 
@@ -4518,10 +4622,10 @@ config AT32_TIM4_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM4_CLOCK
-	int "TIM4 work frequence for capture"
+	int "TIM4 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM4_CAP
 
@@ -4547,10 +4651,10 @@ config AT32_TIM5_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM5_CLOCK
-	int "TIM5 work frequence for capture"
+	int "TIM5 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM5_CAP
 
@@ -4576,10 +4680,10 @@ config AT32_TIM8_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM8_CLOCK
-	int "TIM8 work frequence for capture"
+	int "TIM8 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM8_CAP
 
@@ -4605,10 +4709,10 @@ config AT32_TIM9_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM9_CLOCK
-	int "TIM9 work frequence for capture"
+	int "TIM9 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM9_CAP
 
@@ -4634,10 +4738,10 @@ config AT32_TIM10_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM10_CLOCK
-	int "TIM10 work frequence for capture"
+	int "TIM10 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM10_CAP
 
@@ -4663,10 +4767,10 @@ config AT32_TIM11_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM11_CLOCK
-	int "TIM11 work frequence for capture"
+	int "TIM11 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM11_CAP
 
@@ -4692,10 +4796,10 @@ config AT32_TIM12_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM12_CLOCK
-	int "TIM12 work frequence for capture"
+	int "TIM12 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM12_CAP
 
@@ -4721,10 +4825,10 @@ config AT32_TIM13_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM13_CLOCK
-	int "TIM13 work frequence for capture"
+	int "TIM13 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM13_CAP
 
@@ -4750,10 +4854,10 @@ config AT32_TIM14_CHANNEL
 		channel {1,..,4}
 
 config AT32_TIM14_CLOCK
-	int "TIM14 work frequence for capture"
+	int "TIM14 work frequency for capture"
 	default 1000000
 	---help---
-		This clock frequence limiting the count rate at the expense of resolution.
+		This clock frequency limiting the count rate at the expense of resolution.
 
 endif # AT32_TIM14_CAP
 
@@ -6009,7 +6113,6 @@ config AT32_ADC5_JEXTSEL
 
 endmenu
 
-
 config AT32_USART
 	bool
 	default n
@@ -6808,7 +6911,6 @@ config AT32_HCIUART_RXDMAPRIO
 	---help---
 		Select HCI UART DMA priority.
 
-
 config AT32_HCIUART_SW_RXFLOW
 	bool "Use Software UART RTS flow control"
 	default n
@@ -6941,7 +7043,6 @@ config AT32_SPI4_DMA_BUFFER
 
 endmenu # SPI Configuration
 
-
 menu "I2C Configuration"
 	depends on AT32_I2C
 
@@ -7028,7 +7129,6 @@ config AT32_SDIO_DMAPRIO
 		For AT32 , options are: 0x00000000 low, 0x00001000 medium,
 		0x00002000 high, 0x00003000 very high.  Default: medium.
 
-
 config AT32_SDIO_WIDTH_D1_ONLY
 	bool "Use D1 only"
 	default n
@@ -7036,7 +7136,6 @@ config AT32_SDIO_WIDTH_D1_ONLY
 		Select 1-bit transfer mode.  Default: 4-bit transfer mode.
 
 endmenu
-
 
 config AT32_HAVE_RTC_COUNTER
 	bool
@@ -7434,7 +7533,6 @@ config OTG_ID_GPIO_DISABLE
 
 endmenu
 
-
 menu "CAN driver configuration"
 	depends on AT32_CAN
 
@@ -7488,7 +7586,6 @@ config AT32_CAN_REGDEBUG
 		Requires also CONFIG_DEBUG_CAN_INFO.
 
 endmenu # "CAN driver configuration"
-
 
 menu "AT32 QEncoder Driver"
 	depends on SENSORS_QENCODER

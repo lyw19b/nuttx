@@ -40,7 +40,7 @@
 
 #if !defined(CONFIG_USBDEV_CUSTOM_TXFIFO_SIZE) && \
   defined(CONFIG_USBDEV_DUALSPEED)
-#  error USBMSC high-speed require custom TXFIFO configuratin that set EPIN FIFO to >=512
+#  error USBMSC high-speed require custom TXFIFO configuration that set EPIN FIFO to >=512
 #endif
 
 /****************************************************************************
@@ -59,8 +59,7 @@
 int board_usbmsc_initialize(int port)
 {
   /* If system/usbmsc is built as an NSH command, then SD slot should
-   * already have been initialized in board_app_initialize()
-   * (see stm32_appinit.c).
+   * already have been initialized.
    * In this case, there is nothing further to be done here.
    */
 

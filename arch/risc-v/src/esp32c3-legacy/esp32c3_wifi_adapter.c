@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <pthread.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -454,7 +454,7 @@ static bool g_softap_started;
 static wifi_txdone_cb_t g_softap_txdone_cb;
 #endif
 
-/* Wi-Fi and BT coexistance OS adapter data */
+/* Wi-Fi and BT coexistence OS adapter data */
 
 #ifdef CONFIG_ESP32C3_WIFI_BT_COEXIST
 coex_adapter_funcs_t g_coex_adapter_funcs =
@@ -1136,7 +1136,6 @@ static void IRAM_ATTR esp_task_yield_from_isr(void)
 
 static void *esp_semphr_create(uint32_t max, uint32_t init)
 {
-  int ret;
   sem_t *sem;
   int tmp;
 
@@ -1148,13 +1147,7 @@ static void *esp_semphr_create(uint32_t max, uint32_t init)
       return NULL;
     }
 
-  ret = nxsem_init(sem, 0, init);
-  if (ret)
-    {
-      wlerr("ERROR: Failed to initialize sem error=%d\n", ret);
-      kmm_free(sem);
-      return NULL;
-    }
+  nxsem_init(sem, 0, init);
 
   return sem;
 }
@@ -2053,7 +2046,7 @@ static void esp_task_delay(uint32_t tick)
 {
   useconds_t us = TICK2USEC(tick);
 
-  nxsig_usleep(us);
+  nxsched_usleep(us);
 }
 
 /****************************************************************************
@@ -2926,7 +2919,7 @@ static void wifi_rtc_disable_iso(void)
 
 int64_t esp_timer_get_time(void)
 {
-  return (int64_t)rt_timer_time_us();
+  return rt_timer_time_us();
 }
 
 /****************************************************************************
@@ -3289,8 +3282,8 @@ static int esp_get_time(void *t)
   ret = gettimeofday(&tv, NULL);
   if (!ret)
     {
-      time_adpt->sec  = (time_t)tv.tv_sec;
-      time_adpt->usec = (suseconds_t)tv.tv_usec;
+      time_adpt->sec  = tv.tv_sec;
+      time_adpt->usec = tv.tv_usec;
     }
   else
     {
@@ -3351,7 +3344,7 @@ static uint32_t esp_rand(void)
    * faster than it is added, this function needs to wait for at least 16 APB
    * clock cycles after reading previous word. This implementation may
    * actually wait a bit longer due to extra time spent in arithmetic and
-   * branch statements. As a (probably unncessary) precaution to avoid
+   * branch statements. As a (probably unnecessary) precaution to avoid
    * returning the RNG state as-is, the result is XORed with additional
    * WDEV_RND_REG reads while waiting.
    * This code does not run in a critical section, so CPU frequency switch
@@ -4702,9 +4695,9 @@ esp_err_t esp_wifi_deinit(void)
     }
 
 #ifdef CONFIG_PM
-    esp32c3_pm_unregister_skip_sleep_callback(
+  esp32c3_pm_unregister_skip_sleep_callback(
                     esp_wifi_internal_is_tsf_active);
-    esp32c3_pm_unregister_inform_out_sleep_overhead_callback(
+  esp32c3_pm_unregister_inform_out_sleep_overhead_callback(
                     esp_wifi_internal_update_light_sleep_wake_ahead_time);
 #endif
   return ret;
@@ -5471,6 +5464,7 @@ int esp_wifi_sta_connect(void)
         {
           int scan_retry = 3;
           int retry_cnt =  0;
+
           memset(&config, 0x0, sizeof(wifi_scan_config_t));
           config.scan_type  = IW_SCAN_TYPE_ACTIVE;
           config.channel = g_channel;
@@ -6883,7 +6877,7 @@ int esp_wifi_softap_rssi(struct iwreq *iwr, bool set)
  * Name: esp32c3_wifi_bt_coexist_init
  *
  * Description:
- *   Initialize ESP32-C3 Wi-Fi and BT coexistance module.
+ *   Initialize ESP32-C3 Wi-Fi and BT coexistence module.
  *
  * Input Parameters:
  *   None
@@ -6923,12 +6917,13 @@ void esp_wifi_stop_callback(void)
   wlinfo("Trying to stop Wi-Fi...");
 
   int ret = esp_wifi_stop();
+
   if (ret)
     {
       wlerr("ERROR: Failed to stop Wi-Fi ret=%d\n", ret);
     }
   else
     {
-      nxsig_sleep(1);
+      nxsched_sleep(1);
     }
 }

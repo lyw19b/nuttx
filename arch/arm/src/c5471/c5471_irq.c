@@ -76,7 +76,7 @@ static up_vector_t g_vectorinittab[] =
  * Name: up_ackirq
  *
  * Description:
- *   Acknowlede the IRQ.Bit 0 of the Interrupt Control
+ *   Acknowledge the IRQ.Bit 0 of the Interrupt Control
  *   Register ==  New IRQ agreement (NEW_IRQ_AGR). Reset IRQ
  *   output. Clear source IRQ register. Enables a new IRQ
  *   generation. Reset by internal logic.
@@ -158,6 +158,7 @@ void up_irqinitialize(void)
   /* And finally, enable interrupts */
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
+  arm_color_intstack();
   up_irq_restore(PSR_MODE_SYS | PSR_F_BIT);
 #endif
 }

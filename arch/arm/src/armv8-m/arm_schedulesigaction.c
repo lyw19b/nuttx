@@ -29,8 +29,8 @@
 #include <stdint.h>
 #include <sched.h>
 #include <assert.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <arch/armv8-m/nvicpri.h>
@@ -38,7 +38,6 @@
 #include "psr.h"
 #include "exc_return.h"
 #include "sched/sched.h"
-#include "signal/signal.h"
 #include "arm_internal.h"
 #include "irq/irq.h"
 #include "nvic.h"
@@ -92,16 +91,7 @@ void up_schedule_sigaction(struct tcb_s *tcb)
    * being delivered to the currently executing task.
    */
 
-  if (tcb == rtcb && ipsr == 0)
-    {
-      /* In this case just deliver the signal now.
-       * REVISIT:  Signal handle will run in a critical section!
-       */
-
-      nxsig_deliver(tcb);
-      tcb->flags &= ~TCB_FLAG_SIGDELIVER;
-    }
-  else if (tcb == rtcb && ipsr != NVIC_IRQ_PENDSV)
+  if (tcb == rtcb && ipsr != NVIC_IRQ_PENDSV)
     {
       /* Context switch should be done in pendsv, for exception directly
        * last regs is not saved tcb->xcp.regs.
@@ -119,6 +109,11 @@ void up_schedule_sigaction(struct tcb_s *tcb)
       /* Save the current register context location */
 
       tcb->xcp.saved_regs           = tcb->xcp.regs;
+
+      /* Stack pointer should be 8-byte aligned */
+
+      tcb->xcp.regs                 = (void *)STACKFRAME_ALIGN_DOWN(
+                                      (uint32_t)tcb->xcp.regs);
 
       /* Duplicate the register context.  These will be
        * restored by the signal trampoline after the signal has been

@@ -28,7 +28,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/sdio.h>
@@ -122,7 +122,7 @@ int litex_sdio_initialize(void)
   finfo("Successfully bound SDIO to the MMC/SD driver\n");
 
   /* Assume that the SD card is inserted.
-   * The Arty A7 board doesnt have the CD pin wired.
+   * The Arty A7 board does not have the CD pin wired.
    */
 
   sdio_mediachange(sdio_dev, litex_sdio_get_card_detect());

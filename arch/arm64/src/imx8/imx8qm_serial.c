@@ -32,7 +32,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #ifdef CONFIG_SERIAL_TERMIOS
 #  include <termios.h>
@@ -1018,7 +1018,7 @@ static struct uart_dev_s g_uart1port =
  * Description:
  *   Performs the low level UART initialization early in
  *   debug so that the serial console will be available
- *   during bootup.  This must be called before arm64_serialinit.
+ *   during boot up.  This must be called before arm64_serialinit.
  *
  ****************************************************************************/
 

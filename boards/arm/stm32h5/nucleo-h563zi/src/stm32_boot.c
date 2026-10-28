@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/board.h>
 
@@ -53,6 +53,12 @@
 
 void stm32_board_initialize(void)
 {
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_STM32_ICACHE)
+  /* Configure OTP MPU region. */
+
+  stm32_mpu_configure_otp();
+#endif
+
 #ifdef CONFIG_ARCH_LEDS
   /* Configure on-board LEDs if LED support has been selected. */
 

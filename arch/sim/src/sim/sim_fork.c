@@ -31,7 +31,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/compiler.h>
 #include <nuttx/sched.h>
@@ -48,17 +48,15 @@
  * Name: sim_fork
  *
  * Description:
- *   The fork() function has the same effect as posix fork(), except that the
- *   behavior is undefined if the process created by fork() either modifies
- *   any data other than a variable of type pid_t used to store the return
- *   value from fork(), or returns from the function in which fork() was
- *   called, or calls any other function before successfully calling _exit()
- *   or one of the exec family of functions.
+ *   The common simulator worker behind up_fork().  vfork() and fork()
+ *   snapshot the caller's registers identically; `vfork' says which
+ *   primitive was called, and is passed straight through to
+ *   nxtask_setup_fork(), which is where the memory semantics are decided.
  *
  *   The overall sequence is:
  *
- *   1) User code calls fork().  fork() collects context information and
- *      transfers control up sim_fork().
+ *   1) User code calls vfork() or fork().  up_fork() collects context
+ *      information and transfers control to sim_fork().
  *   2) sim_fork() and calls nxtask_setup_fork().
  *   3) nxtask_setup_fork() allocates and configures the child task's TCB.
  *      This consists of:
@@ -77,6 +75,10 @@
  * nxtask_abort_fork() may be called if an error occurs between steps 3 and
  * 6.
  *
+ * Input Parameters:
+ *   vfork   - true for vfork(), false for fork()
+ *   context - Caller context information saved by up_fork()
+ *
  * Returned Value:
  *   Upon successful completion, fork() returns 0 to the child process and
  *   returns the process ID of the child process to the parent process.
@@ -88,10 +90,10 @@
 #ifdef CONFIG_SIM_ASAN
 nosanitize_address
 #endif
-pid_t sim_fork(const xcpt_reg_t *context)
+pid_t sim_fork(bool vfork, const xcpt_reg_t *context)
 {
   struct tcb_s *parent = this_task();
-  struct task_tcb_s *child;
+  struct tcb_s *child;
   unsigned char *pout;
   unsigned char *pin;
   xcpt_reg_t newsp;
@@ -106,7 +108,7 @@ pid_t sim_fork(const xcpt_reg_t *context)
 
   /* Allocate and initialize a TCB for the child task. */
 
-  child = nxtask_setup_fork((start_t)context[JB_PC]);
+  child = nxtask_setup_fork((start_t)context[JB_PC], vfork);
   if (!child)
     {
       serr("ERROR: nxtask_setup_fork failed\n");
@@ -135,8 +137,8 @@ pid_t sim_fork(const xcpt_reg_t *context)
    * effort is overkill.
    */
 
-  newtop = (xcpt_reg_t)child->cmn.stack_base_ptr +
-                       child->cmn.adj_stack_size;
+  newtop = (xcpt_reg_t)child->stack_base_ptr +
+                       child->adj_stack_size;
   newsp = newtop - stackutil;
   pout = (unsigned char *)newsp;
   pin  = (unsigned char *)context[JB_SP];
@@ -166,14 +168,14 @@ pid_t sim_fork(const xcpt_reg_t *context)
    * child thread.
    */
 
-  memcpy(child->cmn.xcp.regs, context,
+  memcpy(child->xcp.regs, context,
          sizeof(xcpt_reg_t) * XCPTCONTEXT_REGS);
-  child->cmn.xcp.regs[JB_FP] = newfp; /* Frame pointer */
-  child->cmn.xcp.regs[JB_SP] = newsp; /* Stack pointer */
+  child->xcp.regs[JB_FP] = newfp; /* Frame pointer */
+  child->xcp.regs[JB_SP] = newsp; /* Stack pointer */
 
   /* And, finally, start the child task.  On a failure, nxtask_start_fork()
    * will discard the TCB by calling nxtask_abort_fork().
    */
 
-  return nxtask_start_fork(child);
+  return nxtask_start_fork(child, vfork);
 }

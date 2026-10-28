@@ -46,7 +46,7 @@ if(CONFIG_SCHED_HAVE_PARENT)
   list(APPEND SRCS task_getppid.c task_reparent.c)
 endif()
 
-if(CONFIG_ARCH_HAVE_FORK)
+if(CONFIG_ARCH_HAVE_VFORK OR CONFIG_ARCH_HAVE_FORK)
   list(APPEND SRCS task_fork.c)
 endif()
 
@@ -58,10 +58,6 @@ if(NOT CONFIG_BINFMT_DISABLE)
   if(CONFIG_LIBC_EXECFUNCS)
     list(APPEND SRCS task_execve.c task_posixspawn.c)
   endif()
-endif()
-
-if(CONFIG_SCHED_STARTHOOK)
-  list(APPEND SRCS task_starthook.c)
 endif()
 
 target_sources(sched PRIVATE ${SRCS})

@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdio.h>
 #include <stddef.h>
 #ifdef CONFIG_SYSTEM_PROPERTY
@@ -1581,7 +1581,7 @@ int usbdev_register(struct usbdevclass_driver_s *driver)
 
       putreg32(~USB_DEVS_SOF, USB_DEVS);
 
-      nxsig_usleep(100000);
+      nxsched_usleep(100000);
 
       /* SOF is not arrived & D+/D- is HIGH */
 
@@ -1923,6 +1923,7 @@ void usbdev_msc_stop(void)
  *
  * return value : 0 : charger was not detected.
  *               !0 : charger was detected.
+ *
  ****************************************************************************/
 
 int usbdev_is_usbcharger(void)

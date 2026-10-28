@@ -32,8 +32,8 @@
 #include <sched.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/clock.h>
 #include <nuttx/spinlock.h>
@@ -100,18 +100,21 @@ static int intel64_oneshot_handler(int irg_num, void * context, void *arg)
       INTEL64_TIM_ACKINT(oneshot->tch, oneshot->chan);
 #endif
 
-      /* The timer is no longer running */
+      /* The timer is no longer running.  Only pick up the handler here;
+       * it is owned by intel64_oneshot_start()/cancel(), which may be
+       * re-arming the timer on another CPU right now.  Clearing it from
+       * the ISR could leave a re-armed timer without a handler, and the
+       * next expiry would then jump through a NULL pointer.
+       */
 
       oneshot->running = false;
-
-      /* Forward the event, clearing out any vestiges */
-
       oneshot_handler  = (oneshot_handler_t)oneshot->handler;
-      oneshot->handler = NULL;
       oneshot_arg      = (void *)oneshot->arg;
-      oneshot->arg     = NULL;
 
-      oneshot_handler(oneshot_arg);
+      if (oneshot_handler != NULL)
+        {
+          oneshot_handler(oneshot_arg);
+        }
     }
   else
     {
@@ -219,7 +222,7 @@ int intel64_oneshot_initialize(struct intel64_oneshot_s *oneshot, int chan,
   oneshot->arg        = NULL;
 
 #ifdef CONFIG_INTEL64_HPET_FSB
-  /* IMPORTENT: HPET in edge triggered mode is broken on some hardware
+  /* IMPORTANT: HPET in edge triggered mode is broken on some hardware
    * and generate spurious interrupts when we enable timer. On the other
    * hand FSB works only with edge triggered mode.
    *
@@ -290,9 +293,8 @@ int intel64_oneshot_start(struct intel64_oneshot_s *oneshot,
   uint64_t   compare = 0;
   irqstate_t flags;
 
-  tmrinfo("handler=%p arg=%p, ts=(%lu, %lu)\n",
-         handler, arg, (unsigned long)ts->tv_sec,
-         (unsigned long)ts->tv_nsec);
+  tmrinfo("handler=%p arg=%p, ts=(%jd, %ld)\n",
+         handler, arg, (intmax_t)ts->tv_sec, ts->tv_nsec);
 
   DEBUGASSERT(oneshot && handler && ts);
   DEBUGASSERT(oneshot->tch);
@@ -302,10 +304,21 @@ int intel64_oneshot_start(struct intel64_oneshot_s *oneshot,
   flags = spin_lock_irqsave(&g_oneshot_spin);
   if (oneshot->running)
     {
-      /* Yes.. then cancel it */
+      /* Yes.. then stop it.  Do NOT call intel64_oneshot_cancel() here:
+       * it takes g_oneshot_spin, which we already hold, and spinlocks are
+       * not recursive, so that deadlocks the CPU.  Everything else that
+       * cancel would do (ISR, comparator, interrupt enable) is
+       * reprogrammed below anyway.
+       */
 
       tmrinfo("Already running... cancelling\n");
-      intel64_oneshot_cancel(oneshot, NULL);
+
+#ifndef CONFIG_INTEL64_HPET_FSB
+      INTEL64_TIM_DISABLEINT(oneshot->tch, oneshot->chan);
+      INTEL64_TIM_SETISR(oneshot->tch, oneshot->chan, NULL, NULL, false);
+#endif
+
+      oneshot->running = false;
     }
 
   /* Save the new handler and its argument */
@@ -315,10 +328,10 @@ int intel64_oneshot_start(struct intel64_oneshot_s *oneshot,
 
   /* Express the delay in microseconds */
 
-  usec = (uint64_t)ts->tv_sec * USEC_PER_SEC +
-         (uint64_t)(ts->tv_nsec / NSEC_PER_USEC);
+  usec = ts->tv_sec * USEC_PER_SEC +
+         (ts->tv_nsec / NSEC_PER_USEC);
 
-  /* HPET use free runnin up-counter and a comparators which generate events
+  /* HPET use free running up-counter and a comparators which generate events
    * only on a equal event. This can results in event miss if we set too
    * small delay. In that case we just set a minimum value for delay that
    * seem to work.
@@ -337,7 +350,7 @@ int intel64_oneshot_start(struct intel64_oneshot_s *oneshot,
    *             = (usecs * frequency) / USEC_PER_SEC;
    */
 
-  compare = (usec * (uint64_t)oneshot->frequency) / USEC_PER_SEC;
+  compare = (usec * oneshot->frequency) / USEC_PER_SEC;
 
 #ifndef CONFIG_INTEL64_HPET_FSB
   /* Set up to receive the callback when the interrupt occurs */
@@ -346,7 +359,7 @@ int intel64_oneshot_start(struct intel64_oneshot_s *oneshot,
                      oneshot, false);
 #endif
 
-  /* Set comparator ahed of the current counter */
+  /* Set comparator ahead of the current counter */
 
   compare += INTEL64_TIM_GETCOUNTER(oneshot->tch);
   INTEL64_TIM_SETCOMPARE(oneshot->tch, oneshot->chan, compare);
@@ -461,11 +474,11 @@ int intel64_oneshot_cancel(struct intel64_oneshot_s *oneshot,
       sec         = usec / USEC_PER_SEC;
       nsec        = ((usec) - (sec * USEC_PER_SEC)) * NSEC_PER_USEC;
 
-      ts->tv_sec  = (time_t)sec;
-      ts->tv_nsec = (unsigned long)nsec;
+      ts->tv_sec  = sec;
+      ts->tv_nsec = nsec;
 
-      tmrinfo("remaining (%lu, %lu)\n",
-             (unsigned long)ts->tv_sec, (unsigned long)ts->tv_nsec);
+      tmrinfo("remaining (%jd, %ld)\n",
+              (intmax_t)ts->tv_sec, ts->tv_nsec);
     }
 
   return OK;

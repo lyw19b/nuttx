@@ -33,7 +33,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/kmalloc.h>
@@ -222,7 +222,7 @@ const struct trace_msg_t g_usb_trace_strings_intdecode[] =
 
 struct imxrt_dtd_s
 {
-  volatile uint32_t       nextdesc;      /* Address of the next DMA descripto in RAM */
+  volatile uint32_t       nextdesc;      /* Address of the next DMA descriptor in RAM */
   volatile uint32_t       config;        /* Misc. bit encoded configuration information */
   uint32_t                buffer0;       /* Buffer start address */
   uint32_t                buffer1;       /* Buffer start address */
@@ -303,7 +303,7 @@ struct imxrt_dqh_s
 #define IMXRT_EP0MAXPACKET           (64)         /* EP0 max packet size (1-64) */
 #define IMXRT_BULKMAXPACKET          (512)        /* Bulk endpoint max packet (8/16/32/64/512) */
 #define IMXRT_INTRMAXPACKET          (1024)       /* Interrupt endpoint max packet (1 to 1024) */
-#define IMXRT_ISOCMAXPACKET          (512)        /* Acutally 1..1023 */
+#define IMXRT_ISOCMAXPACKET          (512)        /* Actually 1..1023 */
 
 /* Endpoint bit position in SETUPSTAT, PRIME, FLUSH, STAT, COMPLETE
  * registers
@@ -647,6 +647,7 @@ static void imxrt_putreg(uint32_t val, uint32_t addr)
 static inline void imxrt_clrbits(uint32_t mask, uint32_t addr)
 {
   uint32_t reg = imxrt_getreg(addr);
+
   reg &= ~mask;
   imxrt_putreg(reg, addr);
 }
@@ -662,6 +663,7 @@ static inline void imxrt_clrbits(uint32_t mask, uint32_t addr)
 static inline void imxrt_setbits(uint32_t mask, uint32_t addr)
 {
   uint32_t reg = imxrt_getreg(addr);
+
   reg |= mask;
   imxrt_putreg(reg, addr);
 }
@@ -677,6 +679,7 @@ static inline void imxrt_setbits(uint32_t mask, uint32_t addr)
 static inline void imxrt_chgbits(uint32_t mask, uint32_t val, uint32_t addr)
 {
   uint32_t reg = imxrt_getreg(addr);
+
   reg &= ~mask;
   reg |= val;
   imxrt_putreg(reg, addr);
@@ -791,10 +794,11 @@ static void imxrt_queuedtd(uint8_t epphy, struct imxrt_dtd_s *dtd)
 
   uint32_t bit = IMXRT_ENDPTMASK(epphy);
 
-  imxrt_setbits(bit, IMXRT_USBDEV_ENDPTPRIME);
+  imxrt_setbits(bit, IMXRT_USBDEV_ENDPTPRIME(0));
 
-  while (imxrt_getreg(IMXRT_USBDEV_ENDPTPRIME) & bit)
-    ;
+  while (imxrt_getreg(IMXRT_USBDEV_ENDPTPRIME(0)) & bit)
+    {
+    }
 }
 
 /****************************************************************************
@@ -832,7 +836,7 @@ static void imxrt_readsetup(uint8_t epphy, struct usb_ctrlreq_s *ctrl)
     {
       /* Set the trip wire */
 
-      imxrt_setbits(USBDEV_USBCMD_SUTW, IMXRT_USBDEV_USBCMD);
+      imxrt_setbits(USBDEV_USBCMD_SUTW, IMXRT_USBDEV_USBCMD(0));
 
       up_invalidate_dcache((uintptr_t)dqh,
                            (uintptr_t)dqh + sizeof(struct imxrt_dqh_s));
@@ -844,15 +848,16 @@ static void imxrt_readsetup(uint8_t epphy, struct usb_ctrlreq_s *ctrl)
           ((uint8_t *) ctrl)[i] = ((uint8_t *) dqh->setup)[i];
         }
     }
-  while (!(imxrt_getreg(IMXRT_USBDEV_USBCMD) & USBDEV_USBCMD_SUTW));
+  while (!(imxrt_getreg(IMXRT_USBDEV_USBCMD(0)) & USBDEV_USBCMD_SUTW));
 
   /* Clear the trip wire */
 
-  imxrt_clrbits(USBDEV_USBCMD_SUTW, IMXRT_USBDEV_USBCMD);
+  imxrt_clrbits(USBDEV_USBCMD_SUTW, IMXRT_USBDEV_USBCMD(0));
 
   /* Clear the Setup Interrupt */
 
-  imxrt_putreg(IMXRT_ENDPTMASK(IMXRT_EP0_OUT), IMXRT_USBDEV_ENDPTSETUPSTAT);
+  imxrt_putreg(IMXRT_ENDPTMASK(IMXRT_EP0_OUT),
+               IMXRT_USBDEV_ENDPTSETUPSTAT(0));
 }
 
 /****************************************************************************
@@ -871,7 +876,7 @@ static inline void imxrt_set_address(struct imxrt_usbdev_s *priv,
 
   imxrt_chgbits(USBDEV_DEVICEADDR_MASK,
                 priv->paddr << USBDEV_DEVICEADDR_SHIFT,
-                IMXRT_USBDEV_DEVICEADDR);
+                IMXRT_USBDEV_DEVICEADDR(0));
 }
 
 /****************************************************************************
@@ -885,13 +890,15 @@ static inline void imxrt_set_address(struct imxrt_usbdev_s *priv,
 static void imxrt_flushep(struct imxrt_ep_s *privep)
 {
   uint32_t mask = IMXRT_ENDPTMASK(privep->epphy);
+
   do
     {
-      imxrt_putreg(mask, IMXRT_USBDEV_ENDPTFLUSH);
-      while ((imxrt_getreg(IMXRT_USBDEV_ENDPTFLUSH) & mask) != 0)
-      ;
+      imxrt_putreg(mask, IMXRT_USBDEV_ENDPTFLUSH(0));
+      while ((imxrt_getreg(IMXRT_USBDEV_ENDPTFLUSH(0)) & mask) != 0)
+        {
+        }
     }
-  while ((imxrt_getreg(IMXRT_USBDEV_ENDPTSTATUS) & mask) != 0);
+  while ((imxrt_getreg(IMXRT_USBDEV_ENDPTSTATUS(0)) & mask) != 0);
 }
 
 /****************************************************************************
@@ -993,8 +1000,11 @@ static void imxrt_reqcomplete(struct imxrt_ep_s *privep,
    */
 
   bool stalled = privep->stalled;
+
   if (privep->epphy == IMXRT_EP0_IN)
-    privep->stalled = privep->dev->stalled;
+    {
+      privep->stalled = privep->dev->stalled;
+    }
 
   /* Save the result in the request structure */
 
@@ -1020,7 +1030,9 @@ static void imxrt_reqcomplete(struct imxrt_ep_s *privep,
 static void imxrt_cancelrequests(struct imxrt_ep_s *privep, int16_t status)
 {
   if (!imxrt_rqempty(privep))
+    {
       imxrt_flushep(privep);
+    }
 
   while (!imxrt_rqempty(privep))
     {
@@ -1138,7 +1150,7 @@ static void imxrt_ep0configure(struct imxrt_usbdev_s *priv)
   /* Enable EP0 */
 
   imxrt_setbits(USBDEV_ENDPTCTRL0_RXE | USBDEV_ENDPTCTRL0_TXE,
-                IMXRT_USBDEV_ENDPTCTRL0);
+                IMXRT_USBDEV_ENDPTCTRL0(0));
 }
 
 /****************************************************************************
@@ -1156,34 +1168,37 @@ static void imxrt_usbreset(struct imxrt_usbdev_s *priv)
   /* Disable all endpoints. Control endpoint 0 is always enabled */
 
   imxrt_clrbits(USBDEV_ENDPTCTRL_RXE | USBDEV_ENDPTCTRL_TXE,
-                IMXRT_USBDEV_ENDPTCTRL1);
+                IMXRT_USBDEV_ENDPTCTRL1(0));
   imxrt_clrbits(USBDEV_ENDPTCTRL_RXE | USBDEV_ENDPTCTRL_TXE,
-                IMXRT_USBDEV_ENDPTCTRL2);
+                IMXRT_USBDEV_ENDPTCTRL2(0));
   imxrt_clrbits(USBDEV_ENDPTCTRL_RXE | USBDEV_ENDPTCTRL_TXE,
-                IMXRT_USBDEV_ENDPTCTRL3);
+                IMXRT_USBDEV_ENDPTCTRL3(0));
   imxrt_clrbits(USBDEV_ENDPTCTRL_RXE | USBDEV_ENDPTCTRL_TXE,
-                IMXRT_USBDEV_ENDPTCTRL4);
+                IMXRT_USBDEV_ENDPTCTRL4(0));
   imxrt_clrbits(USBDEV_ENDPTCTRL_RXE | USBDEV_ENDPTCTRL_TXE,
-                IMXRT_USBDEV_ENDPTCTRL5);
+                IMXRT_USBDEV_ENDPTCTRL5(0));
 
   /* Clear all pending interrupts */
 
-  imxrt_putreg(imxrt_getreg(IMXRT_USBDEV_ENDPTNAK),
-               IMXRT_USBDEV_ENDPTNAK);
-  imxrt_putreg(imxrt_getreg(IMXRT_USBDEV_ENDPTSETUPSTAT),
-               IMXRT_USBDEV_ENDPTSETUPSTAT);
-  imxrt_putreg(imxrt_getreg(IMXRT_USBDEV_ENDPTCOMPLETE),
-               IMXRT_USBDEV_ENDPTCOMPLETE);
+  imxrt_putreg(imxrt_getreg(IMXRT_USBDEV_ENDPTNAK(0)),
+               IMXRT_USBDEV_ENDPTNAK(0));
+  imxrt_putreg(imxrt_getreg(IMXRT_USBDEV_ENDPTSETUPSTAT(0)),
+               IMXRT_USBDEV_ENDPTSETUPSTAT(0));
+  imxrt_putreg(imxrt_getreg(IMXRT_USBDEV_ENDPTCOMPLETE(0)),
+               IMXRT_USBDEV_ENDPTCOMPLETE(0));
 
   /* Wait for all prime operations to have completed and then flush all
    * DTDs
    */
 
-  while (imxrt_getreg(IMXRT_USBDEV_ENDPTPRIME) != 0)
-    ;
-  imxrt_putreg(IMXRT_ENDPTMASK_ALL, IMXRT_USBDEV_ENDPTFLUSH);
-  while (imxrt_getreg(IMXRT_USBDEV_ENDPTFLUSH))
-    ;
+  while (imxrt_getreg(IMXRT_USBDEV_ENDPTPRIME(0)) != 0)
+    {
+    }
+
+  imxrt_putreg(IMXRT_ENDPTMASK_ALL, IMXRT_USBDEV_ENDPTFLUSH(0));
+  while (imxrt_getreg(IMXRT_USBDEV_ENDPTFLUSH(0)))
+    {
+    }
 
   /* Reset endpoints */
 
@@ -1210,7 +1225,7 @@ static void imxrt_usbreset(struct imxrt_usbdev_s *priv)
   /* Set the interrupt Threshold control interval to 0 */
 
   imxrt_chgbits(USBDEV_USBCMD_ITC_MASK, USBDEV_USBCMD_ITCIMME,
-                IMXRT_USBDEV_USBCMD);
+                IMXRT_USBDEV_USBCMD(0));
 
   /* Zero out the Endpoint queue heads */
 
@@ -1224,9 +1239,9 @@ static void imxrt_usbreset(struct imxrt_usbdev_s *priv)
 
   imxrt_set_address(priv, 0);
 
-  /* Initialise the Enpoint List Address */
+  /* Initialise the Endpoint List Address */
 
-  imxrt_putreg((uint32_t)g_qh, IMXRT_USBDEV_ENDPOINTLIST);
+  imxrt_putreg((uint32_t)g_qh, IMXRT_USBDEV_ENDPOINTLIST(0));
 
   /* EndPoint 0 initialization */
 
@@ -1236,7 +1251,7 @@ static void imxrt_usbreset(struct imxrt_usbdev_s *priv)
 
   imxrt_putreg(USB_FRAME_INT | USB_ERROR_INT | USBDEV_USBINTR_NAKE |
                USBDEV_USBINTR_SLE | USBDEV_USBINTR_URE | USBDEV_USBINTR_PCE |
-               USBDEV_USBINTR_UE, IMXRT_USBDEV_USBINTR);
+               USBDEV_USBINTR_UE, IMXRT_USBDEV_USBINTR(0));
 }
 
 /****************************************************************************
@@ -1254,17 +1269,25 @@ static inline void imxrt_ep0state(struct imxrt_usbdev_s *priv,
 
   switch (state)
     {
-    case EP0STATE_WAIT_NAK_IN:
-      imxrt_putreg(IMXRT_ENDPTMASK(IMXRT_EP0_IN), IMXRT_USBDEV_ENDPTNAKEN);
-      break;
+      case EP0STATE_WAIT_NAK_IN:
+        {
+          imxrt_putreg(IMXRT_ENDPTMASK(IMXRT_EP0_IN),
+                       IMXRT_USBDEV_ENDPTNAKEN(0));
+          break;
+        }
 
-    case EP0STATE_WAIT_NAK_OUT:
-      imxrt_putreg(IMXRT_ENDPTMASK(IMXRT_EP0_OUT), IMXRT_USBDEV_ENDPTNAKEN);
-      break;
+      case EP0STATE_WAIT_NAK_OUT:
+        {
+          imxrt_putreg(IMXRT_ENDPTMASK(IMXRT_EP0_OUT),
+                       IMXRT_USBDEV_ENDPTNAKEN(0));
+          break;
+        }
 
-    default:
-      imxrt_putreg(0, IMXRT_USBDEV_ENDPTNAKEN);
-      break;
+      default:
+        {
+          imxrt_putreg(0, IMXRT_USBDEV_ENDPTNAKEN(0));
+          break;
+        }
     }
 }
 
@@ -1347,316 +1370,330 @@ static inline void imxrt_ep0setup(struct imxrt_usbdev_s *priv)
 
       switch (ctrl->req)
         {
-        case USB_REQ_GETSTATUS:
-          {
-            /* type:  device-to-host; recipient = device, interface, endpoint
-             * value: 0
-             * index: zero interface endpoint
-             * len:   2; data = status
-             */
+          case USB_REQ_GETSTATUS:
+            {
+              /* type:  device-to-host; recipient = device, interface,
+               * endpoint
+               * value: 0
+               * index: zero interface endpoint
+               * len:   2; data = status
+               */
 
-            usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_GETSTATUS), 0);
-            if (!priv->paddrset || len != 2 ||
-                (ctrl->type & USB_REQ_DIR_IN) == 0 || value != 0)
-              {
-                priv->stalled = true;
-              }
-            else
-              {
-                switch (ctrl->type & USB_REQ_RECIPIENT_MASK)
-                  {
-                  case USB_REQ_RECIPIENT_ENDPOINT:
+              usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_GETSTATUS), 0);
+              if (!priv->paddrset || len != 2 ||
+                  (ctrl->type & USB_REQ_DIR_IN) == 0 || value != 0)
+                {
+                  priv->stalled = true;
+                }
+              else
+                {
+                  switch (ctrl->type & USB_REQ_RECIPIENT_MASK)
                     {
-                      usbtrace(
-                          TRACE_INTDECODE(IMXRT_TRACEINTID_EPGETSTATUS), 0);
-                      privep = imxrt_epfindbyaddr(priv, index);
-                      if (!privep)
+                      case USB_REQ_RECIPIENT_ENDPOINT:
                         {
                           usbtrace(
-                              TRACE_DEVERROR(IMXRT_TRACEERR_BADEPGETSTATUS),
+                              TRACE_INTDECODE(IMXRT_TRACEINTID_EPGETSTATUS),
                               0);
-                          priv->stalled = true;
-                        }
-                      else
-                        {
-                          if (privep->stalled)
+                          privep = imxrt_epfindbyaddr(priv, index);
+                          if (!privep)
                             {
-                              priv->ep0buf[0] = 1; /* Stalled */
+                              usbtrace(
+                                  TRACE_DEVERROR(
+                                      IMXRT_TRACEERR_BADEPGETSTATUS),
+                                  0);
+                              priv->stalled = true;
                             }
                           else
                             {
-                              priv->ep0buf[0] = 0; /* Not stalled */
+                              if (privep->stalled)
+                                {
+                                  priv->ep0buf[0] = 1; /* Stalled */
+                                }
+                              else
+                                {
+                                  priv->ep0buf[0] = 0; /* Not stalled */
+                                }
+
+                              priv->ep0buf[1] = 0;
+
+                              imxrt_ep0xfer(IMXRT_EP0_IN, priv->ep0buf, 2);
+                              imxrt_ep0state(priv, EP0STATE_SHORTWRITE);
                             }
-
-                          priv->ep0buf[1] = 0;
-
-                          imxrt_ep0xfer(IMXRT_EP0_IN, priv->ep0buf, 2);
-                          imxrt_ep0state(priv, EP0STATE_SHORTWRITE);
                         }
-                    }
-                    break;
+                        break;
 
-                  case USB_REQ_RECIPIENT_DEVICE:
-                    {
-                      if (index == 0)
+                      case USB_REQ_RECIPIENT_DEVICE:
+                        {
+                          if (index == 0)
+                            {
+                              usbtrace(
+                                  TRACE_INTDECODE(
+                                      IMXRT_TRACEINTID_DEVGETSTATUS), 0);
+
+                              /* Features:  Remote Wakeup=YES;
+                               * selfpowered=?
+                               */
+
+                              priv->ep0buf[0] =
+                                  (priv->selfpowered <<
+                                      USB_FEATURE_SELFPOWERED) |
+                                  (1 << USB_FEATURE_REMOTEWAKEUP);
+                              priv->ep0buf[1] = 0;
+
+                              imxrt_ep0xfer(IMXRT_EP0_IN, priv->ep0buf, 2);
+                              imxrt_ep0state(priv, EP0STATE_SHORTWRITE);
+                            }
+                          else
+                            {
+                              usbtrace(
+                                  TRACE_DEVERROR(
+                                      IMXRT_TRACEERR_BADDEVGETSTATUS), 0);
+                              priv->stalled = true;
+                            }
+                        }
+                        break;
+
+                      case USB_REQ_RECIPIENT_INTERFACE:
                         {
                           usbtrace(
-                              TRACE_INTDECODE(IMXRT_TRACEINTID_DEVGETSTATUS),
+                              TRACE_INTDECODE(IMXRT_TRACEINTID_IFGETSTATUS),
                               0);
-
-                          /* Features:  Remote Wakeup=YES; selfpowered=? */
-
-                          priv->ep0buf[0] =
-                              (priv->selfpowered <<
-                                  USB_FEATURE_SELFPOWERED) |
-                              (1 << USB_FEATURE_REMOTEWAKEUP);
+                          priv->ep0buf[0] = 0;
                           priv->ep0buf[1] = 0;
 
                           imxrt_ep0xfer(IMXRT_EP0_IN, priv->ep0buf, 2);
                           imxrt_ep0state(priv, EP0STATE_SHORTWRITE);
                         }
-                      else
+                        break;
+
+                      default:
                         {
                           usbtrace(
-                              TRACE_DEVERROR(IMXRT_TRACEERR_BADDEVGETSTATUS),
+                              TRACE_DEVERROR(IMXRT_TRACEERR_BADGETSTATUS),
                               0);
                           priv->stalled = true;
                         }
+                        break;
                     }
-                    break;
-
-                  case USB_REQ_RECIPIENT_INTERFACE:
-                    {
-                      usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_IFGETSTATUS),
-                               0);
-                      priv->ep0buf[0] = 0;
-                      priv->ep0buf[1] = 0;
-
-                      imxrt_ep0xfer(IMXRT_EP0_IN, priv->ep0buf, 2);
-                      imxrt_ep0state(priv, EP0STATE_SHORTWRITE);
-                    }
-                    break;
-
-                  default:
-                    {
-                      usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADGETSTATUS),
-                               0);
-                      priv->stalled = true;
-                    }
-                    break;
                 }
             }
-        }
-        break;
+            break;
 
-      case USB_REQ_CLEARFEATURE:
-        {
-          /* type:  host-to-device; recipient = device, interface or endpoint
-           * value: feature selector
-           * index: zero interface endpoint;
-           * len:   zero, data = none
-           */
-
-          usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_CLEARFEATURE), 0);
-          if ((ctrl->type & USB_REQ_RECIPIENT_MASK) !=
-              USB_REQ_RECIPIENT_ENDPOINT)
+          case USB_REQ_CLEARFEATURE:
             {
-              imxrt_dispatchrequest(priv, ctrl);
-            }
-          else if (priv->paddrset != 0 &&
-              value == USB_FEATURE_ENDPOINTHALT &&
-              len == 0 && (privep = imxrt_epfindbyaddr(priv, index)) != NULL)
-            {
-              imxrt_epstall(&privep->ep, true);
-              imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
-            }
-          else
-            {
-              usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADCLEARFEATURE), 0);
-              priv->stalled = true;
-            }
-        }
-        break;
-
-      case USB_REQ_SETFEATURE:
-        {
-          /* type:  host-to-device; recipient = device, interface, endpoint
-           * value: feature selector
-           * index: zero interface endpoint;
-           * len:   0; data = none
-           */
-
-          usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_SETFEATURE), 0);
-          if (((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
-              USB_REQ_RECIPIENT_DEVICE) && value == USB_FEATURE_TESTMODE)
-            {
-              uinfo("test mode: %d\n", index);
-            }
-          else if ((ctrl->type & USB_REQ_RECIPIENT_MASK) !=
-              USB_REQ_RECIPIENT_ENDPOINT)
-            {
-              imxrt_dispatchrequest(priv, ctrl);
-            }
-          else if (priv->paddrset != 0 &&
-              value == USB_FEATURE_ENDPOINTHALT &&
-              len == 0 && (privep = imxrt_epfindbyaddr(priv, index)) != NULL)
-            {
-              imxrt_epstall(&privep->ep, false);
-              imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
-            }
-          else
-            {
-              usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADSETFEATURE), 0);
-              priv->stalled = true;
-            }
-        }
-        break;
-
-      case USB_REQ_SETADDRESS:
-        {
-          /* type:  host-to-device; recipient = device
-           * value: device address
-           * index: 0
-           * len:   0; data = none
-           */
-
-          usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_EP0SETUPSETADDRESS),
-                   value);
-          if (((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
-              USB_REQ_RECIPIENT_DEVICE) &&
-              index == 0 && len == 0 && value < 128)
-            {
-              /* Save the address.  We cannot actually change to the next
-               * address until the completion of the status phase.
+              /* type:  host-to-device; recipient = device, interface or
+               * endpoint
+               * value: feature selector
+               * index: zero interface endpoint;
+               * len:   zero, data = none
                */
 
-              priv->paddr = ctrl->value[0];
-              priv->paddrset = false;
-              imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
+              usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_CLEARFEATURE), 0);
+              if ((ctrl->type & USB_REQ_RECIPIENT_MASK) !=
+                  USB_REQ_RECIPIENT_ENDPOINT)
+                {
+                  imxrt_dispatchrequest(priv, ctrl);
+                }
+              else if (priv->paddrset != 0 &&
+                       value == USB_FEATURE_ENDPOINTHALT &&
+                       len == 0 &&
+                       (privep = imxrt_epfindbyaddr(priv, index)) != NULL)
+                {
+                  imxrt_epstall(&privep->ep, true);
+                  imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
+                }
+              else
+                {
+                  usbtrace(
+                      TRACE_DEVERROR(IMXRT_TRACEERR_BADCLEARFEATURE), 0);
+                  priv->stalled = true;
+                }
             }
-          else
+            break;
+
+          case USB_REQ_SETFEATURE:
             {
-              usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADSETADDRESS), 0);
-              priv->stalled = true;
+              /* type:  host-to-device; recipient = device, interface,
+               * endpoint
+               * value: feature selector
+               * index: zero interface endpoint;
+               * len:   0; data = none
+               */
+
+              usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_SETFEATURE), 0);
+              if (((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
+                   USB_REQ_RECIPIENT_DEVICE) &&
+                  value == USB_FEATURE_TESTMODE)
+                {
+                  uinfo("test mode: %d\n", index);
+                }
+              else if ((ctrl->type & USB_REQ_RECIPIENT_MASK) !=
+                       USB_REQ_RECIPIENT_ENDPOINT)
+                {
+                  imxrt_dispatchrequest(priv, ctrl);
+                }
+              else if (priv->paddrset != 0 &&
+                       value == USB_FEATURE_ENDPOINTHALT &&
+                       len == 0 &&
+                       (privep = imxrt_epfindbyaddr(priv, index)) != NULL)
+                {
+                  imxrt_epstall(&privep->ep, false);
+                  imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
+                }
+              else
+                {
+                  usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADSETFEATURE), 0);
+                  priv->stalled = true;
+                }
             }
-        }
-        break;
+            break;
 
-      case USB_REQ_GETDESCRIPTOR:
-        /* type:  device-to-host; recipient = device
-         * value: descriptor type and index
-         * index: 0 or language ID;
-         * len:   descriptor len; data = descriptor
-         */
-
-      case USB_REQ_SETDESCRIPTOR:
-        /* type:  host-to-device; recipient = device
-         * value: descriptor type and index
-         * index: 0 or language ID;
-         * len:   descriptor len; data = descriptor
-         */
-
-        {
-          usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_GETSETDESC), 0);
-          if ((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
-              USB_REQ_RECIPIENT_DEVICE)
+          case USB_REQ_SETADDRESS:
             {
-              imxrt_dispatchrequest(priv, ctrl);
+              /* type:  host-to-device; recipient = device
+               * value: device address
+               * index: 0
+               * len:   0; data = none
+               */
+
+              usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_EP0SETUPSETADDRESS),
+                       value);
+              if (((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
+                   USB_REQ_RECIPIENT_DEVICE) &&
+                  index == 0 && len == 0 && value < 128)
+                {
+                  /* Save the address.  We cannot actually change to the next
+                   * address until the completion of the status phase.
+                   */
+
+                  priv->paddr = ctrl->value[0];
+                  priv->paddrset = false;
+                  imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
+                }
+              else
+                {
+                  usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADSETADDRESS), 0);
+                  priv->stalled = true;
+                }
             }
-          else
+            break;
+
+          case USB_REQ_GETDESCRIPTOR:
+            /* type:  device-to-host; recipient = device
+             * value: descriptor type and index
+             * index: 0 or language ID;
+             * len:   descriptor len; data = descriptor
+             */
+
+          case USB_REQ_SETDESCRIPTOR:
+            /* type:  host-to-device; recipient = device
+             * value: descriptor type and index
+             * index: 0 or language ID;
+             * len:   descriptor len; data = descriptor
+             */
+
             {
-              usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADGETSETDESC), 0);
-              priv->stalled = true;
+              usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_GETSETDESC), 0);
+              if ((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
+                  USB_REQ_RECIPIENT_DEVICE)
+                {
+                  imxrt_dispatchrequest(priv, ctrl);
+                }
+              else
+                {
+                  usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADGETSETDESC), 0);
+                  priv->stalled = true;
+                }
             }
-        }
-        break;
+            break;
 
-      case USB_REQ_GETCONFIGURATION:
-        /* type:  device-to-host; recipient = device
-         * value: 0;
-         * index: 0;
-         * len:   1; data = configuration value
-         */
+          case USB_REQ_GETCONFIGURATION:
+            /* type:  device-to-host; recipient = device
+             * value: 0;
+             * index: 0;
+             * len:   1; data = configuration value
+             */
 
-        {
-          usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_GETCONFIG), 0);
-          if (priv->paddrset &&
-              ((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
-                  USB_REQ_RECIPIENT_DEVICE) &&
+            {
+              usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_GETCONFIG), 0);
+              if (priv->paddrset &&
+                  ((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
+                   USB_REQ_RECIPIENT_DEVICE) &&
                   value == 0 && index == 0 && len == 1)
+                {
+                  imxrt_dispatchrequest(priv, ctrl);
+                }
+              else
+                {
+                  usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADGETCONFIG), 0);
+                  priv->stalled = true;
+                }
+            }
+            break;
+
+          case USB_REQ_SETCONFIGURATION:
+            /* type:  host-to-device; recipient = device
+             * value: configuration value
+             * index: 0;
+             * len:   0; data = none
+             */
+
             {
+              usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_SETCONFIG), 0);
+              if (((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
+                   USB_REQ_RECIPIENT_DEVICE) &&
+                  index == 0 && len == 0)
+                {
+                  imxrt_dispatchrequest(priv, ctrl);
+                }
+              else
+                {
+                  usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADSETCONFIG), 0);
+                  priv->stalled = true;
+                }
+            }
+            break;
+
+          case USB_REQ_GETINTERFACE:
+            /* type:  device-to-host; recipient = interface
+             * value: 0
+             * index: interface;
+             * len:   1; data = alt interface
+             */
+
+          case USB_REQ_SETINTERFACE:
+            /* type:  host-to-device; recipient = interface
+             * value: alternate setting
+             * index: interface;
+             * len:   0; data = none
+             */
+
+            {
+              usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_GETSETIF), 0);
               imxrt_dispatchrequest(priv, ctrl);
             }
-          else
+            break;
+
+          case USB_REQ_SYNCHFRAME:
+            /* type:  device-to-host; recipient = endpoint
+             * value: 0
+             * index: endpoint;
+             * len:   2; data = frame number
+             */
+
             {
-              usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADGETCONFIG), 0);
+              usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_SYNCHFRAME), 0);
+            }
+            break;
+
+          default:
+            {
+              usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_INVALIDCTRLREQ), 0);
               priv->stalled = true;
             }
+            break;
         }
-        break;
-
-      case USB_REQ_SETCONFIGURATION:
-        /* type:  host-to-device; recipient = device
-         * value: configuration value
-         * index: 0;
-         * len:   0; data = none
-         */
-
-        {
-          usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_SETCONFIG), 0);
-          if (((ctrl->type & USB_REQ_RECIPIENT_MASK) ==
-              USB_REQ_RECIPIENT_DEVICE) && index == 0 && len == 0)
-            {
-              imxrt_dispatchrequest(priv, ctrl);
-            }
-          else
-            {
-              usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADSETCONFIG), 0);
-              priv->stalled = true;
-            }
-        }
-        break;
-
-      case USB_REQ_GETINTERFACE:
-        /* type:  device-to-host; recipient = interface
-         * value: 0
-         * index: interface;
-         * len:   1; data = alt interface
-         */
-
-      case USB_REQ_SETINTERFACE:
-        /* type:  host-to-device; recipient = interface
-         * value: alternate setting
-         * index: interface;
-         * len:   0; data = none
-         */
-
-        {
-          usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_GETSETIF), 0);
-          imxrt_dispatchrequest(priv, ctrl);
-        }
-        break;
-
-      case USB_REQ_SYNCHFRAME:
-        /* type:  device-to-host; recipient = endpoint
-         * value: 0
-         * index: endpoint;
-         * len:   2; data = frame number
-         */
-
-        {
-          usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_SYNCHFRAME), 0);
-        }
-        break;
-
-      default:
-        {
-          usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_INVALIDCTRLREQ), 0);
-          priv->stalled = true;
-        }
-        break;
-      }
-  }
+    }
 
   if (priv->stalled)
     {
@@ -1684,77 +1721,77 @@ static void imxrt_ep0complete(struct imxrt_usbdev_s *priv, uint8_t epphy)
 
   switch (priv->ep0state)
     {
-    case EP0STATE_DATA_IN:
-      if (imxrt_rqempty(privep))
-        {
-          return;
-        }
+      case EP0STATE_DATA_IN:
+        if (imxrt_rqempty(privep))
+          {
+            return;
+          }
 
-      if (imxrt_epcomplete(priv, epphy))
-        {
-          imxrt_ep0state(priv, EP0STATE_WAIT_NAK_OUT);
-        }
-      break;
+        if (imxrt_epcomplete(priv, epphy))
+          {
+            imxrt_ep0state(priv, EP0STATE_WAIT_NAK_OUT);
+          }
+        break;
 
-    case EP0STATE_DATA_OUT:
-      if (imxrt_rqempty(privep))
-        {
-          return;
-        }
+      case EP0STATE_DATA_OUT:
+        if (imxrt_rqempty(privep))
+          {
+            return;
+          }
 
-      if (imxrt_epcomplete(priv, epphy))
-        {
-          imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
-        }
-      break;
+        if (imxrt_epcomplete(priv, epphy))
+          {
+            imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
+          }
+        break;
 
-    case EP0STATE_SHORTREAD:
+      case EP0STATE_SHORTREAD:
 
-      /* Make sure we have updated data after the DMA transfer.
-       * This invalidation matches the flush in writedtd().
-       */
+        /* Make sure we have updated data after the DMA transfer.
+         * This invalidation matches the flush in writedtd().
+         */
 
-      up_invalidate_dcache((uintptr_t)priv->ep0buf,
-                           (uintptr_t)priv->ep0buf + sizeof(priv->ep0buf));
+        up_invalidate_dcache((uintptr_t)priv->ep0buf,
+                             (uintptr_t)priv->ep0buf + sizeof(priv->ep0buf));
 
-      imxrt_dispatchrequest(priv, &priv->ep0ctrl);
-      imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
-      break;
+        imxrt_dispatchrequest(priv, &priv->ep0ctrl);
+        imxrt_ep0state(priv, EP0STATE_WAIT_NAK_IN);
+        break;
 
-    case EP0STATE_SHORTWRITE:
-      imxrt_ep0state(priv, EP0STATE_WAIT_NAK_OUT);
-      break;
+      case EP0STATE_SHORTWRITE:
+        imxrt_ep0state(priv, EP0STATE_WAIT_NAK_OUT);
+        break;
 
-    case EP0STATE_WAIT_STATUS_IN:
-      imxrt_ep0state(priv, EP0STATE_IDLE);
+      case EP0STATE_WAIT_STATUS_IN:
+        imxrt_ep0state(priv, EP0STATE_IDLE);
 
-      /* If we've received a SETADDRESS packet, then we set the address
-       * now that the status phase has completed
-       */
+        /* If we've received a SETADDRESS packet, then we set the address
+         * now that the status phase has completed
+         */
 
-      if (! priv->paddrset && priv->paddr != 0)
-        {
-          usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_EP0INSETADDRESS),
-                   (uint16_t)priv->paddr);
-          imxrt_set_address(priv, priv->paddr);
-        }
+        if (!priv->paddrset && priv->paddr != 0)
+          {
+            usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_EP0INSETADDRESS),
+                     (uint16_t)priv->paddr);
+            imxrt_set_address(priv, priv->paddr);
+          }
 
-      break;
+        break;
 
-    case EP0STATE_WAIT_STATUS_OUT:
-      imxrt_ep0state(priv, EP0STATE_IDLE);
-      break;
+      case EP0STATE_WAIT_STATUS_OUT:
+        imxrt_ep0state(priv, EP0STATE_IDLE);
+        break;
 
-    default:
+      default:
 #ifdef CONFIG_DEBUG_FEATURES
-      DEBUGASSERT(priv->ep0state != EP0STATE_DATA_IN &&
-          priv->ep0state != EP0STATE_DATA_OUT        &&
-          priv->ep0state != EP0STATE_SHORTWRITE      &&
-          priv->ep0state != EP0STATE_WAIT_STATUS_IN  &&
-          priv->ep0state != EP0STATE_WAIT_STATUS_OUT);
+        DEBUGASSERT(priv->ep0state != EP0STATE_DATA_IN &&
+                    priv->ep0state != EP0STATE_DATA_OUT &&
+                    priv->ep0state != EP0STATE_SHORTWRITE &&
+                    priv->ep0state != EP0STATE_WAIT_STATUS_IN &&
+                    priv->ep0state != EP0STATE_WAIT_STATUS_OUT);
 #endif
-      priv->stalled = true;
-      break;
+        priv->stalled = true;
+        break;
     }
 
   if (priv->stalled)
@@ -1781,23 +1818,29 @@ static void imxrt_ep0nak(struct imxrt_usbdev_s *priv, uint8_t epphy)
 
   switch (priv->ep0state)
     {
-    case EP0STATE_WAIT_NAK_IN:
-      imxrt_ep0xfer(IMXRT_EP0_IN, NULL, 0);
-      imxrt_ep0state(priv, EP0STATE_WAIT_STATUS_IN);
-      break;
+      case EP0STATE_WAIT_NAK_IN:
+        {
+          imxrt_ep0xfer(IMXRT_EP0_IN, NULL, 0);
+          imxrt_ep0state(priv, EP0STATE_WAIT_STATUS_IN);
+          break;
+        }
 
-    case EP0STATE_WAIT_NAK_OUT:
-      imxrt_ep0xfer(IMXRT_EP0_OUT, NULL, 0);
-      imxrt_ep0state(priv, EP0STATE_WAIT_STATUS_OUT);
-      break;
+      case EP0STATE_WAIT_NAK_OUT:
+        {
+          imxrt_ep0xfer(IMXRT_EP0_OUT, NULL, 0);
+          imxrt_ep0state(priv, EP0STATE_WAIT_STATUS_OUT);
+          break;
+        }
 
-    default:
+      default:
+        {
 #ifdef CONFIG_DEBUG_FEATURES
-      DEBUGASSERT(priv->ep0state != EP0STATE_WAIT_NAK_IN &&
-                  priv->ep0state != EP0STATE_WAIT_NAK_OUT);
+          DEBUGASSERT(priv->ep0state != EP0STATE_WAIT_NAK_IN &&
+            priv->ep0state != EP0STATE_WAIT_NAK_OUT);
 #endif
-      priv->stalled = true;
-      break;
+          priv->stalled = true;
+          break;
+        }
     }
 
   if (priv->stalled)
@@ -1852,6 +1895,7 @@ bool imxrt_epcomplete(struct imxrt_usbdev_s *priv, uint8_t epphy)
   privreq->req.xfrd += xfrd;
 
   bool complete = true;
+
   if (IMXRT_EPPHYOUT(privep->epphy))
     {
       /* read(OUT) completes when request filled, or a short transfer is
@@ -1920,8 +1964,8 @@ static int imxrt_usbinterrupt(int irq, void *context, void *arg)
 
   /* Read the interrupts and then clear them */
 
-  disr = imxrt_getreg(IMXRT_USBDEV_USBSTS);
-  imxrt_putreg(disr, IMXRT_USBDEV_USBSTS);
+  disr = imxrt_getreg(IMXRT_USBDEV_USBSTS(0));
+  imxrt_putreg(disr, IMXRT_USBDEV_USBSTS(0));
 
   if (disr & USBDEV_USBSTS_URI)
     {
@@ -1973,12 +2017,16 @@ static int imxrt_usbinterrupt(int irq, void *context, void *arg)
 
   if (disr & USBDEV_USBSTS_PCI)
     {
-      portsc1 = imxrt_getreg(IMXRT_USBDEV_PORTSC1);
+      portsc1 = imxrt_getreg(IMXRT_USBDEV_PORTSC1(0));
 
       if (portsc1 & USBDEV_PRTSC1_HSP)
-        priv->usbdev.speed = USB_SPEED_HIGH;
+        {
+          priv->usbdev.speed = USB_SPEED_HIGH;
+        }
       else
-        priv->usbdev.speed = USB_SPEED_FULL;
+        {
+          priv->usbdev.speed = USB_SPEED_FULL;
+        }
 
       if (portsc1 & USBDEV_PRTSC1_FPR)
         {
@@ -1996,7 +2044,7 @@ static int imxrt_usbinterrupt(int irq, void *context, void *arg)
     {
       usbtrace(TRACE_INTDECODE(IMXRT_TRACEINTID_FRAME), 0);
 
-      uint32_t frindex = imxrt_getreg(IMXRT_USBDEV_FRINDEX);
+      uint32_t frindex = imxrt_getreg(IMXRT_USBDEV_FRINDEX(0));
       uint16_t frame_num =
           (frindex & USBDEV_FRINDEX_LFN_MASK) >> USBDEV_FRINDEX_LFN_SHIFT;
 
@@ -2016,14 +2064,14 @@ static int imxrt_usbinterrupt(int irq, void *context, void *arg)
     {
       /* Handle completion interrupts */
 
-      uint32_t mask = imxrt_getreg(IMXRT_USBDEV_ENDPTCOMPLETE);
+      uint32_t mask = imxrt_getreg(IMXRT_USBDEV_ENDPTCOMPLETE(0));
 
       if (mask)
         {
           /* Clear any NAK interrupt and completion interrupts */
 
-          imxrt_putreg(mask, IMXRT_USBDEV_ENDPTNAK);
-          imxrt_putreg(mask, IMXRT_USBDEV_ENDPTCOMPLETE);
+          imxrt_putreg(mask, IMXRT_USBDEV_ENDPTNAK(0));
+          imxrt_putreg(mask, IMXRT_USBDEV_ENDPTCOMPLETE(0));
 
           if (mask & IMXRT_ENDPTMASK(0))
             {
@@ -2051,7 +2099,8 @@ static int imxrt_usbinterrupt(int irq, void *context, void *arg)
 
       /* Handle setup interrupts */
 
-      uint32_t setupstat = imxrt_getreg(IMXRT_USBDEV_ENDPTSETUPSTAT);
+      uint32_t setupstat = imxrt_getreg(IMXRT_USBDEV_ENDPTSETUPSTAT(0));
+
       if (setupstat)
         {
           /* Clear the endpoint complete CTRL OUT and IN when a Setup is
@@ -2060,7 +2109,7 @@ static int imxrt_usbinterrupt(int irq, void *context, void *arg)
 
           imxrt_putreg(IMXRT_ENDPTMASK(IMXRT_EP0_IN) |
                        IMXRT_ENDPTMASK(IMXRT_EP0_OUT),
-                       IMXRT_USBDEV_ENDPTCOMPLETE);
+                       IMXRT_USBDEV_ENDPTCOMPLETE(0));
 
           if (setupstat & IMXRT_ENDPTMASK(IMXRT_EP0_OUT))
             {
@@ -2073,8 +2122,9 @@ static int imxrt_usbinterrupt(int irq, void *context, void *arg)
 
   if (disr & USBDEV_USBSTS_NAKI)
     {
-      uint32_t pending = imxrt_getreg(IMXRT_USBDEV_ENDPTNAK) &
-          imxrt_getreg(IMXRT_USBDEV_ENDPTNAKEN);
+      uint32_t pending = imxrt_getreg(IMXRT_USBDEV_ENDPTNAK(0)) &
+                         imxrt_getreg(IMXRT_USBDEV_ENDPTNAKEN(0));
+
       if (pending)
         {
           /* We shouldn't see NAK interrupts except on Endpoint 0 */
@@ -2092,7 +2142,7 @@ static int imxrt_usbinterrupt(int irq, void *context, void *arg)
 
       /* Clear the interrupts */
 
-      imxrt_putreg(pending, IMXRT_USBDEV_ENDPTNAK);
+      imxrt_putreg(pending, IMXRT_USBDEV_ENDPTNAK(0));
     }
 
   usbtrace(TRACE_INTEXIT(IMXRT_TRACEINTID_USB), 0);
@@ -2131,6 +2181,7 @@ static int imxrt_epconfigure(struct usbdev_ep_s *ep,
   /* Initialise EP capabilities */
 
   uint16_t maxsize = GETUINT16(desc->mxpacketsize);
+
   if ((desc->attr & USB_EP_ATTR_XFERTYPE_MASK) == USB_EP_ATTR_XFER_ISOC)
     {
       dqh->capability = (DQH_CAPABILITY_MAX_PACKET(maxsize) |
@@ -2337,6 +2388,7 @@ static void *imxrt_epallocbuffer(struct usbdev_ep_s *ep, uint16_t bytes)
    */
 
   struct imxrt_ep_s *privep = (struct imxrt_ep_s *)ep;
+
   UNUSED(privep);
 
   usbtrace(TRACE_EPALLOCBUFFER, privep->epphy);
@@ -2360,6 +2412,7 @@ static void *imxrt_epallocbuffer(struct usbdev_ep_s *ep, uint16_t bytes)
 static void imxrt_epfreebuffer(struct usbdev_ep_s *ep, void *buf)
 {
   struct imxrt_ep_s *privep = (struct imxrt_ep_s *)ep;
+
   UNUSED(privep);
 
   usbtrace(TRACE_EPFREEBUFFER, privep->epphy);
@@ -2603,22 +2656,32 @@ static struct usbdev_ep_s *imxrt_allocep(struct usbdev_s *dev,
 
   switch (eptype)
     {
-    case USB_EP_ATTR_XFER_INT: /* Interrupt endpoint */
-      epset &= IMXRT_EPINTRSET;
-      break;
+      case USB_EP_ATTR_XFER_INT: /* Interrupt endpoint */
+        {
+          epset &= IMXRT_EPINTRSET;
+          break;
+        }
 
-    case USB_EP_ATTR_XFER_BULK: /* Bulk endpoint */
-      epset &= IMXRT_EPBULKSET;
-      break;
+      case USB_EP_ATTR_XFER_BULK: /* Bulk endpoint */
+        {
+          epset &= IMXRT_EPBULKSET;
+          break;
+        }
 
-    case USB_EP_ATTR_XFER_ISOC: /* Isochronous endpoint */
-      epset &= IMXRT_EPISOCSET;
-      break;
+      case USB_EP_ATTR_XFER_ISOC: /* Isochronous endpoint */
+        {
+          epset &= IMXRT_EPISOCSET;
+          break;
+        }
 
-    case USB_EP_ATTR_XFER_CONTROL: /* Control endpoint -- not a valid choice */
-    default:
-      usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADEPTYPE), (uint16_t)eptype);
-      return NULL;
+      case USB_EP_ATTR_XFER_CONTROL: /* Control endpoint -- not a valid choice
+                                      */
+      default:
+        {
+          usbtrace(TRACE_DEVERROR(IMXRT_TRACEERR_BADEPTYPE),
+            (uint16_t)eptype);
+          return NULL;
+        }
     }
 
   /* Is the resulting endpoint supported by the IMXRT3x? */
@@ -2638,6 +2701,7 @@ static struct usbdev_ep_s *imxrt_allocep(struct usbdev_s *dev,
           for (epndx = 2; epndx < IMXRT_NPHYSENDPOINTS; epndx++)
             {
               uint32_t bit = 1 << epndx;
+
               if ((epset & bit) != 0)
                 {
                   /* Mark endpoint no longer available */
@@ -2708,7 +2772,7 @@ static int imxrt_getframe(struct usbdev_s *dev)
   usbtrace(TRACE_DEVGETFRAME, (uint16_t)priv->sof);
   return priv->sof;
 #else
-  uint32_t frindex = imxrt_getreg(IMXRT_USBDEV_FRINDEX);
+  uint32_t frindex = imxrt_getreg(IMXRT_USBDEV_FRINDEX(0));
   uint16_t frame_num =
       (frindex & USBDEV_FRINDEX_LFN_MASK) >> USBDEV_FRINDEX_LFN_SHIFT;
 
@@ -2735,7 +2799,7 @@ static int imxrt_wakeup(struct usbdev_s *dev)
   usbtrace(TRACE_DEVWAKEUP, 0);
 
   flags = enter_critical_section();
-  imxrt_setbits(USBDEV_PRTSC1_FPR, IMXRT_USBDEV_PORTSC1);
+  imxrt_setbits(USBDEV_PRTSC1_FPR, IMXRT_USBDEV_PORTSC1(0));
   leave_critical_section(flags);
   return OK;
 }
@@ -2779,9 +2843,10 @@ static int imxrt_pullup(struct usbdev_s *dev, bool enable)
   usbtrace(TRACE_DEVPULLUP, (uint16_t)enable);
 
   irqstate_t flags = enter_critical_section();
+
   if (enable)
     {
-      imxrt_setbits(USBDEV_USBCMD_RS, IMXRT_USBDEV_USBCMD);
+      imxrt_setbits(USBDEV_USBCMD_RS, IMXRT_USBDEV_USBCMD(0));
 
 #ifdef CONFIG_IMXRT_USB0DEV_NOVBUS
       /* Create a 'false' power event on the USB port so the MAC connects */
@@ -2792,7 +2857,7 @@ static int imxrt_pullup(struct usbdev_s *dev, bool enable)
     }
   else
     {
-      imxrt_clrbits(USBDEV_USBCMD_RS, IMXRT_USBDEV_USBCMD);
+      imxrt_clrbits(USBDEV_USBCMD_RS, IMXRT_USBDEV_USBCMD(0));
     }
 
   leave_critical_section(flags);
@@ -2888,36 +2953,37 @@ void arm_usbinitialize(void)
 #ifdef CONFIG_ARCH_FAMILY_IMXRT117x
   up_mdelay(1);
 
-  putreg32(USBPHY1_PLL_SIC_PLL_POWER |
-           USBPHY1_PLL_SIC_PLL_REG_ENABLE,
-           IMXRT_USBPHY1_PLL_SIC_SET);
+  putreg32(USBPHY_PLL_SIC_PLL_POWER |
+           USBPHY_PLL_SIC_PLL_REG_ENABLE,
+           IMXRT_USBPHY_PLL_SIC_SET(0));
 
-  putreg32(USBPHY1_PLL_SIC_PLL_DIV_SEL_MASK,
-           IMXRT_USBPHY1_PLL_SIC_CLR);
+  putreg32(USBPHY_PLL_SIC_PLL_DIV_SEL_MASK,
+           IMXRT_USBPHY_PLL_SIC_CLR(0));
 
-  putreg32(USBPHY1_PLL_SIC_PLL_DIV_SEL(3),
-           IMXRT_USBPHY1_PLL_SIC_SET);
+  putreg32(USBPHY_PLL_SIC_PLL_DIV_SEL(3),
+           IMXRT_USBPHY_PLL_SIC_SET(0));
 
-  putreg32(USBPHY1_PLL_SIC_PLL_BYPASS,
-           IMXRT_USBPHY1_PLL_SIC_CLR);
+  putreg32(USBPHY_PLL_SIC_PLL_BYPASS,
+           IMXRT_USBPHY_PLL_SIC_CLR(0));
 
-  putreg32(USBPHY1_PLL_SIC_PLL_EN_USB_CLKS,
-           IMXRT_USBPHY1_PLL_SIC_SET);
+  putreg32(USBPHY_PLL_SIC_PLL_EN_USB_CLKS,
+           IMXRT_USBPHY_PLL_SIC_SET(0));
 
   putreg32(USBPHY_CTRL_CLKGATE,
-           IMXRT_USBPHY1_CTRL_CLR);
+           IMXRT_USBPHY_CTRL_CLR(0));
 
-  while ((getreg32(IMXRT_USBPHY1_PLL_SIC) & USBPHY1_PLL_SIC_PLL_LOCK) == 0);
+  while ((getreg32(IMXRT_USBPHY_PLL_SIC(0)) & USBPHY_PLL_SIC_PLL_LOCK) == 0);
 
 #endif
 
   /* Disable USB interrupts */
 
-  imxrt_putreg(0, IMXRT_USBDEV_USBINTR);
+  imxrt_putreg(0, IMXRT_USBDEV_USBINTR(0));
 
   /* Soft reset PHY and enable clock */
 
-  putreg32(USBPHY_CTRL_SFTRST | USBPHY_CTRL_CLKGATE, IMXRT_USBPHY1_CTRL_CLR);
+  putreg32(USBPHY_CTRL_SFTRST | USBPHY_CTRL_CLKGATE,
+           IMXRT_USBPHY_CTRL_CLR(0));
 
   /* Disconnect device */
 
@@ -2925,9 +2991,10 @@ void arm_usbinitialize(void)
 
   /* Reset the controller */
 
-  imxrt_setbits(USBDEV_USBCMD_RST, IMXRT_USBDEV_USBCMD);
-  while (imxrt_getreg(IMXRT_USBDEV_USBCMD) & USBDEV_USBCMD_RST)
-      ;
+  imxrt_setbits(USBDEV_USBCMD_RST, IMXRT_USBDEV_USBCMD(0));
+  while (imxrt_getreg(IMXRT_USBDEV_USBCMD(0)) & USBDEV_USBCMD_RST)
+    {
+    }
 
   /* Power up the PHY (turn off power disable) - USBPHYx_PWDn
    * Manual: The USB PHY Power-Down Register provides overall control of the
@@ -2936,12 +3003,12 @@ void arm_usbinitialize(void)
    * CCM_ANALOG_USBPHYx_PLL_480_CTRLn.
    */
 
-  imxrt_putreg(0, IMXRT_USBPHY1_PWD);
+  imxrt_putreg(0, IMXRT_USBPHY_PWD(0));
 
   /* Program the controller to be the USB device controller */
 
   imxrt_putreg(USBDEV_USBMODE_SDIS | USBDEV_USBMODE_SLOM |
-                USBDEV_USBMODE_CM_DEVICE, IMXRT_USBDEV_USBMODE);
+                USBDEV_USBMODE_CM_DEVICE, IMXRT_USBDEV_USBMODE(0));
 
   /* Attach USB controller interrupt handler */
 
@@ -2986,15 +3053,16 @@ void arm_usbuninitialize(void)
 
   /* Reset the controller */
 
-  imxrt_setbits(USBDEV_USBCMD_RST, IMXRT_USBDEV_USBCMD);
-  while (imxrt_getreg(IMXRT_USBDEV_USBCMD) & USBDEV_USBCMD_RST)
-      ;
+  imxrt_setbits(USBDEV_USBCMD_RST, IMXRT_USBDEV_USBCMD(0));
+  while (imxrt_getreg(IMXRT_USBDEV_USBCMD(0)) & USBDEV_USBCMD_RST)
+    {
+    }
 
   /* Turn off USB power and clocking */
 
   /* Power down the PHY */
 
-  imxrt_putreg(0xffffffff, IMXRT_USBPHY1_PWD);
+  imxrt_putreg(0xffffffff, IMXRT_USBPHY_PWD(0));
 
   /* Stop clock
    * NOTE: This will interfere with USB OTG 2 and should probably be removed
@@ -3094,4 +3162,3 @@ int usbdev_unregister(struct usbdevclass_driver_s *driver)
   g_usbdev.driver = NULL;
   return OK;
 }
-

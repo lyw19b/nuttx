@@ -25,6 +25,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <nuttx/spinlock.h>
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -33,8 +34,8 @@
 #include <unistd.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
 
+#include <nuttx/debug.h>
 #include <nuttx/irq.h>
 #include <nuttx/kmalloc.h>
 #include <nuttx/signal.h>
@@ -42,6 +43,7 @@
 #include <nuttx/wqueue.h>
 #include <nuttx/scsi.h>
 #include <nuttx/fs/fs.h>
+#include <nuttx/fs/partition.h>
 #include <nuttx/mutex.h>
 
 #include <nuttx/usb/usb.h>
@@ -120,6 +122,7 @@ struct usbhost_state_s
   int16_t                 crefs;        /* Reference count on the driver instance */
   uint16_t                blocksize;    /* Block size of USB mass storage device */
   uint32_t                nblocks;      /* Number of blocks on the USB mass storage device */
+  spinlock_t              spinlock;     /* Used to protect critical section */
   mutex_t                 lock;         /* Used to maintain mutual exclusive access */
   struct work_s           work;         /* For interacting with the worker thread */
   FAR uint8_t            *tbuffer;      /* The allocated transfer buffer */
@@ -298,6 +301,8 @@ static FAR struct usbhost_freestate_s *g_freelist;
 
 static uint32_t g_devinuse;
 
+static spinlock_t g_lock = SP_UNLOCKED;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -331,14 +336,14 @@ static inline FAR struct usbhost_state_s *usbhost_allocclass(void)
    * our pre-allocated class instances from the free list.
    */
 
-  flags = enter_critical_section();
+  flags = spin_lock_irqsave(&g_lock);
   entry = g_freelist;
   if (entry)
     {
       g_freelist = entry->flink;
     }
 
-  leave_critical_section(flags);
+  spin_unlock_irqrestore(&g_lock, flags);
   uinfo("Allocated: %p\n", entry);
   return (FAR struct usbhost_state_s *)entry;
 }
@@ -387,10 +392,10 @@ static inline void usbhost_freeclass(FAR struct usbhost_state_s *usbclass)
 
   /* Just put the pre-allocated class structure back on the freelist */
 
-  flags = enter_critical_section();
+  flags = spin_lock_irqsave(&g_lock);
   entry->flink = g_freelist;
   g_freelist = entry;
-  leave_critical_section(flags);
+  spin_unlock_irqrestore(&g_lock, flags);
 }
 #else
 static inline void usbhost_freeclass(FAR struct usbhost_state_s *usbclass)
@@ -420,7 +425,7 @@ static int usbhost_allocdevno(FAR struct usbhost_state_s *priv)
   irqstate_t flags;
   int devno;
 
-  flags = enter_critical_section();
+  flags = spin_lock_irqsave(&g_lock);
   for (devno = 0; devno < 26; devno++)
     {
       uint32_t bitno = 1 << devno;
@@ -428,12 +433,12 @@ static int usbhost_allocdevno(FAR struct usbhost_state_s *priv)
         {
           g_devinuse |= bitno;
           priv->sdchar = 'a' + devno;
-          leave_critical_section(flags);
+          spin_unlock_irqrestore(&g_lock, flags);
           return OK;
         }
     }
 
-  leave_critical_section(flags);
+  spin_unlock_irqrestore(&g_lock, flags);
   return -EMFILE;
 }
 
@@ -443,9 +448,9 @@ static void usbhost_freedevno(FAR struct usbhost_state_s *priv)
 
   if (devno >= 0 && devno < 26)
     {
-      irqstate_t flags = enter_critical_section();
+      irqstate_t flags = spin_lock_irqsave(&g_lock);
       g_devinuse &= ~(1 << devno);
-      leave_critical_section(flags);
+      spin_unlock_irqrestore(&g_lock, flags);
     }
 }
 
@@ -475,9 +480,9 @@ static void usbhost_dumpcbw(FAR struct usbmsc_cbw_s *cbw)
   int i;
 
   uinfo("CBW:\n");
-  uinfo("  signature: %08x\n", usbhost_getle32(cbw->signature));
-  uinfo("  tag:       %08x\n", usbhost_getle32(cbw->tag));
-  uinfo("  datlen:    %08x\n", usbhost_getle32(cbw->datlen));
+  uinfo("  signature: %08" PRIx32 "\n", usbhost_getle32(cbw->signature));
+  uinfo("  tag:       %08" PRIx32 "\n", usbhost_getle32(cbw->tag));
+  uinfo("  datlen:    %08" PRIx32 "\n", usbhost_getle32(cbw->datlen));
   uinfo("  flags:     %02x\n", cbw->flags);
   uinfo("  lun:       %02x\n", cbw->lun);
   uinfo("  cdblen:    %02x\n", cbw->cdblen);
@@ -495,9 +500,9 @@ static void usbhost_dumpcbw(FAR struct usbmsc_cbw_s *cbw)
 static void usbhost_dumpcsw(FAR struct usbmsc_csw_s *csw)
 {
   uinfo("CSW:\n");
-  uinfo("  signature: %08x\n", usbhost_getle32(csw->signature));
-  uinfo("  tag:       %08x\n", usbhost_getle32(csw->tag));
-  uinfo("  residue:   %08x\n", usbhost_getle32(csw->residue));
+  uinfo("  signature: %08" PRIx32 "\n", usbhost_getle32(csw->signature));
+  uinfo("  tag:       %08" PRIx32 "\n", usbhost_getle32(csw->tag));
+  uinfo("  residue:   %08" PRIx32 "\n", usbhost_getle32(csw->residue));
   uinfo("  status:    %02x\n", csw->status);
 }
 #endif
@@ -687,7 +692,7 @@ static inline int usbhost_testunitready(FAR struct usbhost_state_s *priv)
   DEBUGASSERT(priv->usbclass.hport);
   hport = priv->usbclass.hport;
 
-  /* Initialize a CBW (re-using the allocated transfer buffer) */
+  /* Initialize a CBW (reusing the allocated transfer buffer) */
 
   cbw = usbhost_cbwalloc(priv);
   if (!cbw)
@@ -725,7 +730,7 @@ static inline int usbhost_requestsense(FAR struct usbhost_state_s *priv)
   DEBUGASSERT(priv->usbclass.hport);
   hport = priv->usbclass.hport;
 
-  /* Initialize a CBW (re-using the allocated transfer buffer) */
+  /* Initialize a CBW (reusing the allocated transfer buffer) */
 
   cbw = usbhost_cbwalloc(priv);
   if (!cbw)
@@ -771,7 +776,7 @@ static inline int usbhost_readcapacity(FAR struct usbhost_state_s *priv)
   DEBUGASSERT(priv->usbclass.hport);
   hport = priv->usbclass.hport;
 
-  /* Initialize a CBW (re-using the allocated transfer buffer) */
+  /* Initialize a CBW (reusing the allocated transfer buffer) */
 
   cbw = usbhost_cbwalloc(priv);
   if (!cbw)
@@ -823,7 +828,7 @@ static inline int usbhost_inquiry(FAR struct usbhost_state_s *priv)
   DEBUGASSERT(priv->usbclass.hport);
   hport = priv->usbclass.hport;
 
-  /* Initialize a CBW (re-using the allocated transfer buffer) */
+  /* Initialize a CBW (reusing the allocated transfer buffer) */
 
   cbw = usbhost_cbwalloc(priv);
   if (!cbw)
@@ -865,6 +870,41 @@ static inline int usbhost_inquiry(FAR struct usbhost_state_s *priv)
 
   return nbytes < 0 ? (int)nbytes : OK;
 }
+
+#ifdef CONFIG_USBHOST_MSC_PARTITIONS
+/****************************************************************************
+ * Name: usbhost_part_handler
+ *
+ * Description:
+ *   Give one partition found on a drive a block device of its own, named
+ *   after the drive it came from with the partition number after it, which
+ *   is the convention every other system uses.
+ *
+ ****************************************************************************/
+
+static void usbhost_part_handler(FAR struct partition_s *part, FAR void *arg)
+{
+  FAR const char *devname = arg;
+  char            partname[DEV_NAMELEN + 4];
+
+  if (part->nblocks == 0)
+    {
+      return;
+    }
+
+  snprintf(partname, sizeof(partname), "%s%zu", devname, part->index + 1);
+
+  if (register_blockpartition(partname, 0, devname, part->firstblock,
+                              part->nblocks) < 0)
+    {
+      uerr("ERROR: cannot register %s\n", partname);
+      return;
+    }
+
+  uinfo("%s: %zu blocks from %zu\n", partname, part->nblocks,
+        part->firstblock);
+}
+#endif
 
 /****************************************************************************
  * Name: usbhost_destroy
@@ -1000,7 +1040,7 @@ static inline int usbhost_cfgdesc(FAR struct usbhost_state_s *priv,
   configdesc += cfgdesc->len;
   remaining  -= cfgdesc->len;
 
-  /* Loop where there are more dscriptors to examine */
+  /* Loop where there are more descriptors to examine */
 
   while (remaining >= sizeof(struct usb_desc_s))
     {
@@ -1227,11 +1267,11 @@ static inline int usbhost_initvolume(FAR struct usbhost_state_s *priv)
 
       /* Wait just a bit */
 
-      nxsig_usleep(USBHOST_RETRY_USEC);
+      nxsched_usleep(USBHOST_RETRY_USEC);
 
       /* Send TESTUNITREADY to see if the unit is ready.  The most likely
        * error error that can occur here is a a stall which simply means
-       * that the the device is not yet able to respond.
+       * that the device is not yet able to respond.
        */
 
       ret = usbhost_testunitready(priv);
@@ -1327,6 +1367,18 @@ static inline int usbhost_initvolume(FAR struct usbhost_state_s *priv)
       uinfo("Register block driver\n");
       usbhost_mkdevname(priv, devname);
       ret = register_blockdriver(devname, &g_bops, 0, priv);
+
+#ifdef CONFIG_USBHOST_MSC_PARTITIONS
+      /* Such a drive is usually partitioned rather than holding a
+       * filesystem outright.  Give each partition a block device beside
+       * the whole drive, which stays available.
+       */
+
+      if (ret >= 0)
+        {
+          parse_block_partition(devname, usbhost_part_handler, devname);
+        }
+#endif
     }
 
   /* Decrement the reference count.  We incremented the reference count
@@ -1614,7 +1666,7 @@ static inline int usbhost_tfree(FAR struct usbhost_state_s *priv)
  * Name: usbhost_cbwalloc
  *
  * Description:
- *   Initialize a CBW (re-using the allocated transfer buffer). Upon
+ *   Initialize a CBW (reusing the allocated transfer buffer). Upon
  *   successful return, the CBW is cleared and has the CBW signature in
  *   place.
  *
@@ -1703,6 +1755,7 @@ static FAR struct usbhost_class_s *
            */
 
           nxmutex_init(&priv->lock);
+          spin_lock_init(&priv->spinlock);
 
           /* NOTE: We do not yet know the geometry of the USB mass storage
            * device.
@@ -1825,7 +1878,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
    * device is no longer available.
    */
 
-  flags              = enter_critical_section();
+  flags = spin_lock_irqsave(&priv->spinlock);
   priv->disconnected = true;
 
   /* Now check the number of references on the class instance.  If it is one,
@@ -1834,7 +1887,6 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
    * block driver.
    */
 
-  uinfo("crefs: %d\n", priv->crefs);
   if (priv->crefs == 1)
     {
       /* Destroy the class instance.  If we are executing from an interrupt
@@ -1842,6 +1894,7 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
        * Otherwise, destroy the instance now.
        */
 
+      spin_unlock_irqrestore(&priv->spinlock, flags);
       if (up_interrupt_context())
         {
           /* Destroy the instance on the worker thread. */
@@ -1857,9 +1910,11 @@ static int usbhost_disconnected(struct usbhost_class_s *usbclass)
 
           usbhost_destroy(priv);
         }
+
+      return OK;
     }
 
-  leave_critical_section(flags);
+  spin_unlock_irqrestore(&priv->spinlock, flags);
   return OK;
 }
 
@@ -1894,7 +1949,7 @@ static int usbhost_open(FAR struct inode *inode)
    * disconnect events.
    */
 
-  flags = enter_critical_section();
+  flags = spin_lock_irqsave(&priv->spinlock);
   if (priv->disconnected)
     {
       /* No... the block driver is no longer bound to the class.  That means
@@ -1912,7 +1967,7 @@ static int usbhost_open(FAR struct inode *inode)
       ret = OK;
     }
 
-  leave_critical_section(flags);
+  spin_unlock_irqrestore(&priv->spinlock, flags);
 
   nxmutex_unlock(&priv->lock);
   return ret;
@@ -1939,20 +1994,13 @@ static int usbhost_close(FAR struct inode *inode)
   DEBUGASSERT(priv->crefs > 1);
 
   nxmutex_lock(&priv->lock);
-  priv->crefs--;
-
-  /* Release the semaphore.  The following operations when crefs == 1 are
-   * safe because we know that there is no outstanding open references to
-   * the block driver.
-   */
-
-  nxmutex_unlock(&priv->lock);
 
   /* We need to disable interrupts momentarily to assure that there are
    * no asynchronous disconnect events.
    */
 
-  flags = enter_critical_section();
+  flags = spin_lock_irqsave(&priv->spinlock);
+  priv->crefs--;
 
   /* Check if the USB mass storage device is still connected.  If the
    * storage device is not connected and the reference count just
@@ -1965,10 +2013,14 @@ static int usbhost_close(FAR struct inode *inode)
       /* Destroy the class instance */
 
       DEBUGASSERT(priv->crefs == 1);
+      spin_unlock_irqrestore(&priv->spinlock, flags);
+      nxmutex_unlock(&priv->lock);
       usbhost_destroy(priv);
+      return OK;
     }
 
-  leave_critical_section(flags);
+  spin_unlock_irqrestore(&priv->spinlock, flags);
+  nxmutex_unlock(&priv->lock);
   return OK;
 }
 
@@ -2023,7 +2075,7 @@ static ssize_t usbhost_read(FAR struct inode *inode, unsigned char *buffer,
 
       nbytes = -ENOMEM;
 
-      /* Initialize a CBW (re-using the allocated transfer buffer) */
+      /* Initialize a CBW (reusing the allocated transfer buffer) */
 
       cbw = usbhost_cbwalloc(priv);
       if (cbw)
@@ -2135,7 +2187,7 @@ static ssize_t usbhost_write(FAR struct inode *inode,
 
       nbytes = -ENOMEM;
 
-      /* Initialize a CBW (re-using the allocated transfer buffer) */
+      /* Initialize a CBW (reusing the allocated transfer buffer) */
 
       cbw = usbhost_cbwalloc(priv);
       if (cbw)
@@ -2231,7 +2283,7 @@ static int usbhost_geometry(FAR struct inode *inode,
           geometry->geo_sectorsize    = priv->blocksize;
           nxmutex_unlock(&priv->lock);
 
-          uinfo("nsectors: %" PRIdOFF " sectorsize: %" PRIi16 "\n",
+          uinfo("nsectors: %" PRIdOFF " sectorsize: %" PRId32 "\n",
                 geometry->geo_nsectors, geometry->geo_sectorsize);
         }
     }

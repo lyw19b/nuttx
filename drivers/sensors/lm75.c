@@ -20,6 +20,19 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -31,7 +44,7 @@
 #include <fixedmath.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/fs/fs.h>
@@ -45,17 +58,13 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifndef CONFIG_LM75_I2C_FREQUENCY
-#  define CONFIG_LM75_I2C_FREQUENCY 100000
-#endif
-
 /* Centigrade to Fahrenheit conversion:  F = 9*C/5 + 32 */
 
 #define B16_9DIV5  (9 * 65536 / 5)
 #define B16_32     (32 * 65536)
 
 /****************************************************************************
- * Private
+ * Private Types
  ****************************************************************************/
 
 struct lm75_dev_s
@@ -562,7 +571,7 @@ int lm75_register(FAR const char *devpath, FAR struct i2c_master_s *i2c,
 
   /* Register the character driver */
 
-  ret = register_driver(devpath, &g_lm75fops, 0666, priv);
+  ret = register_driver(devpath, &g_lm75fops, 0600, priv);
   if (ret < 0)
     {
       snerr("ERROR: Failed to register driver: %d\n", ret);

@@ -47,10 +47,8 @@
 #  error XCPTCONTEXT_SIZE must be aligned to XCPTCONTEXT_ALIGN !
 #endif
 
-/* Aligned size of the kernel stack */
-
-#ifdef CONFIG_ARCH_KERNEL_STACK
-#  define ARCH_KERNEL_STACKSIZE STACK_ALIGN_UP(CONFIG_ARCH_KERNEL_STACKSIZE)
+#if defined(CONFIG_STACK_CANARIES) && !defined(CONFIG_SCHED_THREAD_LOCAL)
+#  error x86_64 stack canaries requires TLS support !
 #endif
 
 /****************************************************************************
@@ -65,7 +63,7 @@
  *   function is called to initialize the processor specific portions of the
  *   new TCB.
  *
- *   This function must setup the intial architecture registers and/or stack
+ *   This function must setup the initial architecture registers and/or stack
  *   so that execution will begin at tcb->start on the next context switch.
  *
  ****************************************************************************/
@@ -82,8 +80,9 @@ void up_initial_state(struct tcb_s *tcb)
 
   if (tcb->pid == IDLE_PROCESS_ID)
     {
-      char *stack_ptr = (char *)(g_idle_topstack[0] -
+      char *stack_ptr = (char *)(x86_64_idle_topstack(0) -
                                  CONFIG_IDLETHREAD_STACKSIZE);
+
       tcb->stack_alloc_ptr = stack_ptr;
       tcb->stack_base_ptr  = stack_ptr;
       tcb->adj_stack_size  = CONFIG_IDLETHREAD_STACKSIZE;
@@ -177,16 +176,19 @@ void up_initial_state(struct tcb_s *tcb)
  */
 
 #ifdef CONFIG_SCHED_THREAD_LOCAL
-  xcp->regs[REG_FS]     = (uintptr_t)tcb->stack_alloc_ptr
-                          + sizeof(struct tls_info_s)
-                          + (_END_TBSS - _START_TDATA);
+  xcp->regs[REG_FSBASE] = ((uintptr_t)tcb->stack_alloc_ptr +
+                           sizeof(struct tls_info_s) +
+                           (_END_TBSS - _START_TDATA));
 
-  *(uint64_t *)(xcp->regs[REG_FS]) = xcp->regs[REG_FS];
+  *(uint64_t *)(xcp->regs[REG_FSBASE]) = xcp->regs[REG_FSBASE];
 
-  write_fsbase(xcp->regs[REG_FS]);
+  /* Do not write FSBASE now. This task is not running yet! */
+
 #else
-  xcp->regs[REG_FS]     = 0;
+  xcp->regs[REG_FSBASE] = 0;
 #endif
+
+  xcp->regs[REG_FS]     = 0;
 
   /* GS used for CPU private data */
 

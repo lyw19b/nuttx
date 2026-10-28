@@ -29,7 +29,7 @@
 #include <nuttx/irq.h>
 
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -94,7 +94,7 @@
 #define INSN_C_FSDSP 0xa002
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Types
  ****************************************************************************/
 
 /* Compressed instruction encoding */

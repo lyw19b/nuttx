@@ -2,6 +2,8 @@
 ST Nucleo F767ZI
 ================
 
+.. tags:: chip:stm32, chip:stm32f7, chip:stm32f767
+
 This page discusses issues unique to NuttX configurations for the STMicro
 Nucleo-144 board.  See ST document STM32 Nucleo-144 boards (UM1974):
 
@@ -219,7 +221,7 @@ You must use a 3.3 TTL to RS-232 converter or a USB to 3.3V TTL
 
 Use make menuconfig to configure USART6 as the console::
 
-    CONFIG_STM32F7_USART6=y
+    CONFIG_STM32_USART6=y
     CONFIG_USARTs_SERIALDRIVER=y
     CONFIG_USARTS_SERIAL_CONSOLE=y
     CONFIG_USART6_RXBUFSIZE=256
@@ -255,7 +257,7 @@ You must use a 3.3 TTL to RS-232 converter or a USB to 3.3V TTL::
 
 Use make menuconfig to configure USART8 as the console::
 
-    CONFIG_STM32F7_UART8=y
+    CONFIG_STM32_UART8=y
     CONFIG_UART8_SERIALDRIVER=y
     CONFIG_UART8_SERIAL_CONSOLE=y
     CONFIG_UART8_RXBUFSIZE=256
@@ -294,7 +296,7 @@ Since this board is so generic, having a quick way to set the SPI
 configuration seams in order. So the board provides a quick test
 that can be selected vi CONFIG_NUCLEO_SPI_TEST that will initialize
 the selected buses (SPI1-SPI3) and send some text on the bus at
-application initialization time board_app_initialize.
+application initialization time.
 
 SDIO
 ----

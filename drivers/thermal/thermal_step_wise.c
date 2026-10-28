@@ -24,7 +24,7 @@
  * Included Files
  ****************************************************************************/
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include "thermal_core.h"
 
@@ -133,6 +133,10 @@ static unsigned int get_target_state(FAR struct thermal_instance_s *instance,
               {
                 return validate_state(instance, throttle, cur_state, 1);
               }
+          }
+        else
+          {
+            return validate_state(instance, throttle, cur_state, -1);
           }
         break;
 

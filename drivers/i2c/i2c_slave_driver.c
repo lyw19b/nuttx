@@ -506,9 +506,12 @@ static int i2c_slave_callback(FAR void *arg, i2c_slave_complete_t status,
       priv->read_index = 0;
       priv->read_length = length;
 
-      while (nxsem_get_value(&priv->wait, &semcount) >= 0 && semcount <= 0)
+      if (nxsem_get_value(&priv->wait, &semcount) >= 0)
         {
-          nxsem_post(&priv->wait);
+          while (semcount++ <= 0)
+            {
+              nxsem_post(&priv->wait);
+            }
         }
     }
   else
@@ -564,7 +567,7 @@ int i2c_slave_register(FAR struct i2c_slave_s *dev, int bus, int addr,
     }
 
   snprintf(devname, sizeof(devname), DEVNAME_FMT, bus);
-  ret = register_driver(devname, &g_i2cslavefops, 0666, priv);
+  ret = register_driver(devname, &g_i2cslavefops, 0600, priv);
   if (ret < 0)
     {
       kmm_free(priv);

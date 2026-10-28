@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 #include <stdio.h>
 
@@ -156,7 +156,7 @@ rpmsg_virtio_ivshmem_get_resource(FAR struct rpmsg_virtio_lite_s *dev)
     }
   else
     {
-      /* Wait untils master is ready, salve need use master base to
+      /* Wait until master is ready, slave needs to use master base to
        * initialize addrenv.
        */
 
@@ -165,7 +165,6 @@ rpmsg_virtio_ivshmem_get_resource(FAR struct rpmsg_virtio_lite_s *dev)
           usleep(1000);
         }
 
-      cmd->cmd_master       = 0;
       priv->addrenv[0].va   = (uint64_t)(uintptr_t)priv->shmem;
       priv->addrenv[0].pa   = priv->shmem->basem;
       priv->addrenv[0].size = priv->shmem_size;

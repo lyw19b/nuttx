@@ -9,13 +9,30 @@
 
 menu "Architecture-Specific Support"
 
-config LIBC_ARCH_ATOMIC
-	bool "arch_atomic"
+config LIBC_ATOMIC_ARCH
+	bool
 	default n
 	---help---
-		If this configuration is selected and <include/nuttx/atomic.h> is
-		included, arch_atomic.c will be linked instead of built-in
-		atomic function.
+		arch_atomic by arch instruction
+
+config LIBC_ATOMIC_HWSPINLOCK
+	bool
+	default n
+	---help---
+		arch_atomic by chip hwspinlock
+
+config LIBC_ATOMIC_IRQ
+	bool
+	default n
+	---help---
+		atomic function by irq disable/enable
+
+config LIBC_ATOMIC_TOOLCHAIN
+	bool
+	default y if !LIBC_ATOMIC_ARCH && !LIBC_ATOMIC_HWSPINLOCK && !LIBC_ATOMIC_IRQ
+	default n
+	---help---
+		atomic function from toolchain
 
 config ARCH_LOWPUTC
 	bool "Low-level console output"
@@ -143,11 +160,6 @@ config LIBC_ARCH_STPNCPY
 config LIBC_ARCH_ELF
 	bool
 	default n
-
-config LIBC_ARCH_ELF_64BIT
-	bool
-	default n
-	depends on LIBC_ARCH_ELF
 
 config LIBC_PREVENT_STRING
 	bool

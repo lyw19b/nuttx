@@ -37,7 +37,10 @@
  * Public Types
  ****************************************************************************/
 
+/* Forward declarations. */
+
 struct onewire_dev_s;
+struct onewire_availroms_s;
 
 struct onewire_master_s
 {
@@ -46,6 +49,8 @@ struct onewire_master_s
   int nslaves;                         /* Number of 1-wire slaves */
   int maxslaves;                       /* Maximum number of 1-wire slaves */
   bool insearch;                       /* If we are in middle of 1-wire search */
+  uint64_t selected_rom;               /* Currently selected ROM */
+  uint64_t *available_roms;            /* Available ROMS */
 #ifdef CONFIG_PM
   struct pm_callback_s pm_cb;          /* PM callbacks */
 #endif
@@ -61,16 +66,32 @@ struct onewire_slave_s
  * Public Function Prototypes
  ****************************************************************************/
 
-/* Additional CRC helpers from 1wire_crc.c */
-
-bool onewire_valid_rom(uint64_t rom);
-
 /* Rest are from 1wire.c */
 
 int onewire_addslave(FAR struct onewire_master_s *master,
                      FAR struct onewire_slave_s *slave);
 int onewire_removeslave(FAR struct onewire_master_s *master,
                         FAR struct onewire_slave_s *slave);
+
+/****************************************************************************
+ * Name: onewire_ioctl_setrom
+ *
+ * Description: implementation of the ONEWIREIOC_SETROM ioctl
+ *
+ ****************************************************************************/
+
+int onewire_ioctl_setrom(FAR struct onewire_master_s *master, uint64_t rom);
+
+/****************************************************************************
+ * Name: onewire_ioctl_getfamilyroms
+ *
+ * Description: implementation of the ONEWIREIOC_GETFAMILYROMS ioctl
+ *
+ ****************************************************************************/
+
+int onewire_ioctl_getfamilyroms(FAR struct onewire_master_s *master,
+                                FAR struct onewire_availroms_s *avail,
+                                int family);
 
 /****************************************************************************
  * Name: onewire_reset_resume

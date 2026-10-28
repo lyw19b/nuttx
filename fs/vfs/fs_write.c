@@ -35,8 +35,8 @@
 
 #include <nuttx/cancelpt.h>
 
-#include "notify/notify.h"
 #include "inode/inode.h"
+#include "vfs.h"
 
 /****************************************************************************
  * Private Functions
@@ -71,6 +71,11 @@ static ssize_t file_writev_compat(FAR struct file *filep,
           continue;
         }
 
+      if (iov[i].iov_base == NULL)
+        {
+          return -EINVAL;
+        }
+
       /* Sanity check to avoid total length overflow */
 
       if (SSIZE_MAX - ntotal < iov[i].iov_len)
@@ -100,7 +105,7 @@ static ssize_t file_writev_compat(FAR struct file *filep,
 
       ntotal += nwritten;
 
-      /* Check for a parital success condition */
+      /* Check for a partial success condition */
 
       if (nwritten < iov[i].iov_len)
         {
@@ -144,22 +149,49 @@ ssize_t file_writev(FAR struct file *filep,
                     FAR const struct iovec *iov, int iovcnt)
 {
   FAR struct inode *inode;
-  ssize_t ret = -EBADF;
+  ssize_t ret;
 
   /* Was this file opened for write access? */
 
-  if ((filep->f_oflags & O_WROK) == 0)
+  if ((filep->f_oflags & O_ACCMODE) == O_RDONLY)
     {
       return -EACCES;
+    }
+
+  /* Check buffer count and pointer for iovec */
+
+  if (iovcnt == 0)
+    {
+      return 0;
+    }
+
+  if (iov == NULL)
+    {
+      return -EFAULT;
+    }
+
+  /* Are all iov_base accessible? */
+
+  for (ret = 0; ret < iovcnt; ret++)
+    {
+      if (iov[ret].iov_base == NULL && iov[ret].iov_len != 0)
+        {
+          return -EFAULT;
+        }
     }
 
   /* Is a driver registered? Does it support the write method?
    * If yes, then let the driver perform the write.
    */
 
+  ret = -EBADF;
   inode = filep->f_inode;
   if (inode != NULL && inode->u.i_ops)
     {
+      clock_t start_time;
+
+      FS_PROFILE_START(start_time);
+
       if (inode->u.i_ops->writev)
         {
           struct uio uio;
@@ -174,6 +206,9 @@ ssize_t file_writev(FAR struct file *filep,
         {
           ret = file_writev_compat(filep, iov, iovcnt);
         }
+
+      FS_PROFILE_STOP(start_time, g_fs_profile.total_write_time,
+                      g_fs_profile.writes);
     }
 
 #ifdef CONFIG_FS_NOTIFY
@@ -253,10 +288,10 @@ ssize_t nx_writev(int fd, FAR const struct iovec *iov, int iovcnt)
   ssize_t ret;
 
   /* First, get the file structure.
-   * Note that fs_getfilep() will return the errno on failure.
+   * Note that file_get() will return the errno on failure.
    */
 
-  ret = (ssize_t)fs_getfilep(fd, &filep);
+  ret = (ssize_t)file_get(fd, &filep);
   if (ret >= 0)
     {
       /* Perform the write operation using the file descriptor as an
@@ -265,7 +300,7 @@ ssize_t nx_writev(int fd, FAR const struct iovec *iov, int iovcnt)
 
       ret = file_writev(filep, iov, iovcnt);
 
-      fs_putfilep(filep);
+      file_put(filep);
     }
 
   return ret;

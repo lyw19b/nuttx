@@ -126,13 +126,27 @@ void put_name(const char * cp)
     {
       switch (*cp)
         {
-          case '\"': printf("\\\""); break;
-          case '\'': printf("\\\'"); break;
-          case '\\': printf("\\\\"); break;
-          case '\a': printf("\\a");  break;
-          case '\b': printf("\\b");  break;
-          case '\n': printf("\\n");  break;
-          case '\t': printf("\\t");  break;
+          case '\"':
+            printf("\\\"");
+            break;
+          case '\'':
+            printf("\\\'");
+            break;
+          case '\\':
+            printf("\\\\");
+            break;
+          case '\a':
+            printf("\\a");
+            break;
+          case '\b':
+            printf("\\b");
+            break;
+          case '\n':
+            printf("\\n");
+            break;
+          case '\t':
+            printf("\\t");
+            break;
           default:
             if (iscntrl(*cp))
               {
@@ -222,12 +236,6 @@ int scan_dir(int in_sector)
   struct dirent *a_dirent;
   struct stat    stat;
   int            name_len;
-
-  if (name_len > max_name_len)
-    {
-      fprintf(stderr, "directory name to big. skipped. (%s)\n", path);
-      return -1;
-    }
 
   input_dir = opendir(path);
 

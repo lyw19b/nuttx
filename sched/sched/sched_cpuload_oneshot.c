@@ -28,7 +28,7 @@
 
 #include <time.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/clock.h>
@@ -194,13 +194,12 @@ static void nxsched_oneshot_start(void)
   /* Then re-start the oneshot timer */
 
   secs       = USEC2SEC(usecs);
-  usecs     -= 100000 * secs;
+  usecs     -= USEC_PER_SEC * secs;
 
   ts.tv_sec  = secs;
   ts.tv_nsec = 1000 * usecs;
 
-  DEBUGVERIFY(ONESHOT_START(g_sched_oneshot.oneshot,
-                            nxsched_oneshot_callback, NULL, &ts));
+  DEBUGVERIFY(ONESHOT_START(g_sched_oneshot.oneshot, &ts));
 }
 
 /****************************************************************************
@@ -328,6 +327,8 @@ void nxsched_oneshot_extclk(FAR struct oneshot_lowerhalf_s *lower)
   /* Then start the oneshot */
 
   g_sched_oneshot.oneshot = lower;
+  lower->callback = nxsched_oneshot_callback;
+  lower->arg      = NULL;
   nxsched_oneshot_start();
 }
 #endif

@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/cache.h>
 #include <nuttx/init.h>
@@ -179,6 +179,7 @@ static inline void stm32_tcmenable(void)
  *
  ****************************************************************************/
 
+osentry_function
 void __start(void)
 {
   const uint32_t *src;
@@ -194,7 +195,7 @@ void __start(void)
 #ifdef CONFIG_ARCH_CHIP_STM32H7_CORTEXM4
   /* Wait for CM7 initialization done */
 
-  stm32h7_waitfor_cm7();
+  stm32_waitfor_cm7();
 #endif
 
   /* If enabled reset the MPU */
@@ -304,11 +305,11 @@ void __start(void)
 
 #if defined(CONFIG_ARCH_STM32H7_DUALCORE) && \
     defined(CONFIG_ARCH_CHIP_STM32H7_CORTEXM7) && \
-    defined(CONFIG_STM32H7_CORTEXM4_ENABLED)
+    defined(CONFIG_STM32_CORTEXM4_ENABLED)
 
-  /* Start CM4 core after clock configration is done */
+  /* Start CM4 core after clock configuration is done */
 
-  stm32h7_start_cm4();
+  stm32_start_cm4();
 #endif
 
   nx_start();

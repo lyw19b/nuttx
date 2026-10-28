@@ -2,6 +2,8 @@
  ST STM32L Discovery
 =====================
 
+.. tags:: chip:stm32, chip:stm32l1, chip:stm32l152
+
 This page discusses issues unique to NuttX configurations for the
 STMicro STM32L-Discovery development board.  The STM32L-Discovery board
 is based on the STM32L152RBT6 MCU (128KB FLASH and 16KB of SRAM).
@@ -291,7 +293,7 @@ NOTES:
          CONFIG_WINDOWS_CYGWIN=y                 : Using Cygwin
 
      System Type::
-       
+
          CONFIG_ARM_TOOLCHAIN_GNU_EABI=y      : GNU EABI toolchain for Windows
 
 4. SLCD.
@@ -316,7 +318,6 @@ NOTES:
    Application Configuration -> NSH Library::
 
          CONFIG_NSH_BUILTIN_APPS=y               : Enable builtin apps in NSH
-         CONFIG_NSH_ARCHINIT=y                   : Needed to initialize the SLCD
 
    Application Configuration -> Examples::
 

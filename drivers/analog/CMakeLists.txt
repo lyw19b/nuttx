@@ -40,6 +40,10 @@ if(CONFIG_DAC)
     list(APPEND SRCS dac7554.c)
   endif()
 
+  if(CONFIG_MCP47X6)
+    list(APPEND SRCS mcp47x6.c)
+  endif()
+
   if(CONFIG_MCP48XX)
     list(APPEND SRCS mcp48xx.c)
   endif()
@@ -58,6 +62,20 @@ endif()
 if(CONFIG_OPAMP)
   # Include the common OPAMP character driver
   list(APPEND SRCS opamp.c)
+endif()
+
+# Check for POT devices
+
+if(CONFIG_POT)
+  # Include the common POT character driver
+  list(APPEND SRCS pot.c)
+
+  # Include POT device drivers
+
+  if(CONFIG_POT_MCP445X)
+    list(APPEND SRCS mcp445x.c)
+  endif()
+
 endif()
 
 # Check for ADC devices
@@ -100,6 +118,14 @@ if(CONFIG_ADC)
 
   if(CONFIG_ADC_MCP3008)
     list(APPEND SRCS mcp3008.c)
+  endif()
+
+  if(CONFIG_ADC_ADS1115)
+    list(APPEND SRCS ads1115.c)
+  endif()
+
+  if(CONFIG_ADC_ADS7046)
+    list(APPEND SRCS ads7046.c)
   endif()
 endif()
 

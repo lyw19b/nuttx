@@ -111,12 +111,46 @@
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
  *
- *   CONFIG_BOARD_LATE_INITIALIZE=n && CONFIG_BOARDCTL=y :
- *     Called from the NSH library
- *
  ****************************************************************************/
 
 int stm32_bringup(void);
+
+/****************************************************************************
+ * Name: stm32_mpu_configure_otp
+ *
+ * Description:
+ *   Initialize MPU and configure the OTP flash region.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_STM32_ICACHE)
+void stm32_mpu_configure_otp(void);
+#endif
+
+#ifdef CONFIG_STM32_SPI
+/****************************************************************************
+ * Name: stm32_spiregister
+ *
+ * Description:
+ *   Called to register spi character driver of initialized
+ *   spi device for the Nucleo-L432KC board.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SPI_DRIVER
+void stm32_spiregister(void);
+#endif
+
+/****************************************************************************
+ * Name: stm32_spiinitialize
+ *
+ * Description:
+ *   Called to configure SPI chip select GPIO pins.
+ *
+ ****************************************************************************/
+
+void stm32_spiinitialize(void);
+#endif /* CONFIG_STM32_SPI */
 
 /****************************************************************************
  * Name: stm32_adc_setup
@@ -127,6 +161,38 @@ int stm32_bringup(void);
 
 #ifdef CONFIG_ADC
 int stm32_adc_setup(void);
+#endif
+
+#ifdef CONFIG_STM32_DTS
+int stm32_dts_setup(int devno);
+#endif
+
+/****************************************************************************
+ * Name: stm32_can_setup
+ *
+ * Description:
+ *  Initialize CAN and register the CAN device
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_STM32_FDCAN_CHARDRIVER
+int stm32_can_setup(uint8_t port);
+#endif
+
+/****************************************************************************
+ * Name: stm32_pwm_setup
+ *
+ * Description:
+ *   Initialize PWM and register the PWM device.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_PWM
+int stm32_pwm_setup(void);
+#endif
+
+#ifdef CONFIG_USBHOST
+int stm32_usbhost_initialize(void);
 #endif
 
 #endif /* __ASSEMBLY__ */

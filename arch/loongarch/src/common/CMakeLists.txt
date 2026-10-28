@@ -20,7 +20,7 @@
 #
 # ##############################################################################
 
-set(SRCS)
+set(SRCS loongarch_fpucmp.c)
 
 list(APPEND SRCS loongarch_vectors.S)
 list(APPEND SRCS loongarch_saveusercontext.S)
@@ -73,7 +73,7 @@ if(CONFIG_LOONGARCH_MMU_TEST)
   target_sources(arch PRIVATE loongarch_mmutest.c)
 endif()
 
-if(CONFIG_ARCH_HAVE_FORK)
+if(CONFIG_ARCH_HAVE_VFORK)
   target_sources(arch PRIVATE loongarch_fork.c loongarch_forkentry.S)
 endif()
 

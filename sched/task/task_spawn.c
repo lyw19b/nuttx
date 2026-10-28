@@ -30,7 +30,7 @@
 #include <sched.h>
 #include <spawn.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include <nuttx/fs/fs.h>
@@ -86,13 +86,13 @@ static int nxtask_spawn_create(FAR const char *name, int priority,
                               FAR const posix_spawn_file_actions_t *actions,
                               FAR const posix_spawnattr_t *attr)
 {
-  FAR struct task_tcb_s *tcb;
+  FAR struct tcb_s *tcb;
   pid_t pid;
   int ret;
 
   /* Allocate a TCB for the new task. */
 
-  tcb = kmm_zalloc(sizeof(struct task_tcb_s));
+  tcb = kmm_zalloc(sizeof(struct tcb_s));
   if (tcb == NULL)
     {
       serr("ERROR: Failed to allocate TCB\n");
@@ -101,7 +101,7 @@ static int nxtask_spawn_create(FAR const char *name, int priority,
 
   /* Setup the task type */
 
-  tcb->cmn.flags = TCB_FLAG_TTYPE_TASK | TCB_FLAG_FREE_TCB;
+  tcb->flags = TCB_FLAG_TTYPE_TASK | TCB_FLAG_FREE_TCB;
 
   /* Initialize the task */
 
@@ -115,7 +115,7 @@ static int nxtask_spawn_create(FAR const char *name, int priority,
 
   /* Get the assigned pid before we start the task */
 
-  pid = tcb->cmn.pid;
+  pid = tcb->pid;
 
   /* Set the attributes */
 
@@ -130,7 +130,7 @@ static int nxtask_spawn_create(FAR const char *name, int priority,
 
   /* Activate the task */
 
-  nxtask_activate(&tcb->cmn);
+  nxtask_activate(tcb);
 
   return pid;
 
@@ -216,6 +216,26 @@ static int nxtask_spawn_exec(FAR pid_t *pidp, FAR const char *name,
         }
 
       priority  = param.sched_priority;
+      stacksize = CONFIG_POSIX_SPAWN_DEFAULT_STACKSIZE;
+    }
+
+  /* A zero priority/stacksize means "use the default": inherit the parent
+   * task's priority and fall back to CONFIG_POSIX_SPAWN_DEFAULT_STACKSIZE.
+   * This lets posix_spawnattr_init() leave these fields zero so that the
+   * binary loader can supply them from the loaded ELF (binp->priority /
+   * binp->stacksize) instead.
+   */
+
+  if (priority == 0)
+    {
+      struct sched_param param;
+
+      nxsched_get_param(0, &param);
+      priority = param.sched_priority;
+    }
+
+  if (stacksize == 0)
+    {
       stacksize = CONFIG_POSIX_SPAWN_DEFAULT_STACKSIZE;
     }
 

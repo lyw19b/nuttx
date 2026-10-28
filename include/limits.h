@@ -124,7 +124,11 @@
 #define _POSIX_MAX_CANON      255
 #define _POSIX_MAX_INPUT      255
 #define _POSIX_NAME_MAX       CONFIG_NAME_MAX
-#define _POSIX_NGROUPS_MAX    0
+#if defined(CONFIG_SCHED_NGROUPS) && CONFIG_SCHED_NGROUPS > 0
+#  define _POSIX_NGROUPS_MAX  CONFIG_SCHED_NGROUPS
+#else
+#  define _POSIX_NGROUPS_MAX  0
+#endif
 #define _POSIX_OPEN_MAX       16
 #define _POSIX_PATH_MAX       CONFIG_PATH_MAX
 #define _POSIX_PIPE_BUF       512
@@ -184,7 +188,7 @@
 
 /* Required for asynchronous I/O */
 
-#define _POSIX_AIO_LISTIO_MAX 2
+#define _POSIX_AIO_LISTIO_MAX CONFIG_FS_AIO_LISTIO_MAX
 #define _POSIX_AIO_MAX        1
 
 /* Required for POSIX message passing */
@@ -204,7 +208,7 @@
 #define ARG_MAX        _POSIX_ARG_MAX
 #define CHILD_MAX      _POSIX_CHILD_MAX
 #define LINE_MAX       _POSIX2_LINE_MAX
-#define LINK_MAX       _POSIX_LINK_MAX
+#define LINK_MAX       128
 #define MAX_CANON      _POSIX_MAX_CANON
 #define MAX_INPUT      _POSIX_MAX_INPUT
 #define NAME_MAX       _POSIX_NAME_MAX
@@ -236,11 +240,7 @@
 #define TIMER_MAX      _POSIX_TIMER_MAX
 #define CLOCKRES_MIN   _POSIX_CLOCKRES_MIN
 
-#ifdef CONFIG_SYSTEM_TIME64
-#  define CLOCK_MAX    UINT64_MAX
-#else
-#  define CLOCK_MAX    UINT32_MAX
-#endif
+#define CLOCK_MAX      INT64_MAX
 
 /* Other invariant values */
 
@@ -313,6 +313,12 @@
 
 #define SEM_NSEMS_MAX  _POSIX_SEM_NSEMS_MAX
 #define SEM_VALUE_MAX  _POSIX_SEM_VALUE_MAX
+
+/* Required for POSIX pthread management */
+
+#define _POSIX_THREAD_DESTRUCTOR_ITERATIONS     4
+#define _POSIX_THREAD_KEYS_MAX                  CONFIG_TLS_NELEM
+#define _POSIX_THREAD_THREADS_MAX               64
 
 /* Required for readv() and writev() */
 

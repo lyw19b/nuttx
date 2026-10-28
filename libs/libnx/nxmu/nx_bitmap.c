@@ -27,7 +27,7 @@
 #include <nuttx/config.h>
 
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/semaphore.h>
 #include <nuttx/nx/nx.h>
@@ -48,7 +48,7 @@
  * Input Parameters:
  *   hwnd   - The window that will receive the bitmap image
  *   dest   - Describes the rectangular region on the display that will
- *            receive the the bit map.
+ *            receive the bit map.
  *   src    - The start of the source image.
  *   origin - The origin of the upper, left-most corner of the full bitmap.
  *            Both dest and origin are in window coordinates, however, origin
@@ -97,12 +97,7 @@ int nx_bitmap(NXWINDOW hwnd, FAR const struct nxgl_rect_s *dest,
 
   outmsg.sem_done = &sem_done;
 
-  ret = nxsem_init(&sem_done, 0, 0);
-  if (ret < 0)
-    {
-      gerr("ERROR: nxsem_init failed: %d\n", ret);
-      return ret;
-    }
+  nxsem_init(&sem_done, 0, 0);
 
   /* Forward the fill command to the server */
 

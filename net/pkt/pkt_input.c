@@ -28,7 +28,7 @@
 #if defined(CONFIG_NET) && defined(CONFIG_NET_PKT)
 
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/mm/iob.h>
 #include <nuttx/net/netdev.h>
@@ -36,6 +36,8 @@
 
 #include "devif/devif.h"
 #include "pkt/pkt.h"
+#include "utils/utils.h"
+#include "socket/socket.h"
 
 /****************************************************************************
  * Private Functions
@@ -50,6 +52,7 @@
  * Input Parameters:
  *   dev    - Device instance only the input packet in d_buf, length = d_len;
  *   conn   - A pointer to the PKT connection structure
+ *   iobq   - A pointer to the buffer queue
  *
  * Returned Value:
  *   The number of bytes actually buffered is returned.  This will be either
@@ -58,7 +61,8 @@
  ****************************************************************************/
 
 static uint16_t pkt_datahandler(FAR struct net_driver_s *dev,
-                                FAR struct pkt_conn_s *conn)
+                                FAR struct pkt_conn_s *conn,
+                                FAR struct iob_queue_s *iobq)
 {
   FAR struct iob_s *iob = iob_tryalloc(true);
   int ret;
@@ -85,7 +89,11 @@ static uint16_t pkt_datahandler(FAR struct net_driver_s *dev,
    * without waiting).
    */
 
-  if ((ret = iob_tryadd_queue(iob, &conn->readahead)) < 0)
+  conn_lock(&conn->sconn);
+  ret = iob_tryadd_queue(iob, iobq);
+  conn_unlock(&conn->sconn);
+
+  if (ret < 0)
     {
       nerr("ERROR: Failed to queue the I/O buffer chain: %d\n", ret);
       goto errout;
@@ -134,10 +142,61 @@ static int pkt_in(FAR struct net_driver_s *dev)
   FAR struct pkt_conn_s *conn;
   int ret = OK;
 
+  pkt_conn_list_lock();
   conn = pkt_active(dev);
   if (conn)
     {
-      uint16_t flags;
+      uint32_t flags;
+
+      if (conn->pendiob == dev->d_iob)
+        {
+          /* Do not read back the packet sent by oneself.  pendiob is
+           * released by devif_poll_pkt_connections() once this tap run
+           * completes, so it is always a live reference here.
+           */
+
+          pkt_conn_list_unlock();
+          return OK;
+        }
+
+#ifdef CONFIG_NET_TIMESTAMP
+
+      /* Handle hardware timestamp */
+
+      if (dev->d_iob->io_conn == &conn->sconn)
+        {
+          if (pkt_datahandler(dev, conn, &conn->errahead) > 0)
+            {
+              pkt_callback(dev, conn, PKT_NEWDATA);
+            }
+
+          pkt_conn_list_unlock();
+          return OK;
+        }
+
+      if (dev->d_iob->io_conn != NULL)
+        {
+          /* Skip no related pkt conn */
+
+          pkt_conn_list_unlock();
+          return OK;
+        }
+#endif
+
+#ifdef CONFIG_NET_TIMESTAMP
+      /* Storing reception timestamp provided by realtime
+       * if timestamp no provided by hardware.
+       */
+
+      if ((dev->d_features & NETDEV_RX_STAMP) == 0)
+        {
+          /* Storing reception timestamp provided by realtime
+           * if timestamp no provided by hardware.
+           */
+
+          clock_gettime(CLOCK_REALTIME, &dev->d_iob->io_time);
+        }
+#endif /* CONFIG_NET_TIMESTAMP */
 
       /* Setup for the application callback */
 
@@ -156,7 +215,7 @@ static int pkt_in(FAR struct net_driver_s *dev)
         {
           /* Add the PKT to the socket read-ahead buffer. */
 
-          if (pkt_datahandler(dev, conn) == 0)
+          if (pkt_datahandler(dev, conn, &conn->readahead) == 0)
             {
               /* No.. the packet was not processed now.  Return -EAGAIN so
                * that the driver may retry again later.
@@ -172,6 +231,7 @@ static int pkt_in(FAR struct net_driver_s *dev)
       ninfo("No PKT listener\n");
     }
 
+  pkt_conn_list_unlock();
   return ret;
 }
 
@@ -204,6 +264,8 @@ int pkt_input(FAR struct net_driver_s *dev)
   FAR uint8_t *buf;
   int ret;
 
+  netdev_lock(dev);
+
   if (dev->d_iob != NULL)
     {
       buf = dev->d_buf;
@@ -215,10 +277,13 @@ int pkt_input(FAR struct net_driver_s *dev)
 
       dev->d_buf = buf;
 
+      netdev_unlock(dev);
       return ret;
     }
 
-  return netdev_input(dev, pkt_in, false);
+  ret = netdev_input(dev, pkt_in, false);
+  netdev_unlock(dev);
+  return ret;
 }
 
 #endif /* CONFIG_NET && CONFIG_NET_PKT */

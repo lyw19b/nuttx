@@ -141,9 +141,6 @@ static void nrf52_i2ctool(void)
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
  *
- *   CONFIG_BOARD_LATE_INITIALIZE=n && CONFIG_BOARDCTL=y :
- *     Called from the NSH library
- *
  ****************************************************************************/
 
 int nrf52_bringup(void)
@@ -164,12 +161,21 @@ int nrf52_bringup(void)
 #ifdef CONFIG_USERLED
   /* Register the LED driver */
 
-  ret = userled_lower_initialize(CONFIG_EXAMPLES_LEDS_DEVPATH);
+  ret = userled_lower_initialize("/dev/userleds");
   if (ret < 0)
     {
       syslog(LOG_ERR,
              "ERROR: userled_lower_initialize() failed: %d\n",
              ret);
+    }
+#endif
+
+#ifdef CONFIG_NRF52840DK_BTNLEDS_GPIO
+  ret = nrf52_gpioleds_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR,
+             "ERROR: nrf52_gpioleds_initialize() failed: %d\n", ret);
     }
 #endif
 
@@ -321,6 +327,14 @@ int nrf52_bringup(void)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize IEE802154 radio: %d\n",
              ret);
+    }
+#endif
+
+#ifdef CONFIG_NRF52_QDEC0
+  ret = nrf52_qencoder_initialize(0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize qencoder: %d\n", ret);
     }
 #endif
 

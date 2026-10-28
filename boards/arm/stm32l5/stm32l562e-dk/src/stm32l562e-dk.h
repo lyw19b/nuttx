@@ -31,7 +31,7 @@
 #include <nuttx/compiler.h>
 #include <stdint.h>
 
-#include "stm32l5_gpio.h"
+#include "stm32_gpio.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -107,9 +107,6 @@
  *
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
- *
- *   CONFIG_BOARD_LATE_INITIALIZE=n && CONFIG_BOARDCTL=y :
- *     Called from the NSH library
  *
  ****************************************************************************/
 

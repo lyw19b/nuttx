@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/board.h>
 #include <arch/board/board.h>
@@ -54,6 +54,14 @@ void stm32_boardinitialize(void)
   /* Configure on-board LEDs if LED support has been selected. */
 
   board_autoled_initialize();
+#endif
+
+#ifdef CONFIG_STM32_OTGFS
+  /* Initialize USB-related GPIOs (VBUS sensing, power switch enable and
+   * over-current) so the OTG FS port can drive VBUS in host mode.
+   */
+
+  stm32_usbinitialize();
 #endif
 }
 

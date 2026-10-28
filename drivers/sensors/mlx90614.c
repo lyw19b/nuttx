@@ -20,6 +20,19 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /* Character driver for the Melexis MLX90614 Infrared Thermometer */
 
 /****************************************************************************
@@ -30,7 +43,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdlib.h>
 
 #include <nuttx/kmalloc.h>
@@ -46,10 +59,6 @@
 #endif
 
 #if defined(CONFIG_I2C) && defined(CONFIG_SENSORS_MLX90614)
-
-/****************************************************************************
- * Pre-process Definitions
- ****************************************************************************/
 
 /****************************************************************************
  * Private Types
@@ -219,7 +228,7 @@ static int mlx90614_write_word(FAR struct mlx90614_dev_s *priv, uint8_t cmd,
 
   /* Wait the EEPROM erase */
 
-  nxsig_usleep(10 * 1000);
+  nxsched_usleep(10 * 1000);
 
   /* Create the I2C command that will be sent to device */
 
@@ -418,7 +427,7 @@ int mlx90614_register(FAR const char *devpath, FAR struct i2c_master_s *i2c,
 
   /* Register the character driver */
 
-  ret = register_driver(devpath, &g_mlx90614_fops, 0666, priv);
+  ret = register_driver(devpath, &g_mlx90614_fops, 0600, priv);
   if (ret < 0)
     {
       snerr("ERROR: Failed to register driver: %d\n", ret);

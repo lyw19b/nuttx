@@ -28,6 +28,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <stdio.h>
 #include <string.h>
 #include <sched.h>
 #include <pthread.h>
@@ -38,6 +39,7 @@
 #include <unistd.h>
 #include <nuttx/addrenv.h>
 #include <nuttx/arch.h>
+#include <nuttx/semaphore.h>
 
 /****************************************************************************
  * Private Data
@@ -123,6 +125,7 @@ static void check_user_access(void)
   };
 
   pthread_t thread;
+  sem_t sem = SEM_INITIALIZER(1);
 
   errno = 0;
   if ((intptr_t)sys_call3(SYS_write, 1, kernel, 8) != -1 || errno != EFAULT)
@@ -166,6 +169,26 @@ static void check_user_access(void)
                      NULL) != EFAULT)
     {
       finish(17);
+    }
+
+  /* Slow counting operations must preserve the new libc fast-path ABI.
+   * A mutex holder word and a kernel pointer must never reach native queues.
+   */
+
+  if ((intptr_t)sys_call1(SYS_nxsem_wait_slow, (uintptr_t)&sem) != 0 ||
+      (intptr_t)sys_call1(SYS_nxsem_trywait_slow, (uintptr_t)&sem) !=
+      -EAGAIN ||
+      (intptr_t)sys_call1(SYS_nxsem_post_slow, (uintptr_t)&sem) != 0 ||
+      (intptr_t)sys_call1(SYS_nxsem_wait_slow, kernel) != -EFAULT)
+    {
+      finish(24);
+    }
+
+  sem.flags = SEM_TYPE_MUTEX;
+  if ((intptr_t)sys_call1(SYS_nxsem_wait_slow, (uintptr_t)&sem) != -ENOSYS ||
+      (intptr_t)sys_call1(SYS_nxsem_post_slow, (uintptr_t)&sem) != -ENOSYS)
+    {
+      finish(25);
     }
 }
 #endif
@@ -251,7 +274,7 @@ int main(int argc, char **argv)
     0
   };
 
-  uintptr_t pid = sys_call0(SYS_getpid);
+  uintptr_t pid = getpid();
   register uintptr_t saved asm("$s8") = 0x12345678;
   register double fp asm("$fs0") = 1.25;
   pthread_t thread;
@@ -315,7 +338,7 @@ int main(int argc, char **argv)
           finish(7);
         }
 
-      if (g_value != pid || sys_call0(SYS_getpid) != pid)
+      if (g_value != pid || getpid() != pid)
         {
           finish(3);
         }
@@ -359,6 +382,7 @@ int main(int argc, char **argv)
           /* Replacing this process must not rely on its old user stack. */
 
           execve("/test/user", next, NULL);
+          printf("execve failed: errno=%d\n", errno);
           finish(10);
         }
         break;

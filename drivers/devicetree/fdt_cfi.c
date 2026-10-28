@@ -23,7 +23,7 @@
  ****************************************************************************/
 
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/config.h>
 #include <nuttx/fdt.h>
@@ -89,7 +89,7 @@ int fdt_cfi_register(FAR const void *fdt)
             }
           else
             {
-              ferr("cfi flash%d has beed used to store text:"
+              ferr("cfi flash%d has been used to store text:"
                    "[%x,%x], flash:[%x,%x]\n", i, flash_base, flash_end,
                    CONFIG_FLASH_START, CONFIG_FLASH_START +
                    CONFIG_FLASH_SIZE);

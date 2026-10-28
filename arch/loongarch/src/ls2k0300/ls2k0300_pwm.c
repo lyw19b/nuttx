@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <fixedmath.h>
 
 #include <nuttx/arch.h>
@@ -169,21 +169,19 @@ static int ls2k0300_pwm_start(FAR struct pwm_lowerhalf_s *dev,
   uint32_t regval;
   uint64_t val;
 
-  val = (uint64_t)priv->clock_freq * info->frequency;
-  val = val / 1000000UL;
-  if (val < 1)
+  if (info->frequency == 0 || info->frequency > priv->clock_freq ||
+      info->channels[0].duty > b16ONE)
     {
-      val = 1;
+      return -EINVAL;
     }
 
-  priv->full_buffer = (uint32_t)val;
+  /* NuttX specifies frequency in Hz and duty as an unsigned 16.16 ratio.
+   * Each lower-half instance controls one hardware PWM output.
+   */
 
-  val = (uint64_t)priv->full_buffer * (uint64_t)info->duty;
-  val = val / 65536UL;
-  if (val < 1)
-    {
-      val = 1;
-    }
+  priv->full_buffer = priv->clock_freq / info->frequency;
+  val = (uint64_t)priv->full_buffer * info->channels[0].duty;
+  val >>= 16;
 
   priv->low_buffer = (uint32_t)val;
 

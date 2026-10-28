@@ -76,7 +76,7 @@ void nrf52_gpiote_set_ch_event(uint32_t pinset, int channel,
  *
  * Description:
  *   Configures a GPIOTE channel in EVENT mode, assigns it to a given pin
- *   and sets a handler for the first availalbe GPIOTE channel
+ *   and sets a handler for the first available GPIOTE channel.
  *
  * Input Parameters:
  *  - pinset:      GPIO pin configuration
@@ -144,7 +144,7 @@ void nrf52_gpiote_set_port_event(uint32_t pinset, xcpt_t func, void *arg);
 #endif
 
 /****************************************************************************
- * Name: nrf52_gpio_set_task
+ * Name: nrf52_gpiote_set_task
  *
  * Description:
  *   Configure GPIO in TASK mode (to be controlled via tasks).
@@ -162,7 +162,7 @@ void nrf52_gpiote_set_port_event(uint32_t pinset, xcpt_t func, void *arg);
  *
  ****************************************************************************/
 
-void nrf52_gpio_set_task(uint32_t pinset, int channel,
+void nrf52_gpiote_set_task(uint32_t pinset, int channel,
                         bool output_high, enum nrf52_gpiote_outcfg_e outcfg);
 
 /****************************************************************************

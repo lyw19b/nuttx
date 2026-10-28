@@ -98,8 +98,7 @@ static uintreg_t *loongarch_doirq_top(int irq, uintreg_t *regs)
       addrenv_switch(tcb);
 #endif
 
-      nxsched_suspend_scheduler(*running_task);
-      nxsched_resume_scheduler(tcb);
+      nxsched_switch_context(*running_task, tcb);
       *running_task = tcb;
     }
 

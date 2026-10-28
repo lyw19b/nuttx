@@ -96,7 +96,7 @@ static int nrf53_appcore_bleinit(void)
 #ifdef CONFIG_BLUETOOTH_RPMSG
   struct bt_driver_s *bt_dev = NULL;
 
-  bt_dev = rpmsghci_register("appcore", "bthci");
+  bt_dev = rpmsghci_register("netcore", "bthci");
   if (bt_dev == NULL)
     {
       syslog(LOG_ERR, "ERROR: rpmsghci_register() failed: %d\n", -errno);
@@ -104,6 +104,10 @@ static int nrf53_appcore_bleinit(void)
     }
 
 #  ifdef CONFIG_DRIVERS_BLUETOOTH
+  /* Wait a moment to make sure the netcore initializes BLE */
+
+  nxsched_usleep(1000);
+
   ret = bt_driver_register(bt_dev);
   if (ret < 0)
     {
@@ -157,9 +161,9 @@ static int nrf53_netcore_bleinit(void)
 void rpmsg_serialinit(void)
 {
 #ifdef CONFIG_NRF53_APPCORE
-  uart_rpmsg_init("appcore", "proxy", 4096, false);
+  uart_rpmsg_init("netcore", "proxy", 4096, false);
 #else
-  uart_rpmsg_init("netcore", "proxy", 4096, true);
+  uart_rpmsg_init("appcore", "proxy", 4096, true);
 #endif
 }
 #endif
@@ -172,9 +176,6 @@ void rpmsg_serialinit(void)
  *
  *   CONFIG_BOARD_LATE_INITIALIZE=y :
  *     Called from board_late_initialize().
- *
- *   CONFIG_BOARD_LATE_INITIALIZE=n && CONFIG_BOARDCTL=y :
- *     Called from the NSH library
  *
  ****************************************************************************/
 
@@ -196,12 +197,22 @@ int nrf53_bringup(void)
 #ifdef CONFIG_USERLED
   /* Register the LED driver */
 
-  ret = userled_lower_initialize(CONFIG_EXAMPLES_LEDS_DEVPATH);
+  ret = userled_lower_initialize("/dev/userleds");
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: userled_lower_initialize() failed: %d\n", ret);
     }
 #endif
+
+#ifdef CONFIG_DEV_GPIO
+
+  ret = nrf53_gpio_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize GPIO Driver: %d\n", ret);
+      return ret;
+    }
+#endif /* CONFIG_DEV_GPIO */
 
 #ifdef CONFIG_INPUT_BUTTONS
   /* Register the BUTTON driver */
@@ -215,9 +226,9 @@ int nrf53_bringup(void)
 
 #ifdef CONFIG_RPTUN
 #ifdef CONFIG_NRF53_APPCORE
-  nrf53_rptun_init("appcore");
-#else
   nrf53_rptun_init("netcore");
+#else
+  nrf53_rptun_init("appcore");
 #endif
 #endif
 
@@ -254,6 +265,14 @@ int nrf53_bringup(void)
       syslog(LOG_ERR,
              "ERROR: Failed to initialize ADC driver: %d\n",
              ret);
+    }
+#endif
+
+#ifdef CONFIG_NRF53_QDEC0
+  ret = nrf53_qencoder_initialize(0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize qencoder: %d\n", ret);
     }
 #endif
 

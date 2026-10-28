@@ -33,8 +33,8 @@
 
 #include <nuttx/fs/fs.h>
 
-#include "notify/notify.h"
 #include "inode/inode.h"
+#include "vfs.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -91,6 +91,13 @@ int rmdir(FAR const char *pathname)
 
   if (INODE_IS_MOUNTPT(inode) && inode->u.i_mops)
     {
+      ret = inode_checkpathperm(inode, 0, 0);
+      if (ret < 0)
+        {
+          errcode = -ret;
+          goto errout_with_inode;
+        }
+
       /* Perform the rmdir operation using the relative path
        * from the mountpoint.
        */

@@ -170,6 +170,10 @@ config NRF52_RTC
 	bool
 	default n
 
+config NRF52_QDEC
+	bool
+	default n
+
 menu "nRF52 Peripheral Selection"
 
 config NRF52_I2C0_MASTER
@@ -660,7 +664,7 @@ config NRF52_RADIO_IEEE802154_TRACE_BUFSIZE
 	depends on NRF52_RADIO_IEEE802154_TRACE
 	default 1024
 
-endif
+endif # NRF52_RADIO_IEEE802154
 
 endif #NRF52_RADIO
 
@@ -690,6 +694,31 @@ config NRF52_SAADC_TIMER_CC
 	int "SAADC Timer CC"
 	default 0
 	range 80 2047
+
+config NRF52_SAADC_CONTINUOUS
+	bool "SAADC continuous mode"
+	select NRF52_PPI
+	default n
+	---help---
+		Continuous timer-triggered sampling with double-buffered EasyDMA.
+		The SAADC is restarted directly from the END event through a PPI
+		channel and completed buffers are passed to the upper-half with
+		the batch interface.
+
+if NRF52_SAADC_CONTINUOUS
+
+config NRF52_SAADC_CONTINUOUS_BUFLEN
+	int "SAADC continuous mode DMA buffer length"
+	default 32
+	---help---
+		Number of samples in each of the two EasyDMA buffers.
+
+config NRF52_SAADC_CONTINUOUS_PPI_CH
+	int "SAADC continuous mode PPI channel"
+	range 0 19
+	default 0
+
+endif # NRF52_SAADC_CONTINUOUS
 
 endif # NRF52_SAADC_TIMER
 
@@ -803,6 +832,23 @@ menu "USBDEV Configuration"
 
 endmenu # USBDEV Configuration
 
+config NRF52_QDEC0
+	bool "Qencoder (QDEC) support"
+	default n
+	select NRF52_QDEC
+	---help---
+		Enable Qencoder support.
+
+config NRF52_QENCODER_INDEX
+	bool "Enable QDEC index pin support"
+	default n
+	depends on NRF52_GPIOTE && NRF52_QDEC
+	---help---
+		Enable index/Z channel support for quadrature encoder.
+		Uses a GPIO interrupt to detect index pulses and reset
+		position to configured index value. Requires one GPIOTE
+		channel for interrupt detection.
+
 menuconfig NRF52_SOFTDEVICE_CONTROLLER
 	bool "SoftDevice Controller"
 	depends on ALLOW_BSDNORDIC_COMPONENTS
@@ -836,7 +882,7 @@ config NRF52_SDC_MULTIROLE
 config NRF52_SDC_CENTRAL
 	bool "BLE Central role"
 
-endchoice
+endchoice # BLE Controller role
 
 config NRF52_SDC_CLOCK_ACCURACY
 	int "Clock Accuracy [PPM]"
@@ -882,7 +928,7 @@ config NRF52_SDC_SCAN_BUFFER_COUNT
 	---help---
 		The minimum allowed number of buffers is 2.
 
-endif
+endif # NRF52_SDC_SCANNING
 
 config NRF52_SDC_LE_2M_PHY
 	bool "Support LE 2M PHY"
@@ -905,5 +951,4 @@ config NRF52_SDC_PUB_ADDR
 	hex "Configure BT public address"
 	default 0x0000000000
 
-endif
-
+endif # NRF52_SOFTDEVICE_CONTROLLER

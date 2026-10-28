@@ -16,7 +16,7 @@
 # under the License.
 
 FROM ubuntu:22.04 AS builder-base
-# NOTE WE ARE NOT REMOVEING APT CACHE.
+# NOTE WE ARE NOT REMOVING APT CACHE.
 # This should only be used for temp build images that artifacts will be copied from
 RUN apt-get update -qq && apt-get install -y -qq \
   curl \
@@ -42,13 +42,15 @@ RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" apt-get install -y -q
   ninja-build \
   nodejs \
   npm \
-  unzip
+  unzip \
+  zip \
+  python3
 
 RUN mkdir -p /tools
 WORKDIR /tools
 
 RUN mkdir -p /tools/nuttx-tools
-RUN curl -s -L https://bitbucket.org/nuttx/tools/get/9ad3e1ee75c7.tar.gz \
+RUN curl -s -L https://github.com/patacongo/tools/archive/9ad3e1ee75c7d39bfee8019ce44f4fd035d89584.tar.gz \
   | tar -C nuttx-tools --strip-components=1 -xz
 
 RUN mkdir -p /tools/bloaty \
@@ -66,8 +68,13 @@ RUN cd nuttx-tools/kconfig-frontends \
 RUN mkdir -p /tools/gn \
   && cd /tools/gn \
   && git clone https://gn.googlesource.com/gn gn \
-  && cd gn && ./build/gen.py \
-  && cd out && ninja
+  && cd gn \
+  && git checkout 5d0a4153b0bcc86c5a23310d5b648a587be3c56d \
+  && python3 build/gen.py \
+  && ninja -C out
+
+# Upgrade nodejs to the stable version we need before install zap
+RUN npm install -g n && n 20.10.0 node && hash -r
 
 ENV ZAP_INSTALL_PATH=/tools/zap_release
 RUN mkdir -p $ZAP_INSTALL_PATH \
@@ -148,6 +155,43 @@ RUN mkdir -p clang-arm-none-eabi && \
 RUN mkdir -p gcc-arm-none-eabi && \
   curl -s -L  "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.Rel1/binrel/arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-eabi.tar.xz" \
   | tar -C gcc-arm-none-eabi --strip-components 1 -xJ
+
+###############################################################################
+# Build image for tool required by FDPIC module builds
+###############################################################################
+FROM nuttx-toolchain-base AS nuttx-toolchain-fdpic
+# Build the arm-uclinuxfdpiceabi binutils.  The stock arm-none-eabi compiler
+# emits correct FDPIC objects, but its assembler and linker cannot handle
+# them: ld is configured with the armelf emulation alone and links an FDPIC
+# object into an ordinary shared object, turning every import into an
+# R_ARM_JUMP_SLOT where the ABI wants an R_ARM_FUNCDESC_VALUE.  No
+# distribution packages this target, so it is built here.
+RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" apt-get install -y -qq \
+  bison \
+  flex \
+  g++ \
+  gcc \
+  make \
+  texinfo \
+  zlib1g-dev
+
+RUN mkdir -p /tools/fdpic-tools/source && \
+  curl -s -L --fail "https://sourceware.org/pub/binutils/releases/binutils-2.43.tar.xz" \
+  | tar -C /tools/fdpic-tools/source --strip-components=1 -xJ
+
+# MAKEINFO=true because the info pages are of no use here and building them
+# is the slowest part of a binutils build.
+
+RUN mkdir -p /tools/fdpic-tools/build && cd /tools/fdpic-tools/build && \
+  /tools/fdpic-tools/source/configure \
+  --target=arm-uclinuxfdpiceabi \
+  --prefix=/tools/binutils-arm-uclinuxfdpiceabi \
+  --disable-nls \
+  --disable-werror \
+  --with-system-zlib && \
+  make -j$(nproc) MAKEINFO=true && make install-strip MAKEINFO=true && \
+  rm -rf /tools/binutils-arm-uclinuxfdpiceabi/share && \
+  cd /tools && rm -rf fdpic-tools
 
 ###############################################################################
 # Build image for tool required by ARM64 builds
@@ -243,7 +287,7 @@ RUN cd /tools/renesas-tools/build/gcc && \
 FROM nuttx-toolchain-base AS nuttx-toolchain-riscv
 # Download the latest RISCV GCC toolchain prebuilt by xPack
 RUN mkdir -p riscv-none-elf-gcc && \
-  curl -s -L "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v13.2.0-2/xpack-riscv-none-elf-gcc-13.2.0-2-linux-x64.tar.gz" \
+  curl -s -L "https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.3.0-1/xpack-riscv-none-elf-gcc-14.3.0-1-linux-x64.tar.gz" \
   | tar -C riscv-none-elf-gcc --strip-components 1 -xz
 
 ###############################################################################
@@ -259,18 +303,10 @@ RUN mkdir -p sparc-gaisler-elf-gcc && \
 # Build image for tool required by ESP32 builds
 ###############################################################################
 FROM nuttx-toolchain-base AS nuttx-toolchain-esp32
-# Download the latest ESP32 GCC toolchain prebuilt by Espressif
-RUN mkdir -p xtensa-esp32-elf-gcc && \
-  curl -s -L "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz" \
-  | tar -C xtensa-esp32-elf-gcc --strip-components 1 -xJ
-
-RUN mkdir -p xtensa-esp32s2-elf-gcc && \
-  curl -s -L "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32s2-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz" \
-  | tar -C xtensa-esp32s2-elf-gcc --strip-components 1 -xJ
-
-RUN mkdir -p xtensa-esp32s3-elf-gcc && \
-  curl -s -L "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz" \
-  | tar -C xtensa-esp32s3-elf-gcc --strip-components 1 -xJ
+# Download the latest ESP32, ESP32-S2 and ESP32-S3 GCC toolchain prebuilt by Espressif
+RUN mkdir -p xtensa-esp-elf-gcc && \
+  curl -s -L "https://github.com/espressif/crosstool-NG/releases/download/esp-14.2.0_20241119/xtensa-esp-elf-14.2.0_20241119-x86_64-linux-gnu.tar.xz" \
+  | tar -C xtensa-esp-elf-gcc --strip-components 1 -xJ
 
 RUN echo "ESP Binaries: 2022/01/26"
 RUN mkdir -p /tools/blobs && cd /tools/blobs \
@@ -296,6 +332,24 @@ RUN mkdir -p wasi-sdk && \
 RUN mkdir -p wamrc && \
   curl -s -L  "https://github.com/bytecodealliance/wasm-micro-runtime/releases/download/WAMR-1.1.2/wamrc-1.1.2-x86_64-ubuntu-20.04.tar.gz" \
   | tar -C wamrc -xz
+
+###############################################################################
+# Build image for tool required by Raspberry Pi pico-sdk builds
+###############################################################################
+FROM nuttx-toolchain-base AS nuttx-toolchain-raspberrypi-pico-sdk
+# Download the latest pico-sdk source archive
+RUN mkdir -p pico-sdk && \
+  curl -s -L "https://github.com/raspberrypi/pico-sdk/releases/download/2.2.0/pico-sdk-2.2.0.tar.gz" \
+  | tar -C pico-sdk --strip-components 1 -xz
+
+###############################################################################
+# Build image for tool required by Raspberry Pi picotool builds
+###############################################################################
+FROM nuttx-toolchain-base AS nuttx-toolchain-raspberrypi-picotool
+# Download the prebuilt Raspberry Pi picotool
+RUN mkdir -p picotool && \
+  curl -s -L "https://github.com/raspberrypi/pico-sdk-tools/releases/download/v2.2.0-0/picotool-2.2.0-x86_64-lin.tar.gz" \
+  | tar -C picotool --strip-components 1 -xz
 
 ###############################################################################
 # Final Docker image used for running CI system.  This includes all toolchains
@@ -341,6 +395,7 @@ RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" TZ=Etc/UTC apt-get in
   libpython2.7 \
   libtinfo5 \
   libusb-1.0-0-dev libusb-1.0-0-dev:i386 \
+  libftdi1-dev \
   libv4l-dev libv4l-dev:i386 \
   libx11-dev libx11-dev:i386 \
   libxext-dev libxext-dev:i386 \
@@ -350,6 +405,7 @@ RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" TZ=Etc/UTC apt-get in
   npm \
   qemu-system-arm \
   qemu-system-misc \
+  qemu-system-x86 \
   python3 \
   python3-pip \
   python-is-python3 \
@@ -360,6 +416,7 @@ RUN apt-get update -qq && DEBIAN_FRONTEND="noninteractive" TZ=Etc/UTC apt-get in
   file \
   subversion \
   tclsh \
+  zip \
   && rm -rf /var/lib/apt/lists/*
 
 # Set GCC-12 as Default compiler
@@ -378,6 +435,7 @@ ENV PIP_NO_CACHE_DIR=0
 # We are using the minimal python installation from the system so include
 # setuptools and also wheel so we can use the binary releases of packages
 # instead of requiring them to be compiled.
+RUN pip3 install --upgrade pip
 RUN pip3 install setuptools
 RUN pip3 install wheel
 RUN pip3 install cmake-format
@@ -388,7 +446,7 @@ RUN pip3 install cvt2utf
 # Install pytest
 RUN pip3 install cxxfilt
 RUN pip3 install construct
-RUN pip3 install esptool==4.8.dev4
+RUN pip3 install esptool==5.2.0
 RUN pip3 install imgtool
 RUN pip3 install kconfiglib
 RUN pip3 install pexpect==4.8.0
@@ -404,8 +462,8 @@ RUN pip3 install stringcase
 RUN pip3 install jinja2
 RUN pip3 install coloredlogs
 
-# Upgrade nodejs to the latest version
-RUN npm install -g n && n stable && hash -r
+# Upgrade nodejs to the stable version we need
+RUN npm install -g n && n 20.10.0 node && hash -r
 
 # Used to generate symbol table files
 
@@ -450,6 +508,10 @@ ENV PATH="/tools/gcc-arm-none-eabi/bin:$PATH"
 COPY --from=nuttx-toolchain-arm64 /tools/gcc-aarch64-none-elf/ gcc-aarch64-none-elf/
 ENV PATH="/tools/gcc-aarch64-none-elf/bin:$PATH"
 
+# FDPIC module toolchain
+COPY --from=nuttx-toolchain-fdpic /tools/binutils-arm-uclinuxfdpiceabi/ binutils-arm-uclinuxfdpiceabi/
+ENV PATH="/tools/binutils-arm-uclinuxfdpiceabi/bin:$PATH"
+
 # AVR32 toolchain
 COPY --from=nuttx-toolchain-avr32 /tools/gcc-avr32-gnu/ gcc-avr32-gnu/
 ENV PATH="/tools/gcc-avr32-gnu/bin:$PATH"
@@ -470,17 +532,9 @@ ENV PATH="/tools/riscv-none-elf-gcc/bin:$PATH"
 COPY --from=nuttx-toolchain-sparc /tools/sparc-gaisler-elf-gcc/ sparc-gaisler-elf-gcc/
 ENV PATH="/tools/sparc-gaisler-elf-gcc/bin:$PATH"
 
-# ESP32 toolchain
-COPY --from=nuttx-toolchain-esp32 /tools/xtensa-esp32-elf-gcc/ xtensa-esp32-elf-gcc/
-ENV PATH="/tools/xtensa-esp32-elf-gcc/bin:$PATH"
-
-# ESP32-S2 toolchain
-COPY --from=nuttx-toolchain-esp32 /tools/xtensa-esp32s2-elf-gcc/ xtensa-esp32s2-elf-gcc/
-ENV PATH="/tools/xtensa-esp32s2-elf-gcc/bin:$PATH"
-
-# ESP32-S3 toolchain
-COPY --from=nuttx-toolchain-esp32 /tools/xtensa-esp32s3-elf-gcc/ xtensa-esp32s3-elf-gcc/
-ENV PATH="/tools/xtensa-esp32s3-elf-gcc/bin:$PATH"
+# ESP32, ESP32-S2, ESP32-S3 toolchain
+COPY --from=nuttx-toolchain-esp32 /tools/xtensa-esp-elf-gcc/ xtensa-esp-elf-gcc/
+ENV PATH="/tools/xtensa-esp-elf-gcc/bin:$PATH"
 
 RUN mkdir -p /tools/blobs/esp-bins
 COPY --from=nuttx-toolchain-esp32 /tools/blobs/* /tools/blobs/esp-bins/
@@ -489,6 +543,15 @@ COPY --from=nuttx-toolchain-esp32 /tools/blobs/* /tools/blobs/esp-bins/
 COPY --from=nuttx-toolchain-wasm /tools/wasi-sdk/ wasi-sdk/
 ENV WASI_SDK_PATH="/tools/wasi-sdk"
 ENV PATH="/tools/wamr:$PATH"
+COPY --from=nuttx-toolchain-esp32 /tools/blobs/* /tools/blobs/esp-bins/
+
+# Raspberry Pi pico-sdk source
+COPY --from=nuttx-toolchain-raspberrypi-pico-sdk /tools/pico-sdk/ pico-sdk/
+ENV PICO_SDK_PATH="/tools/pico-sdk"
+
+# Raspberry Pi picotool
+COPY --from=nuttx-toolchain-raspberrypi-picotool /tools/picotool/ picotool/
+ENV PATH="/tools/picotool:$PATH"
 
 # gn tool
 RUN mkdir -p /tools/gn

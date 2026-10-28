@@ -66,7 +66,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/fs/fs.h>
 #include <nuttx/fs/fat.h>
@@ -362,8 +362,26 @@ static inline int fat_parsesfname(FAR const char **path,
 #ifdef CONFIG_FAT_LCNAMES
           dirinfo->fd_ntflags = ntlcfound & ntlcenable;
 #endif
-          *terminator = ch;
-          *path       = node;
+          /* Ignore sequences of //... in the filename */
+
+          while (node && *node == '/')
+            {
+              node++;
+            }
+
+          if (terminator != NULL)
+            {
+              /* Don't update the variables if terminator is NULL
+               *
+               * Call with terminator == NULL is used to obtain short
+               * file name from already given long file name that fits
+               * into 8.3 format
+               */
+
+              *terminator = ch;
+              *path       = node;
+            }
+
           return OK;
         }
 
@@ -600,6 +618,13 @@ static inline int fat_parselfname(FAR const char **path,
 
           dirinfo->fd_lfname[ndx] = '\0';
 
+          /* Ignore sequences of //... in the filename */
+
+          while (node && *node == '/')
+            {
+              node++;
+            }
+
           /* Return the remaining sub-string and the terminating character. */
 
           *terminator = (char)ch;
@@ -750,7 +775,7 @@ static inline int fat_createalias(FAR struct fat_dirinfo_s *dirinfo)
     }
   else
     {
-       src       = (FAR lfnchar *)dirinfo->fd_lfname;
+      src       = (FAR lfnchar *)dirinfo->fd_lfname;
     }
 
   /* Then copy the name and extension, handling upper case conversions and
@@ -1095,6 +1120,12 @@ static inline int fat_uniquealias(FAR struct fat_mountpt_s *fs,
  * Description:  Convert a user filename into a properly formatted FAT
  *   (short 8.3) filename as it would appear in a directory entry.
  *
+ *   Long file name is returned if CONFIG_FAT_LFN is defined. This applies
+ *   even for entries that would fit standard short 8.3 format. These have
+ *   both long file name and short file name filled. This is done mainly
+ *   because of compatibility with Linux that creates long file name entries
+ *   even if the file name fits into 8.3 format.
+ *
  ****************************************************************************/
 
 static int fat_path2dirname(FAR const char **path,
@@ -1107,17 +1138,49 @@ static int fat_path2dirname(FAR const char **path,
   /* Assume no long file name */
 
   dirinfo->fd_lfname[0] = '\0';
+  dirinfo->fd_name[0] = '\0';
 
-  /* Then parse the (assumed) 8+3 short file name */
+  /* Parse long file name */
 
-  ret = fat_parsesfname(path, dirinfo, terminator);
+  ret = fat_parselfname(path, dirinfo, terminator);
   if (ret < 0)
     {
-      /* No, the name is not a valid short 8+3 file name. Try parsing
-       * the long file name.
+      return ret;
+    }
+  else
+    {
+      /* Does the long file name fit into short file name? This means
+       * this is actually a short file name.
+       *
+       * There are following possibilities:
+       *   - file was created on Linux and is written as long file name
+       *   - file was created on Windows and is written as short file name
+       *   - we are creating file on NuttX -> write it as short file name
        */
 
-      ret = fat_parselfname(path, dirinfo, terminator);
+      if (strlen((FAR const char *)dirinfo->fd_lfname) <= DIR_MAXFNAME)
+        {
+          /* Get short file name for given path */
+
+          char name[DIR_MAXFNAME];
+          FAR const char *tmp;
+
+          memcpy(name, dirinfo->fd_lfname, DIR_MAXFNAME);
+          tmp = (FAR const char *)name;
+          if (fat_parsesfname(&tmp, dirinfo, NULL) != OK)
+            {
+              /* The name fits the short form's length but cannot be
+               * expressed as one (lower case, for example).  The failed
+               * parse has already filled the short name buffer with
+               * spaces, and fat_dirnamewrite() writes long name entries
+               * only while the buffer holds its empty marker.  Without
+               * the marker the file gets eleven spaces for a name, and
+               * every such file aliases to every other.
+               */
+
+              dirinfo->fd_name[0] = '\0';
+            }
+        }
     }
 
   return ret;
@@ -1831,8 +1894,8 @@ static inline int fat_getsfname(FAR uint8_t *direntry, FAR char *buffer,
 
       /* In this version, we never write 0xe5 in the directory filenames
        * (because we do not handle any character sets where 0xe5 is valid
-       * in a filaname), but we could eencounter this in a filesystem
-       * written by some other system
+       * in a filename), but we could eencounter this in a filesystem
+       * written by some other system.
        */
 
       if (ndx == 0 && ch == DIR0_E5)
@@ -2595,20 +2658,27 @@ int fat_finddirentry(FAR struct fat_mountpt_s *fs,
           return ret;
         }
 
-      /* Is this a path segment a long or a short file.  Was a long file
-       * name parsed?
-       */
-
 #ifdef CONFIG_FAT_LFN
       if (dirinfo->fd_lfname[0] != '\0')
         {
-          /* Yes.. Search for the sequence of long file name directory
-           * entries. NOTE: As a side effect, this function returns with
-           * the sector containing the short file name directory entry
-           * in the cache.
+          /* We have to check for both LFN and SFN entry because of
+           * Linux/Windows differences
+           *
+           *  - file created on Linux is written as LFN even if it fits 8.3
+           *  - file created on Windows is written as SFN if it fits 8.3
            */
 
+          struct fat_dirinfo_s d;
+
+          d = *dirinfo;
           ret = fat_findlfnentry(fs, dirinfo);
+          if (ret < 0)
+            {
+              /* There is no LFN entry for given file -> check SFN */
+
+              *dirinfo = d;
+              ret = fat_findsfnentry(fs, dirinfo);
+            }
         }
       else
 #endif
@@ -2738,7 +2808,7 @@ int fat_allocatedirentry(FAR struct fat_mountpt_s *fs,
        */
 
 #ifdef CONFIG_FAT_LFN
-      if (dirinfo->fd_lfname[0] != '\0')
+      if (dirinfo->fd_lfname[0] != '\0' && dirinfo->fd_name[0] == '\0')
         {
           /* Yes.. Allocate for the sequence of long file name directory
            * entries plus a short file name directory entry.
@@ -2994,7 +3064,7 @@ int fat_dirnamewrite(FAR struct fat_mountpt_s *fs,
 
   /* Is this a long file name? */
 
-  if (dirinfo->fd_lfname[0] != '\0')
+  if (dirinfo->fd_lfname[0] != '\0' && dirinfo->fd_name[0] == '\0')
     {
       /* Write the sequence of long file name directory entries (this
        * function also creates the short file name alias).
@@ -3040,7 +3110,7 @@ int fat_dirwrite(FAR struct fat_mountpt_s *fs,
 
   /* Does this directory entry have a long file name? */
 
-  if (dirinfo->fd_lfname[0] != '\0')
+  if (dirinfo->fd_lfname[0] != '\0' && dirinfo->fd_name[0] == '\0')
     {
       /* Write the sequence of long file name directory entries (this
        * function also creates the short file name alias).
@@ -3112,6 +3182,10 @@ int fat_remove(FAR struct fat_mountpt_s *fs, FAR const char *relpath,
   struct fat_dirinfo_s dirinfo;
   uint32_t             dircluster;
   FAR uint8_t         *direntry;
+  FAR struct fat_shared_s *shared;
+  off_t                victimsector;
+  uint16_t             victimindex;
+  bool                 defer = false;
   int                  ret;
 
   /* Find the directory entry referring to the entry to be deleted */
@@ -3144,12 +3218,18 @@ int fat_remove(FAR struct fat_mountpt_s *fs, FAR const char *relpath,
     }
 
   /* Get the directory sector and cluster containing the entry to be
-   * deleted.
+   * deleted.  The sector/index pair identifies the entry for open
+   * handles; unlike the start cluster it is also valid for empty files
+   * (cluster 0).  It must be captured here because the empty-directory
+   * scan and freedirentry below change the sector cache.
    */
 
   dircluster =
       ((uint32_t)DIR_GETFSTCLUSTHI(direntry) << 16) |
       DIR_GETFSTCLUSTLO(direntry);
+
+  victimsector = fs->fs_currentsector;
+  victimindex  = dirinfo.dir.fd_index;
 
   /* Is this entry a directory? */
 
@@ -3254,12 +3334,39 @@ int fat_remove(FAR struct fat_mountpt_s *fs, FAR const char *relpath,
       return ret;
     }
 
-  /* And remove the cluster chain making up the subdirectory */
+  /* If the file is still open, only the name goes away now.  The shared
+   * object is marked pending (detached from the directory namespace) and
+   * the cluster chain is kept until the last reference is closed.  This
+   * deliberately also matches empty files: they have no chain yet, but
+   * clusters allocated by later writes belong to the pending file and
+   * are freed on close.
+   *
+   * NOTE: directories opened with opendir() are not tracked here, so
+   * rmdir() of a directory being iterated still frees immediately.
+   */
 
-  ret = fat_removechain(fs, dircluster);
-  if (ret < 0)
+  for (shared = fs->fs_shared; shared != NULL; shared = shared->s_next)
     {
-      return ret;
+      if (!shared->s_pending &&
+          shared->s_dirsector == victimsector &&
+          shared->s_dirindex == victimindex)
+        {
+          shared->s_pending = true;
+          defer = true;
+        }
+    }
+
+  /* And remove the cluster chain making up the file, unless an open
+   * handle still owns it.
+   */
+
+  if (!defer)
+    {
+      ret = fat_removechain(fs, dircluster);
+      if (ret < 0)
+        {
+          return ret;
+        }
     }
 
   /* Update the FSINFO sector (FAT32) */

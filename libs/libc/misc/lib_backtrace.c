@@ -53,7 +53,7 @@
                           sizeof(int)))
 
 /****************************************************************************
- * Private Type Declarations
+ * Private Types
  ****************************************************************************/
 
 #if CONFIG_LIBC_BACKTRACE_BUFFSIZE > 0
@@ -134,6 +134,7 @@ static void backtrace_init(void)
   size_t i;
 
   sq_init(&bp->freelist);
+  spin_lock_init(&bp->lock);
   memset(bp->bucket, -1, sizeof(bp->bucket));
   for (i = 0; i < nitems(bp->pool); i++)
     {
@@ -238,7 +239,7 @@ static void backtrace_free(FAR struct backtrace_pool_s *bp, int index)
  *
  * Returned Value:
  *   Return the index of the backtrace record if success, otherwise return
- *   a negtive value.
+ *   a negative value.
  ****************************************************************************/
 
 int backtrace_record(int skip)
@@ -267,14 +268,14 @@ int backtrace_record(int skip)
 
       entry = &bp->pool[index];
       entry->count++;
-      spin_unlock_irqrestore(&pool->lock, flags);
+      spin_unlock_irqrestore(&bp->lock, flags);
       return index;
     }
 
   index = backtrace_alloc(bp);
   if (index < 0)
     {
-      spin_unlock_irqrestore(&pool->lock, flags);
+      spin_unlock_irqrestore(&bp->lock, flags);
       return index;
     }
 
@@ -289,7 +290,7 @@ int backtrace_record(int skip)
 
   entry->next = bp->bucket[slot];
   bp->bucket[slot] = index;
-  spin_unlock_irqrestore(&pool->lock, flags);
+  spin_unlock_irqrestore(&bp->lock, flags);
   return index;
 }
 
@@ -303,7 +304,7 @@ int backtrace_record(int skip)
  *   index - The index of the backtrace record
  *
  * Returned Value:
- *   Return 0 if success, otherwise return a negtive value.
+ *   Return 0 if success, otherwise return a negative value.
  ****************************************************************************/
 
 int backtrace_remove(int index)
@@ -323,7 +324,7 @@ int backtrace_remove(int index)
   if (entry->count > 1)
     {
       entry->count--;
-      spin_unlock_irqrestore(&pool->lock, flags);
+      spin_unlock_irqrestore(&bp->lock, flags);
       return OK;
     }
 
@@ -367,7 +368,7 @@ int backtrace_remove(int index)
     }
 
   backtrace_free(bp, index);
-  spin_unlock_irqrestore(&pool->lock, flags);
+  spin_unlock_irqrestore(&bp->lock, flags);
   return OK;
 }
 

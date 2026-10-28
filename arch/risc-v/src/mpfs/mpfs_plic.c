@@ -29,7 +29,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
-#include <debug.h>
+
+#include <nuttx/debug.h>
 #include <nuttx/spinlock.h>
 
 #include <nuttx/arch.h>
@@ -320,7 +321,7 @@ void mpfs_plic_clear_and_enable_irq(int extirq)
 
       putreg32(claim, claim_address);
 
-      /* Return the irq priority to mininum */
+      /* Return the irq priority to minimum */
 
       putreg32(MPFS_PLIC_PRIO_MIN, MPFS_PLIC_PRIORITY + (4 * extirq));
     }

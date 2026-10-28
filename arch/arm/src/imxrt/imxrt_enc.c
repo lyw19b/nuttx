@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/irq.h>
@@ -286,8 +286,8 @@ struct imxrt_qeconfig_s
 
 struct imxrt_qedata_s
 {
-  int32_t  index_pos;      /* Last position of index occurance */
-  uint32_t index_cnt;      /* Number of index occurance */
+  int32_t  index_pos;      /* Last position of index occurrence */
+  uint32_t index_cnt;      /* Number of index occurrence */
 };
 
 /* ENC Device Private Data */

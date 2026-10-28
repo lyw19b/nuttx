@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <string.h>
 #include <sys/types.h>
 #include <inttypes.h>
@@ -350,7 +350,7 @@ int spi_flash_read_encrypted(uint32_t addr, void *buffer, uint32_t size)
  *   func - Function pointer
  *
  * Returned Value:
- *   Absolute address if success or negtive value if failed.
+ *   Absolute address if success or negative value if failed.
  *
  ****************************************************************************/
 

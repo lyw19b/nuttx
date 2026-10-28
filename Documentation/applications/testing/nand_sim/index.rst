@@ -33,7 +33,7 @@ size, the spare area may have different structures (schemes). All the
 required schemes are defined in ``/drivers/mtd/mtd_nandscheme.c`` (in
 the ``g_nand_sparescheme*`` structures).
 
-Due to the nature of NAND flash, upon testing, a manufaturer may decide that
+Due to the nature of NAND flash, upon testing, a manufacturer may decide that
 a certain block fails some test(s), and mark it as a **bad block** by
 writing a certain value in a certain position in the spare area (depends on
 data area's size, and thus, the spare area's scheme) of every page in it.
@@ -152,15 +152,18 @@ is still the wrapper, not the actual upper half, as the upper half methods
 may call the other methods as well internally and we might want to log
 them as well*.
 
-Registering Device & Daemon
-===========================
+Registering Device & Background Task
+====================================
 
 This wrapper is then registered using ``register_mtddriver``, and this
-whole thing is converted to be a daemon, so that the device can keep running
-in the background.
+whole thing is launched as a background task, so that the device can keep
+running after the ``nand`` command returns to the shell.
 
-Making it a daemon is achieved by using ``fork()``, killing the parent, and
-using ``daemon()`` in child.
+The ``nand`` command starts a dedicated NuttX task with ``task_create()``,
+waits until the device registration finishes, and then returns control to
+the shell. This keeps the simulator alive in the background without relying
+on ``fork()``, whose post-fork execution model is not appropriate for this
+kind of long-running initialization in the flat build used by the simulator.
 
 Known Issues
 ============

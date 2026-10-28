@@ -26,7 +26,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -44,7 +44,7 @@
  * Name: nrf53_mx25_initialize
  *
  * Description:
- *   Initialize the MX25RXX QSPI memeory
+ *   Initialize the MX25RXX QSPI memory
  *
  ****************************************************************************/
 

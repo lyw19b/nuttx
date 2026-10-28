@@ -29,7 +29,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
@@ -60,8 +60,8 @@
  * FSMC. In order to use FSMC SRAM, the following additional things need to
  * be present in the NuttX configuration file:
  *
- * CONFIG_STM32L4_FSMC=y      : Enables the FSMC
- * CONFIG_STM32L4_FSMC_SRAM=y : Indicates that SRAM is available via the
+ * CONFIG_STM32_FSMC=y      : Enables the FSMC
+ * CONFIG_STM32_FSMC_SRAM=y : Indicates that SRAM is available via the
  *                              FSMC (as opposed to an LCD or FLASH).
  * CONFIG_HEAP2_BASE          : The base address of the SRAM in the FSMC
  *                              address space
@@ -71,8 +71,8 @@
  *                              include the additional regions.
  */
 
-#ifndef CONFIG_STM32L4_FSMC
-#  undef CONFIG_STM32L4_FSMC_SRAM
+#ifndef CONFIG_STM32_FSMC
+#  undef CONFIG_STM32_FSMC_SRAM
 #endif
 
 /* STM32L4[7,8]6xx have 128 Kib in two banks, both accessible to DMA:
@@ -96,19 +96,19 @@
 
 /* Set the range of system SRAM */
 
-#define SRAM1_START  STM32L4_SRAM_BASE
-#define SRAM1_END    (SRAM1_START + STM32L4_SRAM1_SIZE)
+#define SRAM1_START  STM32_SRAM_BASE
+#define SRAM1_END    (SRAM1_START + STM32_SRAM1_SIZE)
 
 /* Set the range of SRAM2 as well, requires a second memory region */
 
-#define SRAM2_START  STM32L4_SRAM2_BASE
-#define SRAM2_END    (SRAM2_START + STM32L4_SRAM2_SIZE)
+#define SRAM2_START  STM32_SRAM2_BASE
+#define SRAM2_END    (SRAM2_START + STM32_SRAM2_SIZE)
 
 /* Set the range of SRAM3, requiring a third memory region */
 
-#ifdef STM32L4_SRAM3_SIZE
-#  define SRAM3_START  STM32L4_SRAM3_BASE
-#  define SRAM3_END    (SRAM3_START + STM32L4_SRAM3_SIZE)
+#ifdef STM32_SRAM3_SIZE
+#  define SRAM3_START  STM32_SRAM3_BASE
+#  define SRAM3_END    (SRAM3_START + STM32_SRAM3_SIZE)
 #endif
 
 /* Some sanity checking.  If multiple memory regions are defined, verify
@@ -116,15 +116,15 @@
  * that we have been asked to add to the heap.
  */
 
-#if CONFIG_MM_REGIONS < defined(CONFIG_STM32L4_SRAM2_HEAP) + \
-                        defined(CONFIG_STM32L4_SRAM3_HEAP) + \
-                        defined(CONFIG_STM32L4_FSMC_SRAM_HEAP) + 1
+#if CONFIG_MM_REGIONS < defined(CONFIG_STM32_SRAM2_HEAP) + \
+                        defined(CONFIG_STM32_SRAM3_HEAP) + \
+                        defined(CONFIG_STM32_FSMC_SRAM_HEAP) + 1
 #  error "You need more memory manager regions to support selected heap components"
 #endif
 
-#if CONFIG_MM_REGIONS > defined(CONFIG_STM32L4_SRAM2_HEAP) + \
-                        defined(CONFIG_STM32L4_SRAM3_HEAP) + \
-                        defined(CONFIG_STM32L4_FSMC_SRAM_HEAP) + 1
+#if CONFIG_MM_REGIONS > defined(CONFIG_STM32_SRAM2_HEAP) + \
+                        defined(CONFIG_STM32_SRAM3_HEAP) + \
+                        defined(CONFIG_STM32_FSMC_SRAM_HEAP) + 1
 #  warning "CONFIG_MM_REGIONS large enough but I do not know what some of the region(s) are"
 #endif
 
@@ -133,10 +133,10 @@
  * configuration (as CONFIG_HEAP2_BASE and CONFIG_HEAP2_SIZE).
  */
 
-#ifdef CONFIG_STM32L4_FSMC_SRAM
+#ifdef CONFIG_STM32_FSMC_SRAM
 #  if !defined(CONFIG_HEAP2_BASE) || !defined(CONFIG_HEAP2_SIZE)
 #    error "CONFIG_HEAP2_BASE and CONFIG_HEAP2_SIZE must be provided"
-#    undef CONFIG_STM32L4_FSMC_SRAM
+#    undef CONFIG_STM32_FSMC_SRAM
 #  endif
 #endif
 
@@ -241,7 +241,7 @@ void up_allocate_heap(void **heap_start, size_t *heap_size)
 
   /* Allow user-mode access to the user heap memory */
 
-  stm32l4_mpu_uheap((uintptr_t)ubase, usize);
+  stm32_mpu_uheap((uintptr_t)ubase, usize);
 #else
 
   /* Return the heap settings */
@@ -313,13 +313,13 @@ void up_allocate_kheap(void **heap_start, size_t *heap_size)
 #if CONFIG_MM_REGIONS > 1
 void arm_addregion(void)
 {
-#ifdef CONFIG_STM32L4_SRAM2_HEAP
+#ifdef CONFIG_STM32_SRAM2_HEAP
 
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 
   /* Allow user-mode access to the SRAM2 heap */
 
-  stm32l4_mpu_uheap((uintptr_t)SRAM2_START, SRAM2_END - SRAM2_START);
+  stm32_mpu_uheap((uintptr_t)SRAM2_START, SRAM2_END - SRAM2_START);
 #endif
 
   /* Colorize the heap for debug */
@@ -332,13 +332,13 @@ void arm_addregion(void)
 
 #endif /* SRAM2 */
 
-#ifdef CONFIG_STM32L4_SRAM3_HEAP
+#ifdef CONFIG_STM32_SRAM3_HEAP
 
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 
   /* Allow user-mode access to the SRAM3 heap */
 
-  stm32l4_mpu_uheap((uintptr_t)SRAM3_START, SRAM3_END - SRAM3_START);
+  stm32_mpu_uheap((uintptr_t)SRAM3_START, SRAM3_END - SRAM3_START);
 
 #endif
 
@@ -352,12 +352,12 @@ void arm_addregion(void)
 
 #endif /* SRAM3 */
 
-#ifdef CONFIG_STM32L4_FSMC_SRAM_HEAP
+#ifdef CONFIG_STM32_FSMC_SRAM_HEAP
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 
   /* Allow user-mode access to the FSMC SRAM user heap memory */
 
-  stm32l4_mpu_uheap((uintptr_t)CONFIG_HEAP2_BASE, CONFIG_HEAP2_SIZE);
+  stm32_mpu_uheap((uintptr_t)CONFIG_HEAP2_BASE, CONFIG_HEAP2_SIZE);
 
 #endif
 

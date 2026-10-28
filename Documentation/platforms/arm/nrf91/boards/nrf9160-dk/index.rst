@@ -2,6 +2,8 @@
 Nordic nRF9160 DK (nRF9160)
 ===========================
 
+.. tags:: chip:nrf91, chip:nrf9160
+
 The `nRF9160-DK (PCA10090) <https://www.nordicsemi.com/Products/Development-hardware/nrf9160-dk>`_
 is a development board based on the nRF9160 and nRF52840 from Nordic.
 
@@ -111,13 +113,14 @@ To get this configuration working with miniboot bootloader follow these steps:
 
 #. flash bootloader::
 
-     nrfjprog --program build_boot/nuttx.hex --chiperase --verify
+    nrfutil device erase
+    nrfutil device program --firmware build_boot/nuttx.hex
 
 #. flash modem image::
 
-     nrfjprog --program build_modem/nuttx.hex
+    nrfutil device program --firmware build_modem/nuttx.hex
 
 #. reset chip::
 
-     nrfjprog --reset
+    nrfutil device reset
 

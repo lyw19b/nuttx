@@ -44,6 +44,10 @@ ifeq ($(CONFIG_DAC7554),y)
   CSRCS += dac7554.c
 endif
 
+ifeq ($(CONFIG_MCP47X6),y)
+  CSRCS += mcp47x6.c
+endif
+
 ifeq ($(CONFIG_MCP48XX),y)
   CSRCS += mcp48xx.c
 endif
@@ -67,6 +71,22 @@ ifeq ($(CONFIG_OPAMP),y)
 # Include the common OPAMP character driver
 
 CSRCS += opamp.c
+
+endif
+
+# Check for POT devices
+
+ifeq ($(CONFIG_POT),y)
+
+# Include the common POT character driver
+
+CSRCS += pot.c
+
+# Include POT device drivers
+
+ifeq ($(CONFIG_POT_MCP445X),y)
+  CSRCS += mcp445x.c
+endif
 
 endif
 
@@ -113,6 +133,14 @@ endif
 ifeq ($(CONFIG_ADC_MCP3008),y)
   CSRCS += mcp3008.c
 endif
+
+ifeq ($(CONFIG_ADC_ADS1115),y)
+  CSRCS += ads1115.c 
+endif
+
+ifeq ($(CONFIG_ADC_ADS7046),y)
+  CSRCS += ads7046.c
+endif
 endif
 
 ifeq ($(CONFIG_LMP92001),y)
@@ -140,6 +168,12 @@ ifeq ($(CONFIG_OPAMP),y)
   DEPPATH += --dep-path analog
   VPATH += :analog
   CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)drivers$(DELIM)analog
+else
+ifeq ($(CONFIG_POT),y)
+  DEPPATH += --dep-path analog
+  VPATH += :analog
+  CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)drivers$(DELIM)analog
+endif
 endif
 endif
 endif

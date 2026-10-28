@@ -89,17 +89,19 @@ int host_open(const char *pathname, int flags, int mode)
 
   /* Perform flag mapping */
 
-  if ((flags & NUTTX_O_RDWR) == NUTTX_O_RDWR)
+  switch (flags & NUTTX_O_ACCMODE)
     {
-      mapflags = O_RDWR;
-    }
-  else if (flags & NUTTX_O_RDONLY)
-    {
-      mapflags = O_RDONLY;
-    }
-  else if (flags & NUTTX_O_WRONLY)
-    {
-      mapflags = O_WRONLY;
+      case NUTTX_O_RDONLY:
+        mapflags = O_RDONLY;
+        break;
+
+      case NUTTX_O_WRONLY:
+        mapflags = O_WRONLY;
+        break;
+
+      case NUTTX_O_RDWR:
+        mapflags = O_RDWR;
+        break;
     }
 
   if (flags & NUTTX_O_APPEND)
@@ -156,6 +158,7 @@ int host_close(int fd)
   /* Just call the close routine */
 
   int ret = _close(fd);
+
   if (ret == -1)
     {
       ret = -errno;
@@ -173,6 +176,7 @@ nuttx_ssize_t host_read(int fd, void *buf, nuttx_size_t count)
   /* Just call the read routine */
 
   nuttx_ssize_t ret = _read(fd, buf, count);
+
   if (ret == -1)
     {
       ret = -errno;
@@ -190,6 +194,7 @@ nuttx_ssize_t host_write(int fd, const void *buf, nuttx_size_t count)
   /* Just call the write routine */
 
   nuttx_ssize_t ret = _write(fd, buf, count);
+
   if (ret == -1)
     {
       ret = -errno;
@@ -208,6 +213,7 @@ nuttx_off_t host_lseek(int fd, nuttx_off_t pos, nuttx_off_t offset,
   /* Just call the lseek routine */
 
   nuttx_off_t ret = _lseek(fd, offset, whence);
+
   if (ret == (nuttx_off_t)-1)
     {
       ret = -errno;
@@ -222,7 +228,9 @@ nuttx_off_t host_lseek(int fd, nuttx_off_t pos, nuttx_off_t offset,
 
 int host_ioctl(int fd, int request, unsigned long arg)
 {
-  return -ENOSYS;
+  /* Unsupported ioctl requests use ENOTTY so VFS can apply fallbacks. */
+
+  return -ENOTTY;
 }
 
 /****************************************************************************
@@ -240,6 +248,7 @@ void host_sync(int fd)
 int host_dup(int fd)
 {
   int ret = _dup(fd);
+
   if (ret < 0)
     {
       ret = -errno;
@@ -372,6 +381,7 @@ int host_statfs(const char *path, struct nuttx_statfs_s *buf)
 int host_unlink(const char *pathname)
 {
   int ret = _unlink(pathname);
+
   if (ret < 0)
     {
       ret = -errno;
@@ -389,6 +399,7 @@ int host_mkdir(const char *pathname, int mode)
   /* Just call the host's mkdir routine */
 
   int ret = _mkdir(pathname, mode);
+
   if (ret < 0)
     {
       ret = -errno;
@@ -404,6 +415,7 @@ int host_mkdir(const char *pathname, int mode)
 int host_rmdir(const char *pathname)
 {
   int ret = _rmdir(pathname);
+
   if (ret < 0)
     {
       ret = -errno;
@@ -457,3 +469,42 @@ int host_chstat(const char *path, const struct nuttx_stat_s *buf, int flags)
 {
   return -ENOSYS;
 }
+
+/****************************************************************************
+ * Name: host_link
+ ****************************************************************************/
+
+#ifdef CONFIG_FS_LINKS
+int host_link(const char *path1, const char *path2)
+{
+  return -ENOSYS;
+}
+
+/****************************************************************************
+ * Name: host_symlink
+ ****************************************************************************/
+
+int host_symlink(const char *target, const char *linkpath)
+{
+  return -ENOSYS;
+}
+
+/****************************************************************************
+ * Name: host_readlink
+ ****************************************************************************/
+
+nuttx_ssize_t host_readlink(const char *path, char *buf,
+                            nuttx_size_t bufsize)
+{
+  return -ENOSYS;
+}
+
+/****************************************************************************
+ * Name: host_lstat
+ ****************************************************************************/
+
+int host_lstat(const char *path, struct nuttx_stat_s *buf)
+{
+  return -ENOSYS;
+}
+#endif /* CONFIG_FS_LINKS */

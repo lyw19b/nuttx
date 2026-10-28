@@ -34,6 +34,7 @@ include bch/Make.defs
 include can/Make.defs
 include clk/Make.defs
 include crypto/Make.defs
+include devfreq/Make.defs
 include devicetree/Make.defs
 include dma/Make.defs
 include math/Make.defs
@@ -59,7 +60,6 @@ include pinctrl/Make.defs
 include pipes/Make.defs
 include power/Make.defs
 include regmap/Make.defs
-include rmt/Make.defs
 include rpmsg/Make.defs
 include rptun/Make.defs
 include sensors/Make.defs
@@ -109,7 +109,7 @@ $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 $(BIN): $(OBJS)
-	$(call ARCHIVE, $@, $(OBJS))
+	$(call ARCHIVE_REBUILD, $@, $(OBJS))
 
 context::
 
@@ -128,6 +128,7 @@ clean:
 	$(call CLEAN)
 
 distclean:: clean
+	$(call DELFILE, $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds))
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
 

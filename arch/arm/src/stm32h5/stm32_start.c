@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/init.h>
 #include <arch/board/board.h>
@@ -39,6 +39,10 @@
 #include "stm32.h"
 #include "stm32_gpio.h"
 #include "stm32_start.h"
+
+#ifdef CONFIG_ARM_MPU
+#  include "stm32_mpuinit.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -83,10 +87,10 @@
  */
 
 #define SRAM2_START  STM32_SRAM2_BASE
-#define SRAM2_END    (SRAM2_START + STM32H5_SRAM2_SIZE)
+#define SRAM2_END    (SRAM2_START + STM32_SRAM2_SIZE)
 
 #define SRAM3_START  STM32_SRAM3_BASE
-#define SRAM3_END    (SRAM3_START + STM32H5_SRAM3_SIZE)
+#define SRAM3_END    (SRAM3_START + STM32_SRAM3_SIZE)
 
 #define HEAP_BASE  ((uintptr_t)_ebss + CONFIG_IDLETHREAD_STACKSIZE)
 
@@ -154,35 +158,6 @@ void __start(void)
     ("sub r10, sp, %0" : : "r" (CONFIG_IDLETHREAD_STACKSIZE - 64) :);
 #endif
 
-#ifdef CONFIG_STM32H5_SRAM2_INIT
-  /* NOTE:  this is optional because this may be inappropriate, especially
-   * if the memory is being used for it's battery backed purpose.  In that
-   * case, the first-time initialization needs to be performed by the board
-   * under application-specific circumstances.  On the other hand, if we're
-   * using this memory for, say, additional heap space, then this is handy.
-   */
-
-  for (dest = (uint32_t *)SRAM2_START; dest < (uint32_t *)SRAM2_END; )
-    {
-      *dest++ = 0;
-    }
-#endif
-
-#ifdef CONFIG_STM32H5_SRAM3_INIT
-  for (dest = (uint32_t *)SRAM3_START; dest < (uint32_t *)SRAM3_END; )
-    {
-      *dest++ = 0;
-    }
-#endif
-
-  /* Configure the UART so that we can get debug output as soon as possible */
-
-  stm32_clockconfig();
-  arm_fpuconfig();
-  stm32_lowsetup();
-  stm32_gpioinit();
-  showprogress('A');
-
   /* Clear .bss.  We'll do this inline (vs. calling memset) just to be
    * certain that there are no issues with the state of global variables.
    */
@@ -191,8 +166,6 @@ void __start(void)
     {
       *dest++ = 0;
     }
-
-  showprogress('B');
 
   /* Move the initialized data section from his temporary holding spot in
    * FLASH into the correct place in SRAM.  The correct place in SRAM is
@@ -207,7 +180,34 @@ void __start(void)
       *dest++ = *src++;
     }
 
-  showprogress('C');
+#ifdef CONFIG_STM32_SRAM2_INIT
+  /* NOTE:  this is optional because this may be inappropriate, especially
+   * if the memory is being used for it's battery backed purpose.  In that
+   * case, the first-time initialization needs to be performed by the board
+   * under application-specific circumstances.  On the other hand, if we're
+   * using this memory for, say, additional heap space, then this is handy.
+   */
+
+  for (dest = (uint32_t *)SRAM2_START; dest < (uint32_t *)SRAM2_END; )
+    {
+      *dest++ = 0;
+    }
+#endif
+
+#ifdef CONFIG_STM32_SRAM3_INIT
+  for (dest = (uint32_t *)SRAM3_START; dest < (uint32_t *)SRAM3_END; )
+    {
+      *dest++ = 0;
+    }
+#endif
+
+  /* Configure the UART so that we can get debug output as soon as possible */
+
+  stm32_clockconfig();
+  arm_fpuconfig();
+  stm32_lowsetup();
+  stm32_gpioinit();
+  showprogress('A');
 
 #ifdef CONFIG_ARMV8M_STACKCHECK
   arm_stack_check_init();
@@ -222,12 +222,26 @@ void __start(void)
 #ifdef USE_EARLYSERIALINIT
   arm_earlyserialinit();
 #endif
-  showprogress('D');
+  showprogress('B');
+
+  /* Configure the MPU to permit user-space access to its FLASH and RAM (for
+   * CONFIG_BUILD_PROTECTED) or to manage cache properties of external
+   * memory regions (in a flat build).
+   */
+
+#ifdef CONFIG_ARM_MPU
+  stm32_mpuinitialize();
+#endif
 
   /* Initialize onboard resources */
 
   stm32_board_initialize();
-  showprogress('F');
+  showprogress('C');
+
+#ifdef CONFIG_STM32_ICACHE
+  stm32_enable_icache();
+#endif
+  showprogress('G');
 
   /* Then start NuttX */
 
@@ -236,7 +250,7 @@ void __start(void)
 
   nx_start();
 
-  /* Shoulnd't get here */
+  /* Shouldn't get here */
 
   for (; ; );
 }

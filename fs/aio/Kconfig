@@ -6,10 +6,22 @@
 config FS_AIO
 	bool "Asynchronous I/O support"
 	default n
-	depends on SCHED_WORKQUEUE
+	depends on SCHED_WORKQUEUE && !DISABLE_ALL_SIGNALS
 	---help---
-		Enable support for aynchronous I/O.  This selection enables the
+		Enable support for asynchronous I/O.  This selection enables the
 		interfaces declared in include/aio.h.
+
+config FS_AIO_LISTIO_MAX
+	int "Maximum number of AIO operations in listio"
+	default 256
+	---help---
+		This option sets the maximum number of asynchronous I/O (AIO) operations
+		that can be submitted in a single call to lio_listio().
+
+		This value defines the upper limit for the 'nent' parameter in
+		lio_listio(mode, aiocb_list, nent, sevp). Increasing this value allows
+		more operations to be queued.
+		Default: 10
 
 if FS_AIO
 

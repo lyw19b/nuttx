@@ -34,4 +34,39 @@
  * Public Function Prototypes
  ****************************************************************************/
 
+#ifndef __ASSEMBLY__
+
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
+
+void stm32_flash_getopt(uint32_t *opt1, uint32_t *opt2);
+
+int stm32_flash_optmodify(uint32_t clear1, uint32_t set1,
+                          uint32_t clear2, uint32_t set2);
+
+int stm32_flash_swapbanks(void);
+
+void stm32_flash_lock(void);
+
+void stm32_flash_unlock(void);
+
+int stm32_otp_write(const uint16_t *data, uint16_t len, uint32_t offset);
+
+int stm32_otp_read(uint16_t *data, uint16_t len, uint32_t offset);
+
+uint32_t stm32_otp_getlockstatus(void);
+
+#undef EXTERN
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* __ASSEMBLY__ */
+
 #endif /* __ARCH_ARM_SRC_STM32H5_STM32_FLASH_H */

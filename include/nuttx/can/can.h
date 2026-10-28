@@ -40,6 +40,8 @@
 #include <nuttx/fs/ioctl.h>
 #include <nuttx/mutex.h>
 
+#include <nuttx/can/can_common.h>
+
 #ifdef CONFIG_CAN_TXREADY
 #  include <nuttx/wqueue.h>
 #endif
@@ -284,7 +286,7 @@
  *                   nature of the error.
  *   Dependencies:   None
  *
- * CANIOC_SET_TRANSV_STATE
+ * CANIOC_SET_TRANSVSTATE
  *   Description:    Set specific can transceiver state
  *
  *   Argument:       A pointer to an int type that describes the CAN
@@ -294,11 +296,36 @@
  *                   nature of the error.
  *   Dependencies:   None
  *
- * CANIOC_GET_TRANSV_STATE
+ * CANIOC_GET_TRANSVSTATE
  *   Description:    Get specific can transceiver state
  *
  *   Argument:       A pointer to an int type that describes the CAN
  *                   transceiver state.
+ *   returned Value: Zero (OK) is returned on success.  Otherwise -1 (ERROR)
+ *                   is returned with the errno variable set to indicate the
+ *                   nature of the error.
+ *   Dependencies:   None
+ *
+ * CANIOC_SET_MSGALIGN
+ *   Description:    Set messages alignment. Read and written messages can be
+ *                   configured to be aligned to multiple of given bytes by
+ *                   this. The default value is 1. The alignment affects both
+ *                   read and write operation. The value 0 has a special
+ *                   meaning where both write will always write only a single
+ *                   message and read will always provide only a single
+ *                   message.
+ *
+ *   Argument:       A pointer to an unsigned int type with alignment value.
+ *   returned Value: Zero (OK) is returned on success.  Otherwise -1 (ERROR)
+ *                   is returned with the errno variable set to indicate the
+ *                   nature of the error.
+ *   Dependencies:   None
+ *
+ * CANIOC_GET_MSGALIGN
+ *   Description:    Get messages alignment. See CANIOC_SET_MSGALIGN for
+ *                   explanation.
+ *
+ *   Argument:       A pointer to an unsigned int type for alignment value.
  *   returned Value: Zero (OK) is returned on success.  Otherwise -1 (ERROR)
  *                   is returned with the errno variable set to indicate the
  *                   nature of the error.
@@ -324,9 +351,11 @@
 #define CANIOC_GET_STATE          _CANIOC(17)
 #define CANIOC_SET_TRANSVSTATE    _CANIOC(18)
 #define CANIOC_GET_TRANSVSTATE    _CANIOC(19)
+#define CANIOC_SET_MSGALIGN       _CANIOC(20)
+#define CANIOC_GET_MSGALIGN       _CANIOC(21)
 
 #define CAN_FIRST                 0x0001         /* First common command */
-#define CAN_NCMDS                 19             /* 20 common commands   */
+#define CAN_NCMDS                 21             /* 21 common commands   */
 
 /* User defined ioctl commands are also supported. These will be forwarded
  * by the upper-half CAN driver to the lower-half CAN driver via the
@@ -367,6 +396,7 @@
 #define dev_send(dev,m)           (dev)->cd_ops->co_send(dev,m)
 #define dev_txready(dev)          (dev)->cd_ops->co_txready(dev)
 #define dev_txempty(dev)          (dev)->cd_ops->co_txempty(dev)
+#define dev_cancel(dev,m)         (dev)->cd_ops->co_cancel(dev,m)
 
 /* CAN message support ******************************************************/
 
@@ -648,7 +678,7 @@ struct can_rxfifo_s
   struct can_msg_s rx_buffer[CONFIG_CAN_RXFIFOSIZE];
 };
 
-#ifdef CONFIG_CAN_TXPRIORITY
+#ifdef CONFIG_CAN_STRICT_TX_PRIORITY
 struct can_msg_node_s
 {
   struct list_node  list;
@@ -659,7 +689,7 @@ struct can_msg_node_s
 struct can_txcache_s
 {
   sem_t             tx_sem;             /* Counting semaphore */
-#ifdef CONFIG_CAN_TXPRIORITY
+#ifdef CONFIG_CAN_STRICT_TX_PRIORITY
   /* tx_buffer   - Buffer of CAN message. And this buffer is managed by
    *               tx_free/tx_pending/tx_sending
    * tx_free     - Link all buffer node in the initial step
@@ -786,6 +816,9 @@ struct can_ops_s
    */
 
   CODE bool (*co_txempty)(FAR struct can_dev_s *dev);
+
+  CODE bool (*co_cancel)(FAR struct can_dev_s *dev,
+                         FAR struct can_msg_s *msg);
 };
 
 /* This is the device structure used by the driver.  The caller of
@@ -794,13 +827,14 @@ struct can_ops_s
  *
  *   The elements of 'cd_ops', and 'cd_priv'
  *
- * The common logic will initialize all semaphores.
+ * The common logic will initialize all semaphores and set 'msgalign' to '1'.
  */
 
 struct can_reader_s
 {
   struct list_node     list;
   struct can_rxfifo_s  fifo;             /* Describes receive FIFO */
+  unsigned int         msgalign;
   FAR struct pollfd   *cd_fds;
 };
 
@@ -1089,46 +1123,6 @@ int can_txdone(FAR struct can_dev_s *dev);
 #ifdef CONFIG_CAN_TXREADY
 int can_txready(FAR struct can_dev_s *dev);
 #endif
-
-/****************************************************************************
- * Name: can_bytes2dlc
- *
- * Description:
- *   In the CAN FD format, the coding of the DLC differs from the standard
- *   CAN format. The DLC codes 0 to 8 have the same coding as in standard
- *   CAN.  But the codes 9 to 15 all imply a data field of 8 bytes with
- *   standard CAN.  In CAN FD mode, the values 9 to 15 are encoded to values
- *   in the range 12 to 64.
- *
- * Input Parameters:
- *   nbytes - the byte count to convert to a DLC value
- *
- * Returned Value:
- *   The encoded DLC value corresponding to at least that number of bytes.
- *
- ****************************************************************************/
-
-uint8_t can_bytes2dlc(uint8_t nbytes);
-
-/****************************************************************************
- * Name: can_dlc2bytes
- *
- * Description:
- *   In the CAN FD format, the coding of the DLC differs from the standard
- *   CAN format. The DLC codes 0 to 8 have the same coding as in standard
- *   CAN.  But the codes 9 to 15 all imply a data field of 8 bytes with
- *   standard CAN.  In CAN FD mode, the values 9 to 15 are encoded to values
- *   in the range 12 to 64.
- *
- * Input Parameters:
- *   dlc    - the DLC value to convert to a byte count
- *
- * Returned Value:
- *   The number of bytes corresponding to the DLC value.
- *
- ****************************************************************************/
-
-uint8_t can_dlc2bytes(uint8_t dlc);
 
 #undef EXTERN
 #if defined(__cplusplus)

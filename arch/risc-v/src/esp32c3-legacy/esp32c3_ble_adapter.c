@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <pthread.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -775,7 +775,6 @@ static void task_yield_from_isr(void)
 
 static void *semphr_create_wrapper(uint32_t max, uint32_t init)
 {
-  int ret;
   struct bt_sem_s *bt_sem;
   int tmp;
 
@@ -783,8 +782,7 @@ static void *semphr_create_wrapper(uint32_t max, uint32_t init)
   bt_sem = kmm_malloc(tmp);
   DEBUGASSERT(bt_sem);
 
-  ret = nxsem_init(&bt_sem->sem, 0, init);
-  DEBUGASSERT(ret == OK);
+  nxsem_init(&bt_sem->sem, 0, init);
 
 #ifdef CONFIG_ESP32C3_SPIFLASH
   esp32c3_wl_init_semcache(&bt_sem->sc, &bt_sem->sem);
@@ -1263,7 +1261,7 @@ static bool IRAM_ATTR is_in_isr_wrapper(void)
  *   Malloc buffer
  *
  * Input Parameters:
- *  szie - buffer size
+ *  size - buffer size
  *
  * Returned Value:
  *   None
@@ -1287,7 +1285,7 @@ static void *malloc_wrapper(size_t size)
  *   Malloc buffer in DRAM
  *
  * Input Parameters:
- *  szie - buffer size
+ *  size - buffer size
  *
  * Returned Value:
  *   None
@@ -1399,7 +1397,7 @@ static uint32_t IRAM_ATTR btdm_lpcycles_2_hus(uint32_t cycles,
 static uint32_t IRAM_ATTR btdm_hus_2_lpcycles(uint32_t us)
 {
   uint64_t cycles;
-  cycles = ((uint64_t)(us) << g_btdm_lpcycle_us_frac) / g_btdm_lpcycle_us;
+  cycles = ((uint64_t)us << g_btdm_lpcycle_us_frac) / g_btdm_lpcycle_us;
   return (uint32_t)cycles;
 }
 
@@ -1649,7 +1647,7 @@ static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status)
  * Description:
  *
  * Input Parameters:
- *  szie
+ *  size
  *  status
  *
  * Returned Value:
@@ -2209,7 +2207,7 @@ int esp32c3_bt_controller_disable(void)
 
   while (!btdm_power_state_active())
     {
-      nxsig_usleep(1000); /* wait */
+      nxsched_usleep(1000); /* wait */
     }
 
   btdm_controller_disable();
@@ -2284,7 +2282,7 @@ int esp32c3_bt_controller_enable(esp_bt_mode_t mode)
 
   if (g_lp_cntl.enable)
     {
-        btdm_controller_enable_sleep(true);
+      btdm_controller_enable_sleep(true);
     }
 
   if (btdm_controller_enable(mode) != 0)
@@ -2383,6 +2381,7 @@ void esp32c3_vhci_host_send_packet(uint8_t *data, uint16_t len)
 int esp32c3_vhci_register_callback(const esp_vhci_host_callback_t *callback)
 {
   int ret = -1;
+
   if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED)
     {
       return ret;

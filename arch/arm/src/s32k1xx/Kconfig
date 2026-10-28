@@ -75,6 +75,7 @@ config ARCH_CHIP_S32K11X
 	bool
 	select ARCH_CORTEXM0
 	select S32K1XX_HAVE_FIRC_CMU
+	select LIBC_ATOMIC_IRQ
 
 config ARCH_CHIP_S32K14X
 	bool
@@ -701,7 +702,7 @@ config S32K1XX_LPI2C_DMA_MAXMSG
 	default 8
 	depends on S32K1XX_LPI2C_DMA
 	---help---
-		This option set the mumber of mesg that can be in a transfer.
+		This option set the number of mesg that can be in a transfer.
 		It is used to allocate space for the 16 bit LPI2C commands
 		that will be DMA-ed to the LPI2C device.
 

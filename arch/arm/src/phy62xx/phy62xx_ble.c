@@ -33,7 +33,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 /* #include "OSAL.h" */
 
 /* #include "hci_tl.h" */
@@ -191,8 +191,8 @@ uint8 pplus_ble_recv_msg(uint8 destination_task, uint8 *msg_ptr)
  * Input Parameters:
  *   drv  - BT driver pointer
  *   type - BT packet type
- *   data - BT packte data buffer pointer
- *   len  - BT packte length
+ *   data - BT packet data buffer pointer
+ *   len  - BT packet length
  *
  * Returned Value:
  *   Sent bytes on success or a negated value on failure.

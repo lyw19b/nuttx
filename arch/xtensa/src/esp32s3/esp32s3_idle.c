@@ -24,7 +24,7 @@
 
 #include <nuttx/config.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <arch/board/board.h>
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
@@ -32,7 +32,7 @@
 #include <nuttx/spinlock.h>
 
 #include "xtensa.h"
-#include "esp32s3_pm.h"
+#include "espressif/esp_pm.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -90,6 +90,27 @@ static void up_idlepm(void)
   static enum pm_state_e oldstate = PM_NORMAL;
   enum pm_state_e newstate;
   int ret;
+  int count;
+
+  count = pm_staycount(PM_IDLE_DOMAIN, PM_NORMAL);
+  if (oldstate != PM_NORMAL && count == 0)
+    {
+      pm_stay(PM_IDLE_DOMAIN, PM_NORMAL);
+
+      /* Keep working in normal stage */
+
+      pm_changestate(PM_IDLE_DOMAIN, PM_NORMAL);
+
+      /* Release the stay above: it only forces this one state change. */
+
+      pm_relax(PM_IDLE_DOMAIN, PM_NORMAL);
+
+      /* Without this, oldstate goes stale after the first wakeup and the
+       * state machine wedges in PM_NORMAL forever -- see commit message.
+       */
+
+      oldstate = PM_NORMAL;
+    }
 
   /* Decide, which power saving level can be obtained */
 
@@ -127,31 +148,37 @@ static void up_idlepm(void)
 
       switch (newstate)
         {
-        case PM_NORMAL:
-          break;
+          case PM_NORMAL:
+            break;
 
-        case PM_IDLE:
-          break;
+          case PM_IDLE:
+            break;
 
-        case PM_STANDBY:
-          {
-            /* Enter Force-sleep mode */
+          case PM_STANDBY:
+            {
+              /* Enter Force-sleep mode */
 
-            esp32s3_pmstandby(CONFIG_PM_ALARM_SEC * 1000000 +
-                              CONFIG_PM_ALARM_NSEC / 1000);
-          }
-          break;
+              esp_pmstandby(CONFIG_PM_ALARM_SEC * 1000000 +
+                            CONFIG_PM_ALARM_NSEC / 1000);
 
-        case PM_SLEEP:
-          {
-            /* Enter Deep-sleep mode */
+              /* Without this, /proc/pm/state0 bills sleep time to wake[]
+               * -- pm_stats() needs PM_RESTORE to know time was asleep.
+               */
 
-            esp32s3_pmsleep(CONFIG_PM_SLEEP_WAKEUP_SEC * 1000000 +
-                            CONFIG_PM_SLEEP_WAKEUP_NSEC / 1000);
-          }
+              pm_changestate(PM_IDLE_DOMAIN, PM_RESTORE);
+            }
+            break;
 
-        default:
-          break;
+          case PM_SLEEP:
+            {
+              /* Enter Deep-sleep mode */
+
+              esp_pmsleep(CONFIG_PM_SLEEP_WAKEUP_SEC * 1000000 +
+                          CONFIG_PM_SLEEP_WAKEUP_NSEC / 1000);
+            }
+
+          default:
+            break;
         }
     }
   else
@@ -216,9 +243,9 @@ void up_idle(void)
       __asm__ __volatile__ ("waiti 0");
 #  endif
 
-  /* Perform IDLE mode power management */
+      /* Perform IDLE mode power management */
 
-  up_idlepm();
+      up_idlepm();
 #endif /* CONFIG_SUPPRESS_INTERRUPTS || CONFIG_SUPPRESS_TIMER_INTS */
 
 #ifdef CONFIG_ESP32S3_SPEED_UP_ISR

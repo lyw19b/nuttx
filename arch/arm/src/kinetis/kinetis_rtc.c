@@ -36,7 +36,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 
 #include "arm_internal.h"
@@ -63,9 +63,7 @@
  * Private Data
  ****************************************************************************/
 
-#ifdef CONFIG_RTC_HIRES
 static spinlock_t g_rtc_lock = SP_UNLOCKED;
-#endif
 
 #ifdef CONFIG_RTC_ALARM
 static alarmcb_t g_alarmcb;
@@ -354,7 +352,7 @@ int up_rtc_initialize(void)
 
       putreg32(0, KINETIS_RTC_SR);
 
-      /* Enable oscilator - must have Vbat else hard fault */
+      /* Enable oscillator - must have Vbat else hard fault */
 
       putreg32((BOARD_RTC_CAP | RTC_CR_OSCE), KINETIS_RTC_CR);
 

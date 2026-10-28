@@ -90,10 +90,6 @@ volatile clock_t g_cpuload_total;
  * Private Data
  ****************************************************************************/
 
-#ifdef CONFIG_SCHED_CPULOAD_SYSCLK
-static struct wdog_s g_cpuload_wdog;
-#endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -117,8 +113,9 @@ static struct wdog_s g_cpuload_wdog;
 static void cpuload_callback(wdparm_t arg)
 {
   FAR struct wdog_s *wdog = (FAR struct wdog_s *)arg;
+
   nxsched_process_cpuload_ticks(CPULOAD_SAMPLING_PERIOD);
-  wd_start(wdog, CPULOAD_SAMPLING_PERIOD, cpuload_callback, arg);
+  wd_start_next(wdog, CPULOAD_SAMPLING_PERIOD, cpuload_callback, arg);
 }
 #endif
 
@@ -176,7 +173,7 @@ void nxsched_process_taskload_ticks(FAR struct tcb_s *tcb, clock_t ticks)
  * Description:
  *   Collect data that can be used for CPU load measurements.  When
  *   CONFIG_SCHED_CPULOAD_EXTCLK is defined, this is an exported interface,
- *   use the the external clock logic.  Otherwise, it is an OS Internal
+ *   use the external clock logic.  Otherwise, it is an OS Internal
  *   interface.
  *
  * Input Parameters:
@@ -200,6 +197,7 @@ void nxsched_process_cpuload_ticks(clock_t ticks)
   for (i = 0; i < CONFIG_SMP_NCPUS; i++)
     {
       FAR struct tcb_s *rtcb = current_task(i);
+
       nxsched_process_taskload_ticks(rtcb, ticks);
     }
 }
@@ -232,12 +230,6 @@ int clock_cpuload(int pid, FAR struct cpuload_s *cpuload)
 
   DEBUGASSERT(cpuload);
 
-#ifdef CONFIG_SCHED_CPULOAD_CRITMONITOR
-  /* Update critmon in case of the target thread busyloop */
-
-  nxsched_update_critmon(nxsched_get_tcb(pid));
-#endif
-
   /* Momentarily disable interrupts.  We need (1) the task to stay valid
    * while we are doing these operations and (2) the tick counts to be
    * synchronized when read.
@@ -261,6 +253,12 @@ int clock_cpuload(int pid, FAR struct cpuload_s *cpuload)
 
   if (g_pidhash[hash_index] && g_pidhash[hash_index]->pid == pid)
     {
+#ifdef CONFIG_SCHED_CPULOAD_CRITMONITOR
+      /* Update critmon in case of the target thread busyloop */
+
+      nxsched_update_critmon(g_pidhash[hash_index]);
+#endif
+
       cpuload->total  = g_cpuload_total;
       cpuload->active = g_pidhash[hash_index]->ticks;
       ret = OK;
@@ -287,7 +285,9 @@ int clock_cpuload(int pid, FAR struct cpuload_s *cpuload)
 #ifdef CONFIG_SCHED_CPULOAD_SYSCLK
 void cpuload_init(void)
 {
-  wd_start(&g_cpuload_wdog, CPULOAD_SAMPLING_PERIOD, cpuload_callback,
-           (wdparm_t)&g_cpuload_wdog);
+  static struct wdog_s cpuload_wdog;
+
+  wd_start(&cpuload_wdog, CPULOAD_SAMPLING_PERIOD, cpuload_callback,
+           (wdparm_t)&cpuload_wdog);
 }
 #endif

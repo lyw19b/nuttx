@@ -20,6 +20,19 @@
  *
  ****************************************************************************/
 
+/* WARNING for developers:
+ *
+ * This driver uses the legacy style of writing sensor drivers for NuttX. The
+ * project has since decided to adopt a new sensor framework in order to
+ * have a consistent API and feature-set.
+ *
+ * Sensors which use the uORB framework are typically suffixed "_uorb". You
+ * can also visit the documentation about the new sensor framework to learn
+ * more.
+ */
+
+#warning "This is a deprecated legacy sensor driver."
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -29,10 +42,6 @@
 #include "bmi088_base.h"
 
 #if defined(CONFIG_SENSORS_BMI088)
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
 
 /****************************************************************************
  * Private Types
@@ -130,7 +139,7 @@ static int bmi088_gyro_open(FAR struct file *filep)
   FAR struct inode        *inode = filep->f_inode;
   FAR struct bmi088_dev_s *priv  = inode->i_private;
 
-  /* emable and config acc */
+  /* enable and config acc */
 
   bmi088_put_gyro_reg8(priv, BMI088_GYRO_LPM1     , BMI088_GYRO_PM_NORMAL);
   bmi088_put_gyro_reg8(priv, BMI088_GYRO_RANGE    , gyro_range);
@@ -212,7 +221,7 @@ static ssize_t bmi088_acc_read(FAR struct file *filep, FAR char *buffer,
       return 0;
     }
 
-  /* read and caculate acc */
+  /* read and calculate acc */
 
   bmi088_get_acc_regs(priv, BMI088_ACC_X_LSB, (uint8_t *)&p->acc_source, 6);
   p->accel.x = p->acc_source.x / 32768.0 * ((1 << (acc_range)) * 3.0);
@@ -366,7 +375,7 @@ int bmi088_acc_register(FAR const char *devpath, FAR struct spi_dev_s *dev)
       return ret;
     }
 
-  ret = register_driver(devpath, &g_bmi088_acc_fops, 0666, priv);
+  ret = register_driver(devpath, &g_bmi088_acc_fops, 0600, priv);
   if (ret < 0)
     {
       snerr("Failed to register driver: %d\n", ret);
@@ -428,7 +437,7 @@ int bmi088_gyro_register(FAR const char *devpath, FAR struct spi_dev_s *dev)
       return ret;
     }
 
-  ret = register_driver(devpath, &g_bmi088_gyro_fops, 0666, priv);
+  ret = register_driver(devpath, &g_bmi088_gyro_fops, 0600, priv);
   if (ret < 0)
     {
       snerr("Failed to register driver: %d\n", ret);

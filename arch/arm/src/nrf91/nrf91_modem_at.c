@@ -29,7 +29,7 @@
 #include <nuttx/fs/fs.h>
 #include <nuttx/serial/serial.h>
 
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <fcntl.h>
 #include <semaphore.h>
 #include <string.h>
@@ -296,7 +296,7 @@ static void nrf91_modem_at_send(struct uart_dev_s *dev, int ch)
   priv->txbuf[priv->tx_i] = (char)ch;
   priv->tx_i += 1;
 
-  /* Special formating Nordic AT interface (escape charactes) */
+  /* Special formatting Nordic AT interface (escape characters) */
 
   if (ch == '%')
     {

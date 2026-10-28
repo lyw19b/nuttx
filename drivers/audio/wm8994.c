@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fixedmath.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/irq.h>
@@ -1364,7 +1364,7 @@ static int wm8994_pause(FAR struct audio_lowerhalf_s *dev)
 
   if (priv->running && !priv->paused)
     {
-      /* Disable interrupts to prevent us from suppling any more data */
+      /* Disable interrupts to prevent us from supplying any more data */
 
       priv->paused = true;
       WM8994_DISABLE(priv->lower);

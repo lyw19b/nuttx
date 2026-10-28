@@ -32,7 +32,7 @@
 #include <nuttx/config.h>
 
 #include <assert.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -719,7 +719,7 @@ static ssize_t cdcmbim_write(FAR struct file *filep, FAR const char *buffer,
   if (ret < 0)
     {
       iob_free_chain(iob);
-      uerr("CDCMBIM copyin failed: %d\n", ret);
+      uerr("CDCMBIM copying failed: %d\n", ret);
       goto errout;
     }
 
@@ -806,6 +806,7 @@ static int cdcmbim_poll(FAR struct file *filep, FAR struct pollfd *fds,
       /* This is a request to tear down the poll. */
 
       FAR struct pollfd **slot = (FAR struct pollfd **)fds->priv;
+
       DEBUGASSERT(slot);
 
       /* Remove all memory of the poll setup */
@@ -918,13 +919,25 @@ static void cdcncm_transmit_work(FAR void *arg)
   int ndpindex;
   int totallen;
 
-  /* Wait until the USB device request for Ethernet frame transmissions
-   * becomes available.
+  /* Serialise against cdcncm_send() and any other transmit_work: they share
+   * the single wrreq buffer and run under the recursive netdev_lock.
+   * Without it, delay-0 scheduling can submit the same wrreq twice and
+   * wedge TX.
    */
 
-  while (nxsem_wait(&self->wrreq_idle) != OK)
+  netdev_lock(&self->dev.netdev);
+
+  /* Empty batch: a previous flush already submitted it.  Don't resubmit. */
+
+  if (self->dgramcount == 0)
     {
+      netdev_unlock(&self->dev.netdev);
+      return;
     }
+
+  /* cdcncm_send() already holds the wrreq_idle token for this batch, so we
+   * must not wait for it again here (wrcomplete reposts it after EP_SUBMIT).
+   */
 
   ncblen   = opts->nthsize;
   ndpindex = NCM_ALIGN(ncblen, ndpalign);
@@ -950,6 +963,8 @@ static void cdcncm_transmit_work(FAR void *arg)
   self->wrreq->len = totallen;
 
   EP_SUBMIT(self->epbulkin, self->wrreq);
+
+  netdev_unlock(&self->dev.netdev);
 }
 
 /****************************************************************************
@@ -1291,6 +1306,21 @@ static int cdcncm_send(FAR struct netdev_lowerhalf_s *dev, FAR netpkt_t *pkt)
   FAR struct cdcncm_driver_s *self;
 
   self = container_of(dev, struct cdcncm_driver_s, dev);
+
+  /* At the start of a new NTB batch, wait for the previous transfer to
+   * finish before reusing wrreq->buf (the USB controller transmits straight
+   * out of it).  With TCP write buffers, cdcncm_send() drains many segments
+   * back-to-back, so batches overlap; waiting only just before EP_SUBMIT let
+   * the in-flight buffer be overwritten and wedged TX.
+   */
+
+  if (self->dgramcount == 0)
+    {
+      while (nxsem_wait(&self->wrreq_idle) != OK)
+        {
+        }
+    }
+
   cdcncm_transmit_format(self, pkt);
   netpkt_free(dev, pkt, NETPKT_TX);
 
@@ -1302,8 +1332,13 @@ static int cdcncm_send(FAR struct netdev_lowerhalf_s *dev, FAR netpkt_t *pkt)
     }
   else
     {
-      work_queue(ETHWORK, &self->delaywork, cdcncm_transmit_work, self,
-                 MSEC2TICK(CDCNCM_DGRAM_COMBINE_PERIOD));
+      /* Defer to the work thread with zero delay.  A non-zero delay is
+       * rounded up to a full tick (10ms at 100Hz), which dominated the
+       * USB-NIC round-trip; delay 0 wakes the worker immediately while
+       * still coalescing datagrams appended in the same TX burst.
+       */
+
+      work_queue(ETHWORK, &self->delaywork, cdcncm_transmit_work, self, 0);
     }
 
   return OK;
@@ -1786,7 +1821,7 @@ static int cdcncm_setinterface(FAR struct cdcncm_driver_s *self,
     }
   else
     {
-      uerr("invailid interface %d\n", interface);
+      uerr("invalid interface %d\n", interface);
       return -EINVAL;
     }
 
@@ -1813,45 +1848,45 @@ static int cdcnm_mkstrdesc(uint8_t id, FAR struct usb_strdesc_s *strdesc,
   switch (id)
     {
 #ifndef CONFIG_CDCNCM_COMPOSITE
-    case 0:
-      {
-        /* Descriptor 0 is the language id */
+      case 0:
+        {
+          /* Descriptor 0 is the language id */
 
-        strdesc->len  = 4;
-        strdesc->type = USB_DESC_TYPE_STRING;
-        data[0] = LSBYTE(CDCECM_STR_LANGUAGE);
-        data[1] = MSBYTE(CDCECM_STR_LANGUAGE);
-        return 4;
-      }
+          strdesc->len  = 4;
+          strdesc->type = USB_DESC_TYPE_STRING;
+          data[0] = LSBYTE(CDCECM_STR_LANGUAGE);
+          data[1] = MSBYTE(CDCECM_STR_LANGUAGE);
+          return 4;
+        }
 
-    case CDCECM_MANUFACTURERSTRID:
-      str = CONFIG_CDCNCM_VENDORSTR;
-      break;
+      case CDCECM_MANUFACTURERSTRID:
+        str = CONFIG_CDCNCM_VENDORSTR;
+        break;
 
-    case CDCECM_PRODUCTSTRID:
-      str = isncm ? CONFIG_CDCNCM_PRODUCTSTR : CONFIG_CDCMBIM_PRODUCTSTR;
-      break;
+      case CDCECM_PRODUCTSTRID:
+        str = isncm ? CONFIG_CDCNCM_PRODUCTSTR : CONFIG_CDCMBIM_PRODUCTSTR;
+        break;
 
-    case CDCECM_SERIALSTRID:
+      case CDCECM_SERIALSTRID:
 #ifdef CONFIG_BOARD_USBDEV_SERIALSTR
-      str = board_usbdev_serialstr();
+        str = board_usbdev_serialstr();
 #else
-      str = "0";
+        str = "0";
 #endif
-      break;
+        break;
 
-    case CDCECM_CONFIGSTRID:
-      str = "Default";
-      break;
+      case CDCECM_CONFIGSTRID:
+        str = "Default";
+        break;
 #endif
 
-    case CDCECM_MACSTRID:
-      str = "020000112233";
-      break;
+      case CDCECM_MACSTRID:
+        str = "020000112233";
+        break;
 
-    default:
-      uerr("Unknown string descriptor index: %d\n", id);
-      return -EINVAL;
+      default:
+        uerr("Unknown string descriptor index: %d\n", id);
+        return -EINVAL;
     }
 
   /* The string is utf16-le.  The poor man's utf-8 to utf16-le
@@ -1915,88 +1950,88 @@ static int cdcmbim_mkstrdesc(uint8_t id, FAR struct usb_strdesc_s *strdesc)
 static void cdcncm_mkepcompdesc(int epidx,
                                 FAR struct usb_ss_epcompdesc_s *epcompdesc)
 {
-    switch (epidx)
+  switch (epidx)
     {
-    case CDCNCM_EP_INTIN_IDX: /* Interrupt IN endpoint */
-      {
-        epcompdesc->len  = USB_SIZEOF_SS_EPCOMPDESC;                      /* Descriptor length */
-        epcompdesc->type = USB_DESC_TYPE_ENDPOINT_COMPANION;              /* Descriptor type */
+      case CDCNCM_EP_INTIN_IDX: /* Interrupt IN endpoint */
+        {
+          epcompdesc->len  = USB_SIZEOF_SS_EPCOMPDESC;                      /* Descriptor length */
+          epcompdesc->type = USB_DESC_TYPE_ENDPOINT_COMPANION;              /* Descriptor type */
 
-        if (CONFIG_CDCNCM_EPINTIN_MAXBURST >= USB_SS_INT_EP_MAXBURST)
-          {
-            epcompdesc->mxburst = USB_SS_INT_EP_MAXBURST - 1;
-          }
-        else
-          {
-            epcompdesc->mxburst = CONFIG_CDCNCM_EPINTIN_MAXBURST;
-          }
+          if (CONFIG_CDCNCM_EPINTIN_MAXBURST >= USB_SS_INT_EP_MAXBURST)
+            {
+              epcompdesc->mxburst = USB_SS_INT_EP_MAXBURST - 1;
+            }
+          else
+            {
+              epcompdesc->mxburst = CONFIG_CDCNCM_EPINTIN_MAXBURST;
+            }
 
-        epcompdesc->attr      = 0;
-        epcompdesc->wbytes[0] = LSBYTE((epcompdesc->mxburst + 1) *
-                                       CONFIG_CDCNCM_EPINTIN_SSSIZE);
-        epcompdesc->wbytes[1] = MSBYTE((epcompdesc->mxburst + 1) *
-                                       CONFIG_CDCNCM_EPINTIN_SSSIZE);
-      }
-      break;
+          epcompdesc->attr      = 0;
+          epcompdesc->wbytes[0] = LSBYTE((epcompdesc->mxburst + 1) *
+                                         CONFIG_CDCNCM_EPINTIN_SSSIZE);
+          epcompdesc->wbytes[1] = MSBYTE((epcompdesc->mxburst + 1) *
+                                         CONFIG_CDCNCM_EPINTIN_SSSIZE);
+        }
+        break;
 
-    case CDCNCM_EP_BULKOUT_IDX:
-      {
-        epcompdesc->len  = USB_SIZEOF_SS_EPCOMPDESC;                      /* Descriptor length */
-        epcompdesc->type = USB_DESC_TYPE_ENDPOINT_COMPANION;              /* Descriptor type */
+      case CDCNCM_EP_BULKOUT_IDX:
+        {
+          epcompdesc->len  = USB_SIZEOF_SS_EPCOMPDESC;                      /* Descriptor length */
+          epcompdesc->type = USB_DESC_TYPE_ENDPOINT_COMPANION;              /* Descriptor type */
 
-        if (CONFIG_CDCNCM_EPBULKOUT_MAXBURST >= USB_SS_BULK_EP_MAXBURST)
-          {
-            epcompdesc->mxburst = USB_SS_BULK_EP_MAXBURST - 1;
-          }
-        else
-          {
-            epcompdesc->mxburst = CONFIG_CDCNCM_EPBULKOUT_MAXBURST;
-          }
+          if (CONFIG_CDCNCM_EPBULKOUT_MAXBURST >= USB_SS_BULK_EP_MAXBURST)
+            {
+              epcompdesc->mxburst = USB_SS_BULK_EP_MAXBURST - 1;
+            }
+          else
+            {
+              epcompdesc->mxburst = CONFIG_CDCNCM_EPBULKOUT_MAXBURST;
+            }
 
-        if (CONFIG_CDCNCM_EPBULKOUT_MAXSTREAM > USB_SS_BULK_EP_MAXSTREAM)
-          {
-            epcompdesc->attr = USB_SS_BULK_EP_MAXSTREAM;
-          }
-        else
-          {
-            epcompdesc->attr = CONFIG_CDCNCM_EPBULKOUT_MAXSTREAM;
-          }
+          if (CONFIG_CDCNCM_EPBULKOUT_MAXSTREAM > USB_SS_BULK_EP_MAXSTREAM)
+            {
+              epcompdesc->attr = USB_SS_BULK_EP_MAXSTREAM;
+            }
+          else
+            {
+              epcompdesc->attr = CONFIG_CDCNCM_EPBULKOUT_MAXSTREAM;
+            }
 
-        epcompdesc->wbytes[0] = 0;
-        epcompdesc->wbytes[1] = 0;
-      }
-      break;
+          epcompdesc->wbytes[0] = 0;
+          epcompdesc->wbytes[1] = 0;
+        }
+        break;
 
-    case CDCNCM_EP_BULKIN_IDX:
-      {
-        epcompdesc->len  = USB_SIZEOF_SS_EPCOMPDESC;                      /* Descriptor length */
-        epcompdesc->type = USB_DESC_TYPE_ENDPOINT_COMPANION;              /* Descriptor type */
+      case CDCNCM_EP_BULKIN_IDX:
+        {
+          epcompdesc->len  = USB_SIZEOF_SS_EPCOMPDESC;                      /* Descriptor length */
+          epcompdesc->type = USB_DESC_TYPE_ENDPOINT_COMPANION;              /* Descriptor type */
 
-        if (CONFIG_CDCNCM_EPBULKIN_MAXBURST >= USB_SS_BULK_EP_MAXBURST)
-          {
-            epcompdesc->mxburst = USB_SS_BULK_EP_MAXBURST - 1;
-          }
-        else
-          {
-            epcompdesc->mxburst = CONFIG_CDCNCM_EPBULKIN_MAXBURST;
-          }
+          if (CONFIG_CDCNCM_EPBULKIN_MAXBURST >= USB_SS_BULK_EP_MAXBURST)
+            {
+              epcompdesc->mxburst = USB_SS_BULK_EP_MAXBURST - 1;
+            }
+          else
+            {
+              epcompdesc->mxburst = CONFIG_CDCNCM_EPBULKIN_MAXBURST;
+            }
 
-        if (CONFIG_CDCNCM_EPBULKIN_MAXSTREAM > USB_SS_BULK_EP_MAXSTREAM)
-          {
-            epcompdesc->attr = USB_SS_BULK_EP_MAXSTREAM;
-          }
-        else
-          {
-            epcompdesc->attr = CONFIG_CDCNCM_EPBULKIN_MAXSTREAM;
-          }
+          if (CONFIG_CDCNCM_EPBULKIN_MAXSTREAM > USB_SS_BULK_EP_MAXSTREAM)
+            {
+              epcompdesc->attr = USB_SS_BULK_EP_MAXSTREAM;
+            }
+          else
+            {
+              epcompdesc->attr = CONFIG_CDCNCM_EPBULKIN_MAXSTREAM;
+            }
 
-        epcompdesc->wbytes[0] = 0;
-        epcompdesc->wbytes[1] = 0;
-      }
-      break;
+          epcompdesc->wbytes[0] = 0;
+          epcompdesc->wbytes[1] = 0;
+        }
+        break;
 
-    default:
-      break;
+      default:
+        break;
     }
 }
 #endif
@@ -2428,36 +2463,36 @@ static int cdcncm_getdescriptor(FAR struct cdcncm_driver_s *self,
   switch (type)
     {
 #ifndef CONFIG_CDCNCM_COMPOSITE
-    case USB_DESC_TYPE_DEVICE:
-      if (self->isncm)
-        {
-          return usbdev_copy_devdesc(desc,
-                                     &g_ncmdevdesc,
-                                     self->usbdev.speed);
-        }
+      case USB_DESC_TYPE_DEVICE:
+        if (self->isncm)
+          {
+            return usbdev_copy_devdesc(desc,
+                                       &g_ncmdevdesc,
+                                       self->usbdev.speed);
+          }
 #  ifdef CONFIG_NET_CDCMBIM
-      else
-        {
-          memcpy(desc, &g_mbimdevdesc, sizeof(g_mbimdevdesc));
-          return sizeof(g_mbimdevdesc);
-        }
+        else
+          {
+            memcpy(desc, &g_mbimdevdesc, sizeof(g_mbimdevdesc));
+            return sizeof(g_mbimdevdesc);
+          }
 #  endif
-      break;
+        break;
 #endif
 
 #ifdef CONFIG_USBDEV_DUALSPEED
-    case USB_DESC_TYPE_OTHERSPEEDCONFIG:
+      case USB_DESC_TYPE_OTHERSPEEDCONFIG:
 #endif /* CONFIG_USBDEV_DUALSPEED */
-    case USB_DESC_TYPE_CONFIG:
-      return cdcncm_mkcfgdesc((FAR uint8_t *)desc, &self->devinfo,
-                              self->usbdev.speed, type);
+      case USB_DESC_TYPE_CONFIG:
+        return cdcncm_mkcfgdesc((FAR uint8_t *)desc, &self->devinfo,
+                                self->usbdev.speed, type);
 
-    case USB_DESC_TYPE_STRING:
-      return cdcncm_mkstrdesc(index, (FAR struct usb_strdesc_s *)desc);
+      case USB_DESC_TYPE_STRING:
+        return cdcncm_mkstrdesc(index, (FAR struct usb_strdesc_s *)desc);
 
-    default:
-      uerr("Unsupported descriptor type: 0x%02hhx\n", type);
-      break;
+      default:
+        uerr("Unsupported descriptor type: 0x%02hhx\n", type);
+        break;
     }
 
   return -ENOTSUP;
@@ -2561,13 +2596,7 @@ static int cdcncm_bind(FAR struct usbdevclass_driver_s *driver,
 
   /* The single write request just allocated is available now. */
 
-  ret = nxsem_init(&self->wrreq_idle, 0, 1);
-
-  if (ret != OK)
-    {
-      uerr("nxsem_init failed. ret: %d\n", ret);
-      goto error;
-    }
+  nxsem_init(&self->wrreq_idle, 0, 1);
 
   self->txdone    = false;
 
@@ -2739,7 +2768,10 @@ static int cdcncm_setup(FAR struct usbdevclass_driver_s *driver,
 
           case NCM_SET_NTB_FORMAT:
             if (len != 0 || index != self->devinfo.ifnobase)
-              break;
+              {
+                break;
+              }
+
             switch (value)
               {
                 case 0x0000:
@@ -2791,7 +2823,7 @@ static int cdcncm_setup(FAR struct usbdevclass_driver_s *driver,
               if (ret < 0)
                 {
                   iob_free_chain(iob);
-                  uerr("CDCMBIM copyin failed: %d\n", ret);
+                  uerr("CDCMBIM copying failed: %d\n", ret);
                   return ret;
                 }
 
@@ -2813,6 +2845,7 @@ static int cdcncm_setup(FAR struct usbdevclass_driver_s *driver,
               FAR struct cdcmbim_driver_s *mbim =
                                          (FAR struct cdcmbim_driver_s *)self;
               FAR struct iob_s *iob;
+
               ret = -ENOSPC;
 
               if ((iob = iob_remove_queue(&mbim->tx_queue)) != NULL)
@@ -2864,7 +2897,21 @@ static int cdcncm_setup(FAR struct usbdevclass_driver_s *driver,
 static void cdcncm_disconnect(FAR struct usbdevclass_driver_s *driver,
                               FAR struct usbdev_s *dev)
 {
+  FAR struct cdcncm_driver_s *self = (FAR struct cdcncm_driver_s *)driver;
+
+  cdcncm_resetconfig(self);
   uinfo("\n");
+
+  /* Perform the soft connect function so that we can be
+   * re-enumerated (unless we are part of a composite device).  The USB
+   * device controller calls CLASS_DISCONNECT() on every bus reset, which
+   * is the first step of any enumeration, so without this the device is
+   * left soft-disconnected and never enumerates on the host.
+   */
+
+#ifndef CONFIG_CDCNCM_COMPOSITE
+  DEV_CONNECT(dev);
+#endif
 }
 
 /****************************************************************************
@@ -3019,7 +3066,7 @@ static int cdcmbim_classobject(int minor,
       index = self->ncmdriver.dev.netdev.d_ifindex;
 #endif
       snprintf(devname, sizeof(devname), CDC_MBIM_DEVFORMAT, index);
-      ret = register_driver(devname, &g_usbdevfops, 0666, self);
+      ret = register_driver(devname, &g_usbdevfops, 0600, self);
       if (ret < 0)
         {
           nerr("register_driver failed. ret: %d\n", ret);

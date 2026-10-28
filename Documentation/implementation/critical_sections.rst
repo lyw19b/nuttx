@@ -257,6 +257,14 @@ and preemption operations. Only have instructions when scheduler triggers contex
 * >= 0 to enable critical section entered time statistic, data will be in critmon procfs.
 * > 0 to also do alert log when critical section entered time above the configuration ticks.
 
+**Critical section pre-entry busywait time**::
+
+  CONFIG_SCHED_CRITMONITOR_MAXTIME_BUSYWAIT=-1
+
+* Default -1 to disable critical section pre-entry busywait time statistic.
+* >= 0 to enable critical section pre-entry busywait time statistic, data will be in critmon procfs.
+* > 0 to also do alert log when critical section pre-entry busywait time above the configuration ticks.
+
 **Irq executing time**::
 
   CONFIG_SCHED_CRITMONITOR_MAXTIME_IRQ=-1
@@ -383,7 +391,7 @@ And can be stopped with:
 IRQ Monitor and Worst Case Response Time
 ========================================
 
-The IRQ Monitor is additional OS instrumentation. A full discusssion of the
+The IRQ Monitor is additional OS instrumentation. A full discussion of the
 IRQ Monitor is beyond the scope of this page. Suffice it to say:
 
 * The IRQ Monitor is enabled with ``CONFIG_SCHED_IRQMONITOR=y``.
@@ -397,7 +405,7 @@ IRQ Monitor is beyond the scope of this page. Suffice it to say:
   interrupt handler until exit from the interrupt handler.
 
 From this information we can calculate the worst case response time from
-interrupt request until a task runs that can process the the interrupt.
+interrupt request until a task runs that can process the interrupt.
 That worst cast response time, ``Tresp``, is given by:
 
 * ``Tresp1 = Tcrit + Tintr + C1``

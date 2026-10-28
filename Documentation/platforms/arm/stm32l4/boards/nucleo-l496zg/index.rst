@@ -2,6 +2,8 @@
 ST Nucleo L496ZG
 ================
 
+.. tags:: chip:stm32, chip:stm32l4, chip:stm32l496
+
 This page discusses issues unique to NuttX configurations for the STMicro
 Nucleo-144 board for STM32L4 chips.
 
@@ -48,7 +50,7 @@ information about this board.
 
 Hardware
 ========
-Section needs updating 
+Section needs updating
 
 GPIO - there are 144 I/O lines on the STM32L4xxZx with various pins pined out
 on the Nucleo 144.
@@ -151,7 +153,7 @@ You must use a 3.3 TTL to RS-232 converter or a USB to 3.3V TTL::
 
 Use make menuconfig to configure USART3 as the console::
 
-    CONFIG_STM32L4_USART3=y
+    CONFIG_STM32_USART3=y
     CONFIG_USART3_SERIALDRIVER=y
     CONFIG_USART3_SERIAL_CONSOLE=y
     CONFIG_USART3_RXBUFSIZE=256
@@ -191,7 +193,7 @@ Since this board is so generic, having a quick way to vet the SPI
 configuration seams in order. So the board provides a quick test
 that can be selected vi CONFIG_NUCLEO_SPI_TEST that will initialize
 the selected buses (SPI1-SPI3) and send some text on the bus at
-application initialization time board_app_initialize.
+application initialization time.
 
 SDIO
 ----

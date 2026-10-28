@@ -29,7 +29,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <strings.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/bits.h>
 #include <nuttx/mm/gran.h>
@@ -260,6 +260,7 @@ failure:
 int gran_search(const gran_t *gran, size_t size)
 {
   int ret = -EINVAL;
+  size_t i;
 
   if (gran == NULL || gran->ngranules < size)
     {
@@ -267,7 +268,7 @@ int gran_search(const gran_t *gran, size_t size)
     }
 
   ret = -ENOMEM;
-  for (size_t i = 0; i <= gran->ngranules - size; i++)
+  for (i = 0; i <= gran->ngranules - size; i++)
     {
       if (gran_match(gran, i, size, 0, &i))
         {

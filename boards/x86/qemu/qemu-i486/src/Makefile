@@ -22,10 +22,16 @@
 
 include $(TOPDIR)/Make.defs
 
-CSRCS = qemu_boot.c
+CSRCS = qemu_boot.c qemu_bringup.c
 
-ifeq ($(CONFIG_BOARDCTL),y)
-  CSRCS += qemu_appinit.c
+ifeq ($(CONFIG_QEMU_VGA),y)
+  CSRCS += qemu_vga_lcd.c
+endif
+
+ifeq ($(CONFIG_ETC_ROMFS),y)
+ifeq ($(CONFIG_SYSTEM_NXINIT),y)
+  RCSRCS += etc/init.d/init.rc
+endif
 endif
 
 include $(TOPDIR)/boards/Board.mk

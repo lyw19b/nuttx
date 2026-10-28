@@ -28,8 +28,9 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <debug.h>
+#include <nuttx/debug.h>
 #include <errno.h>
+#include <endian.h>
 #include <sys/param.h>
 
 #include <nuttx/arch.h>
@@ -41,7 +42,7 @@
 
 #include <arch/board/board.h>
 
-#include "esp32s3_gpio.h"
+#include "espressif/esp_gpio.h"
 #include "esp32s3_spi.h"
 #include "hardware/esp32s3_gpio_sigmap.h"
 
@@ -93,7 +94,7 @@ static const struct ili9342c_config_data g_lcd_config[] =
     }
   },
   {
-    /* Power contorl B, power control = 0, DC_ENA = 1 */
+    /* Power control B, power control = 0, DC_ENA = 1 */
 
     ILI9341_POWER_CONTROL_B, 3,
     {
@@ -173,7 +174,7 @@ static const struct ili9342c_config_data g_lcd_config[] =
     }
   },
   {
-    /* Memory access contorl, MX=MY=0, MV=1, ML=0, BGR=1, MH=0 */
+    /* Memory access control, MX=MY=0, MV=1, ML=0, BGR=1, MH=0 */
 
     ILI9341_MEMORY_ACCESS_CONTROL, 1,
     {
@@ -420,6 +421,11 @@ static int ili9342c_sendgram(struct ili9341_lcd_s *lcd,
 {
   struct ili9342c_lcd_dev *priv = (struct ili9342c_lcd_dev *)lcd;
 
+  for (uint32_t i = 0; i < nwords; i++)
+    {
+      ((uint16_t *)wd)[i] = swap16(wd[i]);
+    }
+
   lcdinfo("lcd:%p, wd=%p, nwords=%" PRIu32 "\n", lcd, wd, nwords);
 
   SPI_SETBITS(priv->spi_dev, 16);
@@ -482,21 +488,21 @@ static struct ili9341_lcd_s *esp32s3_initializa_ili9342c(int spi_port)
 
   /* Initialize non-SPI GPIOs */
 
-  esp32s3_configgpio(DISPLAY_DC, OUTPUT);
-  esp32s3_configgpio(DISPLAY_RST, OUTPUT);
-  esp32s3_configgpio(DISPLAY_BCKL, OUTPUT);
+  esp_configgpio(DISPLAY_DC, OUTPUT);
+  esp_configgpio(DISPLAY_RST, OUTPUT);
+  esp_configgpio(DISPLAY_BCKL, OUTPUT);
 
   /* Reset LCD */
 
-  nxsig_usleep(10 * 1000);
-  esp32s3_gpiowrite(DISPLAY_RST, true);
-  nxsig_usleep(10 * 1000);
-  esp32s3_gpiowrite(DISPLAY_RST, false);
-  nxsig_usleep(50 * 1000);
+  nxsched_usleep(10 * 1000);
+  esp_gpiowrite(DISPLAY_RST, true);
+  nxsched_usleep(10 * 1000);
+  esp_gpiowrite(DISPLAY_RST, false);
+  nxsched_usleep(50 * 1000);
 
   /* Turn on LCD backlight */
 
-  esp32s3_gpiowrite(DISPLAY_BCKL, true);
+  esp_gpiowrite(DISPLAY_BCKL, true);
 
   g_lcddev.spi_dev = esp32s3_spibus_initialize(spi_port);
   if (!g_lcddev.spi_dev)
@@ -541,7 +547,9 @@ static void ili9342c_configure(struct ili9341_lcd_s *lcd,
   lcd->sendcmd(lcd, cmd);
   if (data_bytes)
     {
-      for (int i = 0; i < data_bytes; i++)
+      int i;
+
+      for (i = 0; i < data_bytes; i++)
         {
           lcd->sendparam(lcd, data[i]);
         }
@@ -570,6 +578,7 @@ static void ili9342c_configure(struct ili9341_lcd_s *lcd,
 int board_lcd_initialize(void)
 {
   struct ili9341_lcd_s *ili9342c_lcd;
+  int i;
 
   ili9342c_lcd = esp32s3_initializa_ili9342c(DISPLAY_SPI);
   if (!ili9342c_lcd)
@@ -585,7 +594,7 @@ int board_lcd_initialize(void)
       return -ENODEV;
     }
 
-  for (int i = 0; i < nitems(g_lcd_config); i++)
+  for (i = 0; i < nitems(g_lcd_config); i++)
     {
       ili9342c_configure(ili9342c_lcd,
                          g_lcd_config[i].cmd,
@@ -604,7 +613,7 @@ int board_lcd_initialize(void)
  *   allows support for multiple LCD devices.
  *
  * Input Parameters:
- *   devno - LCD device nmber
+ *   devno - LCD device number
  *
  * Returned Value:
  *   LCD device pointer if success or NULL if failed.
