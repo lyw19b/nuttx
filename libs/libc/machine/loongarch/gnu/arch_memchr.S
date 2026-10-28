@@ -1,5 +1,5 @@
 /****************************************************************************
- * libs/libc/machine/loongarch/arch_signal.S
+ * libs/libc/machine/loongarch/gnu/arch_memchr.S
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,41 +24,42 @@
  * Included Files
  ****************************************************************************/
 
-#include <nuttx/config.h>
-#include <arch/syscall.h>
+#include "libc.h"
+
+#ifdef LIBC_BUILD_MEMCHR
 
 /****************************************************************************
- * User signal trampoline
+ * Name: memchr
+ *
+ * Description:
+ *   Find the first occurrence of the low byte of a1 in the a2 bytes
+ *   starting at a0. Return its address or NULL. A zero count performs no
+ *   load, and a successful match stops before inspecting later bytes.
+ *
  ****************************************************************************/
 
   .text
-  .balign 4
-  .global up_signal_handler
-  .type up_signal_handler, function
-/****************************************************************************
- * Name: up_signal_handler
- *
- * Description:
- *   Run at PLV3 with the handler in a0 and its arguments in a1-a3.
- *   Preserve stack alignment, call the handler, then invoke the reserved
- *   signal-return syscall. The trusted kernel continuation is never
- *   stored on this user stack. Trap if signal return unexpectedly comes
- *   back.
- *
- ****************************************************************************/
+  .balign 16
+  .global ARCH_LIBCFUN(memchr)
+  .type ARCH_LIBCFUN(memchr), function
+ARCH_LIBCFUN(memchr):
+  andi    $a1, $a1, 255
+  beqz    $a2, .Lmissing
 
-up_signal_handler:
-  addi.d  $sp, $sp, -16
-  move    $t0, $a0
-  move    $a0, $a1
-  move    $a1, $a2
-  move    $a2, $a3
+.Lsearch:
+  ld.bu   $t0, $a0, 0
+  beq     $t0, $a1, .Ldone
+  addi.d  $a0, $a0, 1
+  addi.d  $a2, $a2, -1
+  bnez    $a2, .Lsearch
 
-  jirl    $ra, $t0, 0
+.Lmissing:
+  move    $a0, $zero
 
-  li.w    $a0, SYS_signal_handler_return
+.Ldone:
+  jr      $ra
+  .size ARCH_LIBCFUN(memchr), . - ARCH_LIBCFUN(memchr)
 
-  syscall 0
+#endif /* LIBC_BUILD_MEMCHR */
 
-  break   0
-  .size up_signal_handler, . - up_signal_handler
+  .section .note.GNU-stack,"",@progbits

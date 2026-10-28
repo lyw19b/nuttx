@@ -162,6 +162,10 @@ void board_late_initialize(void)
   loongarch_asid_test();
 #endif
 
+#ifdef CONFIG_LOONGARCH_LIBC_TEST
+  loongarch_libc_test();
+#endif
+
 #ifdef CONFIG_LOONGARCH_VM_TEST
   loongarch_vm_test();
 #endif

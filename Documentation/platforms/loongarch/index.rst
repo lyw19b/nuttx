@@ -180,6 +180,35 @@ Current scope and limitations:
 * QEMU results do not validate noncoherent caches. Additional cache
   maintenance may be needed for another physical platform.
 
+C library assembly
+==================
+
+``libs/libc/machine/loongarch/gnu`` contains the LP64D setjmp/longjmp and
+signal-return implementations, plus scalar memory and string routines.
+``CONFIG_LOONGARCH_STRING_FUNCTION`` selects memcpy, memmove, memset,
+memcmp, memchr, strlen, strnlen, strcmp, strncmp, strcpy, strchr, strchrnul
+and strrchr. Individual ``CONFIG_LOONGARCH_<FUNCTION>`` options can select
+one replacement without the others. Both Make and CMake honor the common
+``LIBC_BUILD_*`` guards and ``ARCH_LIBCFUN`` symbol naming.
+
+Copy and fill use aligned doubleword operations when possible. Other paths
+use byte accesses, including overlapping memmove and string searches, to
+avoid unaligned faults and accesses past bounds or terminators. They use
+caller-saved integer registers and require neither LSX nor LASX. These are
+functional scalar implementations; no throughput claim is made.
+
+``CONFIG_LOONGARCH_LIBC_TEST`` adds an optional startup regression to the
+QEMU user-test configuration. It invokes actual linked functions through
+volatile pointers to prevent compiler builtin substitution, checks every
+source/destination alignment modulo 16, both overlap directions, short and
+word-boundary lengths, unsigned comparisons and character truncation. It
+also places ranges and NUL terminators immediately before unmapped pages.
+The full function suite and following userspace regression passed on one
+and four QEMU CPUs with software refill and hardware PTW. A Make four-CPU
+image also passed with PTW.
+Success prints ``LoongArch libc assembly tests: PASS``. The subsequent user
+ELF links and exercises the same routines at PLV3.
+
 Interrupts and SMP
 ==================
 

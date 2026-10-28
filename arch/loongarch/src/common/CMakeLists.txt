@@ -96,3 +96,7 @@ endif()
 if(CONFIG_LOONGARCH_VM_TEST)
   target_sources(arch PRIVATE loongarch_vmtest.c)
 endif()
+
+if(CONFIG_LOONGARCH_LIBC_TEST)
+  target_sources(arch PRIVATE loongarch_libctest.c)
+endif()

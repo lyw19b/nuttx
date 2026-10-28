@@ -152,6 +152,8 @@ config LOONGARCH_USER_TEST
 		processes through the NuttX loader. Test syscalls, signals, private
 		data, and user faults without terminating the kernel.
 
+source "libs/libc/machine/loongarch/Kconfig"
+
 source "arch/loongarch/src/ls2k0300/Kconfig"
 
 endif # ARCH_LOONGARCH

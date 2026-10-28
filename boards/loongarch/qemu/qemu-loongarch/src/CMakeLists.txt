@@ -48,7 +48,7 @@ if(CONFIG_LOONGARCH_USER_TEST)
     DEPENDS ${user_src}/user.c ${user_arch}/loongarch_user.ld
             ${user_arch}/crt0.c c mm proxies
             ${CMAKE_BINARY_DIR}/include/nuttx/config.h
-            ${NUTTX_DIR}/libs/libc/machine/loongarch/arch_signal.S
+            ${NUTTX_DIR}/libs/libc/machine/loongarch/gnu/arch_signal.S
             ${NUTTX_DIR}/arch/loongarch/include/syscall.h)
   add_custom_target(loongarch_user_elf DEPENDS ${user_dir}/user.elf)
   add_dependencies(board loongarch_user_elf)

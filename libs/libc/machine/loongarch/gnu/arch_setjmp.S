@@ -1,5 +1,5 @@
 /****************************************************************************
- * libs/libc/machine/loongarch/arch_setjmp.S
+ * libs/libc/machine/loongarch/gnu/arch_setjmp.S
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -94,6 +94,7 @@ _longjmp:
   ld.d    $r29, $a0, 72
   ld.d    $r30, $a0, 80
   ld.d    $r31, $a0, 88
+
   fld.d   $fs0, $a0, 96
   fld.d   $fs1, $a0, 104
   fld.d   $fs2, $a0, 112
@@ -102,7 +103,9 @@ _longjmp:
   fld.d   $fs5, $a0, 136
   fld.d   $fs6, $a0, 144
   fld.d   $fs7, $a0, 152
+
   sltui   $t0, $a1, 1
   add.d   $a0, $a1, $t0
+
   jr      $ra
   .size longjmp, . - longjmp

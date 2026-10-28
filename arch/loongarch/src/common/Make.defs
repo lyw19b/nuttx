@@ -91,3 +91,7 @@ endif
 ifeq ($(CONFIG_LOONGARCH_VM_TEST),y)
 CMN_CSRCS += loongarch_vmtest.c
 endif
+
+ifeq ($(CONFIG_LOONGARCH_LIBC_TEST),y)
+CMN_CSRCS += loongarch_libctest.c
+endif

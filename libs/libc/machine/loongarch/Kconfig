@@ -1,0 +1,99 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menu "LoongArch C library assembly"
+
+config LOONGARCH_STRING_FUNCTION
+	bool "Enable LA64 scalar memory and string functions"
+	default n
+	select LOONGARCH_MEMCPY
+	select LOONGARCH_MEMSET
+	select LOONGARCH_MEMMOVE
+	select LOONGARCH_MEMCMP
+	select LOONGARCH_MEMCHR
+	select LOONGARCH_STRLEN
+	select LOONGARCH_STRNLEN
+	select LOONGARCH_STRCMP
+	select LOONGARCH_STRNCMP
+	select LOONGARCH_STRCPY
+	select LOONGARCH_STRCHR
+	select LOONGARCH_STRCHRNUL
+	select LOONGARCH_STRRCHR
+	---help---
+		Use LP64D assembly without vector instructions or unaligned word
+		accesses. Copy and fill use aligned doublewords where possible;
+		string searches stop at the terminator without page overreads.
+
+config LOONGARCH_MEMCPY
+	bool "LA64 memcpy()"
+	default n
+	select LIBC_ARCH_MEMCPY
+
+config LOONGARCH_MEMSET
+	bool "LA64 memset()"
+	default n
+	select LIBC_ARCH_MEMSET
+
+config LOONGARCH_MEMMOVE
+	bool "LA64 memmove()"
+	default n
+	select LIBC_ARCH_MEMMOVE
+
+config LOONGARCH_MEMCMP
+	bool "LA64 memcmp()"
+	default n
+	select LIBC_ARCH_MEMCMP
+
+config LOONGARCH_MEMCHR
+	bool "LA64 memchr()"
+	default n
+	select LIBC_ARCH_MEMCHR
+
+config LOONGARCH_STRLEN
+	bool "LA64 strlen()"
+	default n
+	select LIBC_ARCH_STRLEN
+
+config LOONGARCH_STRNLEN
+	bool "LA64 strnlen()"
+	default n
+	select LIBC_ARCH_STRNLEN
+
+config LOONGARCH_STRCMP
+	bool "LA64 strcmp()"
+	default n
+	select LIBC_ARCH_STRCMP
+
+config LOONGARCH_STRNCMP
+	bool "LA64 strncmp()"
+	default n
+	select LIBC_ARCH_STRNCMP
+
+config LOONGARCH_STRCPY
+	bool "LA64 strcpy()"
+	default n
+	select LIBC_ARCH_STRCPY
+
+config LOONGARCH_STRCHR
+	bool "LA64 strchr()"
+	default n
+	select LIBC_ARCH_STRCHR
+
+config LOONGARCH_STRCHRNUL
+	bool "LA64 strchrnul()"
+	default n
+	select LIBC_ARCH_STRCHRNUL
+
+config LOONGARCH_STRRCHR
+	bool "LA64 strrchr()"
+	default n
+	select LIBC_ARCH_STRRCHR
+
+config LOONGARCH_LIBC_TEST
+	bool "Test LA64 memory and string assembly at startup"
+	default y if LOONGARCH_USER_TEST
+	depends on LOONGARCH_STRING_FUNCTION && LOONGARCH_USER_TEST
+	---help---
+		Check alignments, overlap, byte ordering and page boundaries in
+		the QEMU userspace regression configuration.
+
+endmenu # LoongArch C library assembly

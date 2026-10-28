@@ -32,5 +32,60 @@ ifeq ($(CONFIG_BUILD_KERNEL),y)
 ASRCS += arch_signal.S
 endif
 
+ifeq ($(CONFIG_LOONGARCH_MEMCPY),y)
+ASRCS += arch_memcpy.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_MEMSET),y)
+ASRCS += arch_memset.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_MEMMOVE),y)
+ASRCS += arch_memmove.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_MEMCMP),y)
+ASRCS += arch_memcmp.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_MEMCHR),y)
+ASRCS += arch_memchr.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_STRLEN),y)
+ASRCS += arch_strlen.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_STRNLEN),y)
+ASRCS += arch_strnlen.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_STRCMP),y)
+ASRCS += arch_strcmp.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_STRNCMP),y)
+ASRCS += arch_strncmp.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_STRCPY),y)
+ASRCS += arch_strcpy.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_STRCHR),y)
+ASRCS += arch_strchr.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_STRCHRNUL),y)
+ASRCS += arch_strchrnul.S
+endif
+
+ifeq ($(CONFIG_LOONGARCH_STRRCHR),y)
+ASRCS += arch_strrchr.S
+endif
+
 DEPPATH += --dep-path machine/loongarch
 VPATH += :machine/loongarch
+
+DEPPATH += --dep-path machine/loongarch/gnu
+VPATH += :machine/loongarch/gnu

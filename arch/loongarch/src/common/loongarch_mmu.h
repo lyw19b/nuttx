@@ -103,6 +103,10 @@ int loongarch_copyfromuser(void *dest, const void *src, size_t size);
 int loongarch_copytouser(void *dest, const void *src, size_t size);
 #endif
 
+#ifdef CONFIG_LOONGARCH_LIBC_TEST
+void loongarch_libc_test(void);
+#endif
+
 #ifdef CONFIG_LOONGARCH_VM_TEST
 void loongarch_vm_test(void);
 #endif
