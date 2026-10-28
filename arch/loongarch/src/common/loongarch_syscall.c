@@ -39,51 +39,7 @@
 #include "signal/signal.h"
 #include "loongarch_internal.h"
 #include "loongarch_mmu.h"
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-#ifdef CONFIG_ARCH_KERNEL_STACK
-/****************************************************************************
- * Name: writable_user_range
- *
- * Description:
- *   Check every page touched by a signal frame before copying it to the
- *   user stack. Reject wraparound, missing mappings and nonwritable pages.
- *   The caller holds the current environment through the running task.
- *
- ****************************************************************************/
-
-static bool writable_user_range(struct tcb_s *tcb, uintptr_t addr,
-                                size_t size)
-{
-  const uint64_t required = LOONGARCH_PTE_USER | LOONGARCH_PTE_VALID |
-                            LOONGARCH_PTE_DIRTY;
-  uintptr_t end;
-  uint64_t *pte;
-
-  if (tcb->addrenv_own == NULL || addr >= LOONGARCH_MMU_VLIMIT ||
-      size > LOONGARCH_MMU_VLIMIT - addr)
-    {
-      return false;
-    }
-
-  end = addr + size;
-  addr &= ~(LOONGARCH_PAGE_SIZE - 1ul);
-
-  for (; addr < end; addr += LOONGARCH_PAGE_SIZE)
-    {
-      pte = loongarch_mmu_pte(tcb->addrenv_own->addrenv.root, addr, false);
-      if (pte == NULL || (*pte & required) != required)
-        {
-          return false;
-        }
-    }
-
-  return true;
-}
-#endif
+#include "loongarch_uaccess.h"
 
 /****************************************************************************
  * Public Functions
@@ -104,13 +60,15 @@ static bool writable_user_range(struct tcb_s *tcb, uintptr_t addr,
 
 void loongarch_syscall_dispatch(uintreg_t *regs)
 {
+#ifndef CONFIG_LOONGARCH_USER_ACCESS
   typedef uintptr_t (*stub_t)(unsigned int, uintptr_t, uintptr_t,
                              uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+  stub_t stub;
+#endif
   struct tcb_s *tcb = this_task();
   uintptr_t number = regs[REG_R4];
   uintreg_t *previous = tcb->xcp.sregs;
   uintptr_t result;
-  stub_t stub;
 
   regs[REG_EPC] += 4;
 
@@ -131,10 +89,14 @@ void loongarch_syscall_dispatch(uintreg_t *regs)
   tcb->flags |= TCB_FLAG_SYSCALL;
   up_irq_enable();
 
+#ifdef CONFIG_LOONGARCH_USER_ACCESS
+  result = loongarch_user_syscall(number, &regs[REG_R5]);
+#else
   number -= CONFIG_SYS_RESERVED;
   stub = (stub_t)g_stublookup[number];
   result = stub(number, regs[REG_R5], regs[REG_R6], regs[REG_R7],
                 regs[REG_R8], regs[REG_R9], regs[REG_R10]);
+#endif
 
   /* Deliver deferred signals before releasing the syscall continuation. */
 
@@ -213,22 +175,13 @@ int loongarch_syscall_handler(int irq, void *context, void *arg)
           uintptr_t usp;
 
           DEBUGASSERT(source != NULL && tcb->xcp.sigregs == NULL);
-          usp = STACKFRAME_ALIGN_DOWN(source[REG_SP] - sizeof(siginfo_t));
-          if (!writable_user_range(tcb, usp, sizeof(siginfo_t)))
-            {
-              regs[REG_EPC] = (uintptr_t)_exit;
-              regs[REG_SP] = (uintptr_t)regs;
-              regs[REG_R4] = SIGSEGV;
-              regs[REG_INT_CTX] = CSR_PRMD_PIE;
-              break;
-            }
+          usp = regs[REG_R7];
 
           /* Copy only user register state into the new PLV3 frame. Keep the
            * kernel continuation above it on the trusted stack so syscalls
            * issued by the handler cannot overwrite that continuation.
            */
 
-          memcpy((void *)usp, (void *)regs[REG_R7], sizeof(siginfo_t));
           memcpy(userregs, source, XCPTCONTEXT_SIZE);
           userregs[REG_EPC] = (uintptr_t)ARCH_DATA_RESERVE->ar_sigtramp;
           userregs[REG_INT_CTX] = CSR_PRMD_PIE | PLV_USER;

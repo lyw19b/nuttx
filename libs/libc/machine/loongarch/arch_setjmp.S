@@ -51,6 +51,7 @@ _setjmp:
   st.d    $r29, $a0, 72
   st.d    $r30, $a0, 80
   st.d    $r31, $a0, 88
+
   fst.d   $fs0, $a0, 96
   fst.d   $fs1, $a0, 104
   fst.d   $fs2, $a0, 112
@@ -59,6 +60,7 @@ _setjmp:
   fst.d   $fs5, $a0, 136
   fst.d   $fs6, $a0, 144
   fst.d   $fs7, $a0, 152
+
   move    $a0, $zero
   jr      $ra
   .size setjmp, . - setjmp

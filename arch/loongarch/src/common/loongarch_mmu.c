@@ -382,7 +382,8 @@ int loongarch_mmu_maproot(uintptr_t root, uintptr_t vaddr,
                           uintptr_t paddr, size_t size, uint64_t flags)
 {
   const uint64_t allowed = LOONGARCH_MMU_WRITE | LOONGARCH_PTE_USER |
-                          LOONGARCH_PTE_NOREAD | LOONGARCH_PTE_NOEXEC;
+                          LOONGARCH_PTE_NOREAD | LOONGARCH_PTE_NOEXEC |
+                          LOONGARCH_PTE_LAZY | LOONGARCH_PTE_COW;
   uintptr_t addr;
   uint64_t *pte;
   int ret;
@@ -391,7 +392,13 @@ int loongarch_mmu_maproot(uintptr_t root, uintptr_t vaddr,
       (paddr & (LOONGARCH_PAGE_SIZE - 1)) != 0 ||
       paddr > LOONGARCH_PADDR_MASK ||
       size - 1 > LOONGARCH_PADDR_MASK - paddr ||
-      (flags & ~allowed) != 0 || !(flags & LOONGARCH_PTE_VALID))
+      (flags & ~allowed) != 0 ||
+      !(flags & (LOONGARCH_PTE_VALID | LOONGARCH_PTE_LAZY)) ||
+      ((flags & LOONGARCH_PTE_LAZY) &&
+       (paddr != 0 || (flags & (LOONGARCH_PTE_PRESENT | LOONGARCH_PTE_VALID |
+                               LOONGARCH_PTE_DIRTY | LOONGARCH_PTE_COW)))) ||
+      ((flags & LOONGARCH_PTE_COW) &&
+       (flags & (LOONGARCH_PTE_DIRTY | LOONGARCH_PTE_WRITE))))
     {
       return -EINVAL;
     }
@@ -424,8 +431,9 @@ int loongarch_mmu_maproot(uintptr_t root, uintptr_t vaddr,
           goto rollback;
         }
 
-      __atomic_store_n(pte, (paddr + addr - vaddr) | flags,
-                       __ATOMIC_RELEASE);
+      __atomic_store_n(pte,
+                       flags & LOONGARCH_PTE_LAZY ? flags :
+                       (paddr + addr - vaddr) | flags, __ATOMIC_RELEASE);
     }
 
   loongarch_tlb_sync();
@@ -624,7 +632,11 @@ void loongarch_mmu_freetable(uintptr_t root, unsigned int level)
 
           if (level == 3)
             {
+#ifdef CONFIG_ARCH_ADDRENV
+              loongarch_page_put(paddr);
+#else
               mm_pgfree(paddr, 1);
+#endif
             }
           else
             {

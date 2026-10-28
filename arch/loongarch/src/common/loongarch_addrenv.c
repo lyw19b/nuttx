@@ -41,6 +41,7 @@
 #include "sched/sched.h"
 #include "loongarch_internal.h"
 #include "loongarch_mmu.h"
+#include "loongarch_uaccess.h"
 
 /* Keep all configured user regions page aligned, ordered and below the
  * canonical low-address limit. The data region includes its reserved page.
@@ -60,6 +61,14 @@ static_assert(ARCH_TEXT_VEND <= CONFIG_ARCH_DATA_VBASE &&
               ARCH_HEAP_VEND <= LOONGARCH_MMU_VLIMIT,
               "User regions must not overlap or exceed the VA limit");
 
+#ifdef CONFIG_LOONGARCH_DEMAND_PAGING
+static_assert(CONFIG_LOONGARCH_INITIAL_HEAP_SIZE != 0 &&
+              CONFIG_LOONGARCH_INITIAL_HEAP_SIZE <= ARCH_HEAP_SIZE &&
+              (CONFIG_LOONGARCH_INITIAL_HEAP_SIZE &
+               (LOONGARCH_PAGE_SIZE - 1)) == 0,
+              "Initial user heap must fit and be page aligned");
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -70,9 +79,39 @@ static_assert(ARCH_TEXT_VEND <= CONFIG_ARCH_DATA_VBASE &&
 
 static mutex_t g_env_lock = NXMUTEX_INITIALIZER;
 
+/* Backing-page references are distinct from page-table ownership. Atomic
+ * counters allow inactive environments to be destroyed by the worker while
+ * another task creates an environment. The zero page is never released.
+ */
+
+static uint32_t g_page_refs[CONFIG_LOONGARCH_PAGE_POOL_SIZE /
+                            LOONGARCH_PAGE_SIZE];
+static uint8_t g_zero_page[LOONGARCH_PAGE_SIZE]
+  aligned_data(LOONGARCH_PAGE_SIZE);
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: page_index
+ *
+ * Description:
+ *   Convert an owned backing page to its reference-counter index. Page-table
+ *   allocations use the same pool but are never passed to this interface.
+ *
+ ****************************************************************************/
+
+static size_t page_index(uintptr_t page)
+{
+  uintptr_t base = loongarch_physaddr(CONFIG_RAM_END &
+                                     ~(LOONGARCH_PAGE_SIZE - 1ul)) -
+                   CONFIG_LOONGARCH_PAGE_POOL_SIZE;
+
+  ASSERT(page >= base && page - base < CONFIG_LOONGARCH_PAGE_POOL_SIZE);
+  ASSERT((page & (LOONGARCH_PAGE_SIZE - 1)) == 0);
+  return (page - base) >> LOONGARCH_PAGE_SHIFT;
+}
 
 /****************************************************************************
  * Name: allocate_region
@@ -94,21 +133,18 @@ static int allocate_region(arch_addrenv_t *env, uintptr_t start,
 
   for (addr = start; addr < start + size; addr += LOONGARCH_PAGE_SIZE)
     {
-      paddr = mm_pgalloc(1);
+      paddr = loongarch_page_alloc();
       if (paddr == 0)
         {
           ret = -ENOMEM;
           break;
         }
 
-      /* Clear through the kernel mapping before exposing the page to PLV3. */
-
-      memset(loongarch_virtaddr(paddr), 0, LOONGARCH_PAGE_SIZE);
       ret = loongarch_mmu_maproot(env->root, addr, paddr,
                                   LOONGARCH_PAGE_SIZE, flags);
       if (ret < 0)
         {
-          mm_pgfree(paddr, 1);
+          loongarch_page_put(paddr);
           break;
         }
     }
@@ -122,12 +158,32 @@ static int allocate_region(arch_addrenv_t *env, uintptr_t start,
           addr -= LOONGARCH_PAGE_SIZE;
           paddr = up_addrenv_find_page(env, addr);
           loongarch_mmu_unmaproot(env->root, addr, LOONGARCH_PAGE_SIZE);
-          mm_pgfree(paddr, 1);
+          loongarch_page_put(paddr);
         }
     }
 
   return ret;
 }
+
+/****************************************************************************
+ * Name: reserve_region
+ *
+ * Description:
+ *   Install nonpresent demand-zero leaves without allocating backing pages.
+ *   Hardware PTW must see P clear, and software refill must see V clear.
+ *   Roll back only leaves installed by this call on allocation failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_LOONGARCH_DEMAND_PAGING
+static int reserve_region(arch_addrenv_t *env, uintptr_t start, size_t size)
+{
+  return loongarch_mmu_maproot(env->root, start, 0, size,
+                               LOONGARCH_PTE_LAZY | LOONGARCH_PTE_USER |
+                               LOONGARCH_PTE_WRITE | LOONGARCH_PTE_CACHE |
+                               LOONGARCH_PTE_NOEXEC);
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -162,6 +218,12 @@ int up_addrenv_create(size_t textsize, size_t datasize, size_t heapsize,
   env->datavbase = CONFIG_ARCH_DATA_VBASE + ARCH_DATA_RESERVE_SIZE;
   env->heapvbase = CONFIG_ARCH_HEAP_VBASE;
   env->heapsize = MM_PGALIGNUP(heapsize);
+#ifdef CONFIG_LOONGARCH_DEMAND_PAGING
+  if (env->heapsize > CONFIG_LOONGARCH_INITIAL_HEAP_SIZE)
+    {
+      env->heapsize = CONFIG_LOONGARCH_INITIAL_HEAP_SIZE;
+    }
+#endif
 
   /* Keep mutable ASID contexts separate from the const descriptor passed
    * to up_addrenv_select. Descriptor clones must share this storage, just
@@ -455,6 +517,8 @@ int up_addrenv_mprot(arch_addrenv_t *env, uintptr_t addr,
 {
   uintptr_t end;
   uintptr_t va;
+  uintptr_t page;
+  uint64_t value;
   uint64_t flags = LOONGARCH_MMU_READ | LOONGARCH_PTE_USER;
   uint64_t *pte;
   int ret;
@@ -505,8 +569,25 @@ int up_addrenv_mprot(arch_addrenv_t *env, uintptr_t addr,
   for (va = addr; va < end; va += LOONGARCH_PAGE_SIZE)
     {
       pte = loongarch_mmu_pte(env->root, va, false);
-      __atomic_store_n(pte, (*pte & LOONGARCH_PTE_PADDR_MASK) | flags,
-                       __ATOMIC_RELEASE);
+      value = flags;
+      page = *pte & LOONGARCH_PTE_PADDR_MASK;
+
+      if (*pte & LOONGARCH_PTE_LAZY)
+        {
+          value &= ~(LOONGARCH_PTE_VALID | LOONGARCH_PTE_PRESENT |
+                     LOONGARCH_PTE_DIRTY);
+          value |= LOONGARCH_PTE_LAZY;
+        }
+      else if ((prot & PROT_WRITE) &&
+               (page == loongarch_physaddr((uintptr_t)g_zero_page) ||
+                __atomic_load_n(&g_page_refs[page_index(page)],
+                                __ATOMIC_ACQUIRE) > 1))
+        {
+          value &= ~(LOONGARCH_PTE_DIRTY | LOONGARCH_PTE_WRITE);
+          value |= LOONGARCH_PTE_COW;
+        }
+
+      __atomic_store_n(pte, page | value, __ATOMIC_RELEASE);
     }
 
   /* No CPU may retain permissions that were removed by this update. */
@@ -560,8 +641,12 @@ uintptr_t pgalloc(uintptr_t brkaddr, unsigned int npages)
       return 0;
     }
 
+#ifdef CONFIG_LOONGARCH_DEMAND_PAGING
+  ret = reserve_region(env, brkaddr, size);
+#else
   ret = allocate_region(env, brkaddr, size,
                         LOONGARCH_MMU_WRITE | LOONGARCH_PTE_USER);
+#endif
   nxmutex_unlock(&g_env_lock);
   return ret == OK ? brkaddr : 0;
 }
@@ -606,9 +691,484 @@ int up_addrenv_kstackalloc(struct tcb_s *tcb)
 
 int up_addrenv_kstackfree(struct tcb_s *tcb)
 {
+#ifdef CONFIG_LOONGARCH_USER_ACCESS
+  loongarch_user_cleanup(tcb);
+#endif
+
   kmm_free(tcb->xcp.kstack);
   tcb->xcp.kstack = NULL;
   return OK;
 }
 
 #endif /* CONFIG_ARCH_KERNEL_STACK */
+
+/****************************************************************************
+ * Name: loongarch_page_alloc / loongarch_page_put
+ *
+ * Description:
+ *   Allocate a zeroed user backing page with one reference, or release a
+ *   reference after all stale translations have been invalidated. Physical
+ *   address zero denotes an unpopulated leaf; the immutable zero page has
+ *   permanent storage and does not participate in reference counting.
+ *
+ ****************************************************************************/
+
+uintptr_t loongarch_page_alloc(void)
+{
+  uintptr_t page = mm_pgalloc(1);
+
+  if (page != 0)
+    {
+      ASSERT(__atomic_load_n(&g_page_refs[page_index(page)],
+                             __ATOMIC_RELAXED) == 0);
+      __atomic_store_n(&g_page_refs[page_index(page)], 1, __ATOMIC_RELEASE);
+      memset(loongarch_virtaddr(page), 0, LOONGARCH_PAGE_SIZE);
+    }
+
+  return page;
+}
+
+void loongarch_page_put(uintptr_t page)
+{
+  uint32_t refs;
+
+  if (page == 0 || page == loongarch_physaddr((uintptr_t)g_zero_page))
+    {
+      return;
+    }
+
+  refs = __atomic_fetch_sub(&g_page_refs[page_index(page)], 1,
+                            __ATOMIC_ACQ_REL);
+  ASSERT(refs != 0);
+  if (refs == 1)
+    {
+      mm_pgfree(page, 1);
+    }
+}
+
+/****************************************************************************
+ * Name: resolve_page
+ *
+ * Description:
+ *   Resolve a demand-zero or COW leaf under g_env_lock. Reject accesses
+ *   beyond the leaf's logical permissions. COW clears both D and W so a
+ *   hardware walker cannot silently make a shared page writable. Publish
+ *   the replacement and finish remote invalidation before dropping the old
+ *   backing-page reference.
+ *
+ ****************************************************************************/
+
+static int resolve_page(arch_addrenv_t *env, uintptr_t addr, int prot)
+{
+  uintptr_t zero = loongarch_physaddr((uintptr_t)g_zero_page);
+  uintptr_t oldpage;
+  uintptr_t page;
+  uint64_t value;
+  uint64_t *pte;
+
+  if (addr >= LOONGARCH_MMU_VLIMIT)
+    {
+      return -EFAULT;
+    }
+
+  pte = loongarch_mmu_pte(env->root, addr, false);
+  if (pte == NULL)
+    {
+      return -EFAULT;
+    }
+
+  value = __atomic_load_n(pte, __ATOMIC_ACQUIRE);
+  if ((value & LOONGARCH_PTE_USER) != LOONGARCH_PTE_USER ||
+      !(value & (LOONGARCH_PTE_VALID | LOONGARCH_PTE_LAZY)) ||
+      ((prot & PROT_READ) && (value & LOONGARCH_PTE_NOREAD)) ||
+      ((prot & PROT_EXEC) && (value & LOONGARCH_PTE_NOEXEC)) ||
+      ((prot & PROT_WRITE) &&
+       !(value & (LOONGARCH_PTE_WRITE | LOONGARCH_PTE_COW))))
+    {
+      return -EFAULT;
+    }
+
+  oldpage = value & LOONGARCH_PTE_PADDR_MASK;
+  if (value & LOONGARCH_PTE_LAZY)
+    {
+      value &= ~LOONGARCH_PTE_LAZY;
+      value |= LOONGARCH_PTE_VALID | LOONGARCH_PTE_PRESENT;
+      if (!(prot & PROT_WRITE))
+        {
+          if (value & LOONGARCH_PTE_WRITE)
+            {
+              value |= LOONGARCH_PTE_COW;
+            }
+
+          value &= ~(LOONGARCH_PTE_WRITE | LOONGARCH_PTE_DIRTY);
+          page = zero;
+          goto install;
+        }
+    }
+  else if (!(prot & PROT_WRITE) || !(value & LOONGARCH_PTE_COW))
+    {
+      return OK;
+    }
+
+  /* A sole owner can remove write protection without copying the page. */
+
+  page = oldpage;
+  if (oldpage == 0 || oldpage == zero ||
+      __atomic_load_n(&g_page_refs[page_index(oldpage)],
+                      __ATOMIC_ACQUIRE) != 1)
+    {
+      page = loongarch_page_alloc();
+      if (page == 0)
+        {
+          return -ENOMEM;
+        }
+
+      if (oldpage != 0 && oldpage != zero)
+        {
+          memcpy(loongarch_virtaddr(page), loongarch_virtaddr(oldpage),
+                 LOONGARCH_PAGE_SIZE);
+        }
+    }
+
+  value &= ~LOONGARCH_PTE_COW;
+  value |= LOONGARCH_PTE_DIRTY | LOONGARCH_PTE_WRITE;
+
+install:
+  value = (value & ~LOONGARCH_PTE_PADDR_MASK) | page;
+  __atomic_store_n(pte, value, __ATOMIC_RELEASE);
+  loongarch_tlb_sync();
+  if (oldpage != page)
+    {
+      loongarch_page_put(oldpage);
+    }
+
+  return OK;
+}
+
+/****************************************************************************
+ * Name: loongarch_vm_fault
+ *
+ * Description:
+ *   Materialize one permitted user page from thread context. The caller
+ *   keeps the environment alive and enables interrupts before entering.
+ *   Concurrent faults serialize and recheck the leaf before allocating.
+ *
+ ****************************************************************************/
+
+int loongarch_vm_fault(arch_addrenv_t *env, uintptr_t addr, int prot)
+{
+  int ret = nxmutex_lock(&g_env_lock);
+
+  if (ret >= 0)
+    {
+      ret = resolve_page(env, addr, prot);
+      nxmutex_unlock(&g_env_lock);
+    }
+
+  return ret;
+}
+
+/****************************************************************************
+ * Name: user_transfer
+ *
+ * Description:
+ *   Validate and materialize every page in a user range, then optionally
+ *   copy through kernel physical aliases. Hold the VM mutex through both
+ *   phases to exclude permission changes and COW replacement. Never follow
+ *   a user pointer directly in kernel mode. A zero-length range is valid;
+ *   nonempty null, wrapped and kernel-window ranges fail with EFAULT.
+ *
+ ****************************************************************************/
+
+static int user_transfer(uintptr_t user, void *kernel, size_t size, int prot)
+{
+  struct tcb_s *tcb = this_task();
+  arch_addrenv_t *env;
+  uintptr_t addr;
+  uintptr_t end;
+  size_t offset;
+  size_t chunk;
+  uint64_t *pte;
+  void *alias;
+  int ret;
+
+  if (size == 0)
+    {
+      return OK;
+    }
+
+  if (user == 0 || user >= LOONGARCH_MMU_VLIMIT ||
+      size > LOONGARCH_MMU_VLIMIT - user || tcb->addrenv_curr == NULL)
+    {
+      return -EFAULT;
+    }
+
+  env = &tcb->addrenv_curr->addrenv;
+  end = user + size;
+  ret = nxmutex_lock(&g_env_lock);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  for (addr = user & ~(LOONGARCH_PAGE_SIZE - 1ul); addr < end;
+       addr += LOONGARCH_PAGE_SIZE)
+    {
+      ret = resolve_page(env, addr, prot);
+      if (ret < 0)
+        {
+          goto out;
+        }
+    }
+
+  while (kernel != NULL && size != 0)
+    {
+      offset = user & (LOONGARCH_PAGE_SIZE - 1);
+      chunk = LOONGARCH_PAGE_SIZE - offset;
+      if (chunk > size)
+        {
+          chunk = size;
+        }
+
+      pte = loongarch_mmu_pte(env->root, user, false);
+      alias = (uint8_t *)loongarch_virtaddr(*pte & LOONGARCH_PTE_PADDR_MASK);
+      alias = (uint8_t *)alias + offset;
+      if (prot & PROT_WRITE)
+        {
+          memcpy(alias, kernel, chunk);
+        }
+      else
+        {
+          memcpy(kernel, alias, chunk);
+        }
+
+      user += chunk;
+      kernel = (uint8_t *)kernel + chunk;
+      size -= chunk;
+    }
+
+out:
+  nxmutex_unlock(&g_env_lock);
+  return ret;
+}
+
+/****************************************************************************
+ * Name: loongarch_user_cmpxchg
+ *
+ * Description:
+ *   Update an aligned user counter atomically through its physical alias.
+ *   Hold the VM lock across COW resolution and compare/exchange so the
+ *   operation cannot target an obsolete backing page. Return EAGAIN when
+ *   the counter differs from the expected value.
+ *
+ ****************************************************************************/
+
+int loongarch_user_cmpxchg(uintptr_t addr, int32_t expected, int32_t desired)
+{
+  struct tcb_s *tcb = this_task();
+  arch_addrenv_t *env;
+  int32_t *alias;
+  uint64_t *pte;
+  int ret;
+
+  if (addr == 0 || addr >= LOONGARCH_MMU_VLIMIT ||
+      (addr & (sizeof(int32_t) - 1)) != 0 || tcb->addrenv_curr == NULL)
+    {
+      return -EFAULT;
+    }
+
+  env = &tcb->addrenv_curr->addrenv;
+  ret = nxmutex_lock(&g_env_lock);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  ret = resolve_page(env, addr, PROT_READ | PROT_WRITE);
+  if (ret == OK)
+    {
+      pte = loongarch_mmu_pte(env->root, addr, false);
+      alias = (int32_t *)((uint8_t *)loongarch_virtaddr(*pte &
+                                      LOONGARCH_PTE_PADDR_MASK) +
+                         (addr & (LOONGARCH_PAGE_SIZE - 1)));
+      if (!__atomic_compare_exchange_n(alias, &expected, desired, false,
+                                        __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+        {
+          ret = -EAGAIN;
+        }
+    }
+
+  nxmutex_unlock(&g_env_lock);
+  return ret;
+}
+
+/****************************************************************************
+ * Name: loongarch_user_access
+ *
+ * Description:
+ *   Check logical permissions and make a user range resident. This is a
+ *   permission check, not a pin: callers must use the copy helpers when a
+ *   later page-table update could otherwise race the actual transfer.
+ *
+ ****************************************************************************/
+
+int loongarch_user_access(uintptr_t addr, size_t size, int prot)
+{
+  return user_transfer(addr, NULL, size, prot);
+}
+
+/****************************************************************************
+ * Name: loongarch_copyfromuser / loongarch_copytouser
+ *
+ * Description:
+ *   Copy a complete checked user range through its physical aliases. Return
+ *   OK or a negative errno; invalid ranges never cause a kernel page fault.
+ *
+ ****************************************************************************/
+
+int loongarch_copyfromuser(void *dest, const void *src, size_t size)
+{
+  return user_transfer((uintptr_t)src, dest, size, PROT_READ);
+}
+
+int loongarch_copytouser(void *dest, const void *src, size_t size)
+{
+  return user_transfer((uintptr_t)dest, (void *)src, size, PROT_WRITE);
+}
+
+/****************************************************************************
+ * Name: cow_table
+ *
+ * Description:
+ *   Duplicate occupied leaves into a private root while holding g_env_lock.
+ *   Share backing pages with counted references. Write-protect the parent
+ *   before publishing the child; maproot completes synchronous shootdown.
+ *   Lazy leaves retain their reservation without acquiring a page reference.
+ *
+ ****************************************************************************/
+
+static int cow_table(uintptr_t root, arch_addrenv_t *dest,
+                     unsigned int level, uintptr_t base)
+{
+  uint64_t *table = loongarch_virtaddr(root);
+  unsigned int shift = 39 - level * 9;
+  unsigned int i;
+  uintptr_t addr;
+  uintptr_t page;
+  uint64_t value;
+  uint32_t refs;
+  int ret;
+
+  for (i = 0; i < LOONGARCH_PT_ENTRIES; i++)
+    {
+      value = __atomic_load_n(&table[i], __ATOMIC_ACQUIRE);
+      addr = base | ((uintptr_t)i << shift);
+      if (level != 3)
+        {
+          /* Empty directories lead to immutable empty tables. Walking
+           * them is unnecessary: only configured user regions can own
+           * leaves in this port.
+           */
+
+          if (addr >= ARCH_HEAP_VEND ||
+              addr + (1ul << shift) <= CONFIG_ARCH_TEXT_VBASE)
+            {
+              continue;
+            }
+
+          ret = cow_table(value & LOONGARCH_PTE_PADDR_MASK,
+                          dest, level + 1, addr);
+          if (ret < 0)
+            {
+              return ret;
+            }
+
+          continue;
+        }
+
+      if (value == 0)
+        {
+          continue;
+        }
+
+      page = value & LOONGARCH_PTE_PADDR_MASK;
+      if (value & LOONGARCH_PTE_WRITE && !(value & LOONGARCH_PTE_LAZY))
+        {
+          value &= ~(LOONGARCH_PTE_WRITE | LOONGARCH_PTE_DIRTY);
+          value |= LOONGARCH_PTE_COW;
+          __atomic_store_n(&table[i], value, __ATOMIC_RELEASE);
+        }
+
+      if (page != 0 && page != loongarch_physaddr((uintptr_t)g_zero_page))
+        {
+          refs = __atomic_fetch_add(&g_page_refs[page_index(page)], 1,
+                                    __ATOMIC_ACQ_REL);
+          ASSERT(refs != 0 && refs != UINT32_MAX);
+        }
+
+      ret = loongarch_mmu_maproot(dest->root, addr, page,
+                                  LOONGARCH_PAGE_SIZE,
+                                  value & ~LOONGARCH_PTE_PADDR_MASK);
+      if (ret < 0)
+        {
+          loongarch_page_put(page);
+          return ret;
+        }
+    }
+
+  return OK;
+}
+
+/****************************************************************************
+ * Name: loongarch_addrenv_cow
+ *
+ * Description:
+ *   Build an independently owned address environment that initially shares
+ *   the source's backing pages. This differs from up_addrenv_clone, which
+ *   transfers a descriptor. The caller keeps src alive and must quiesce its
+ *   writers if it requires an atomic snapshot of the entire address space.
+ *   On failure destroy the partial child; parent COW leaves remain valid
+ *   and recover write access on their next write. This does not create a
+ *   task group or implement the POSIX fork process interface.
+ *
+ ****************************************************************************/
+
+int loongarch_addrenv_cow(arch_addrenv_t *src, arch_addrenv_t *dest)
+{
+  int ret;
+
+  if (src == dest || src->root == 0)
+    {
+      return -EINVAL;
+    }
+
+  memset(dest, 0, sizeof(*dest));
+  ret = nxmutex_lock(&g_env_lock);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  *dest = *src;
+  dest->asid = kmm_zalloc(CONFIG_SMP_NCPUS * sizeof(*dest->asid));
+  dest->root = loongarch_mmu_newroot();
+  if (dest->asid == NULL || dest->root == 0)
+    {
+      ret = -ENOMEM;
+    }
+  else
+    {
+      ret = cow_table(src->root, dest, 0, 0);
+    }
+
+  /* A failed child mapping may have followed a parent PTE downgrade. */
+
+  loongarch_tlb_sync();
+  if (ret < 0)
+    {
+      up_addrenv_destroy(dest);
+    }
+
+  nxmutex_unlock(&g_env_lock);
+  return ret;
+}

@@ -50,6 +50,8 @@
 #define LOONGARCH_PTE_GLOBAL     (1ul << 6)
 #define LOONGARCH_PTE_PRESENT    (1ul << 7)
 #define LOONGARCH_PTE_WRITE      (1ul << 8)
+#define LOONGARCH_PTE_LAZY       (1ul << 9)
+#define LOONGARCH_PTE_COW        (1ul << 10)
 #define LOONGARCH_PTE_NOREAD     (1ul << 61)
 #define LOONGARCH_PTE_NOEXEC     (1ul << 62)
 #define LOONGARCH_PTE_PADDR_MASK 0x0000fffffffff000ul
@@ -90,6 +92,19 @@ void loongarch_tlb_sync(void);
 #ifdef CONFIG_ARCH_ADDRENV
 void loongarch_asid_initialize(void);
 void loongarch_asid_select(const arch_addrenv_t *env);
+uintptr_t loongarch_page_alloc(void);
+void loongarch_page_put(uintptr_t page);
+int loongarch_vm_fault(arch_addrenv_t *env, uintptr_t addr, int prot);
+int loongarch_addrenv_cow(arch_addrenv_t *src, arch_addrenv_t *dest);
+int loongarch_user_cmpxchg(uintptr_t addr, int32_t expected,
+                            int32_t desired);
+int loongarch_user_access(uintptr_t addr, size_t size, int prot);
+int loongarch_copyfromuser(void *dest, const void *src, size_t size);
+int loongarch_copytouser(void *dest, const void *src, size_t size);
+#endif
+
+#ifdef CONFIG_LOONGARCH_VM_TEST
+void loongarch_vm_test(void);
 #endif
 
 #ifdef CONFIG_LOONGARCH_ASID_TEST

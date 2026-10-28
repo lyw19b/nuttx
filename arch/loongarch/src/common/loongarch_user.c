@@ -27,6 +27,8 @@
 #include <nuttx/config.h>
 
 #include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #include <syscall.h>
 #include <nuttx/arch.h>
 #include <nuttx/sched.h>
@@ -34,6 +36,7 @@
 
 #include "sched/sched.h"
 #include "loongarch_internal.h"
+#include "loongarch_mmu.h"
 
 /****************************************************************************
  * Private Functions
@@ -126,6 +129,26 @@ void up_pthread_start(pthread_trampoline_t startup,
 void up_signal_dispatch(_sa_sigaction_t handler, int signo,
                         siginfo_t *info, void *context)
 {
+  struct tcb_s *tcb = this_task();
+  uintreg_t *source = tcb->xcp.sregs != NULL ?
+                      tcb->xcp.sregs : tcb->xcp.saved_regs;
+  uintptr_t usp;
+
+  /* Materialize and copy the signal frame while allocation may still
+   * block. The reserved trap below runs on the interrupt stack.
+   */
+
+  if (source == NULL || source[REG_SP] < sizeof(siginfo_t))
+    {
+      _exit(SIGSEGV);
+    }
+
+  usp = STACKFRAME_ALIGN_DOWN(source[REG_SP] - sizeof(siginfo_t));
+  if (loongarch_copytouser((void *)usp, info, sizeof(*info)) < 0)
+    {
+      _exit(SIGSEGV);
+    }
+
   sys_call4(SYS_signal_handler, (uintptr_t)handler, signo,
-            (uintptr_t)info, (uintptr_t)context);
+            usp, (uintptr_t)context);
 }

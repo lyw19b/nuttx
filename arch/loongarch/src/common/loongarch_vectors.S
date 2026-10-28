@@ -206,6 +206,21 @@ loongarch_exception_entry:
   movcf2gr $t0, $fcc7
   st.b    $t0, $sp, (REGSIZE * REG_FCC_NDX + 7)
 #ifdef CONFIG_BUILD_KERNEL
+  /* Page faults may allocate and sleep. Handle them on the thread stack
+   * before entering IRQ context, then retry the original instruction.
+   */
+
+  li.w    $t0, EXCCODE_TLBL
+  bltu    $a0, $t0, .Lsyscall
+  li.w    $t0, EXCCODE_TLBM
+  bltu    $t0, $a0, .Lsyscall
+  move    $a1, $sp
+  bl      loongarch_pagefault
+  bnez    $a0, .Lirq
+  move    $a0, $sp
+  b       loongarch_exception_return
+.Lsyscall:
+
   /* Blocking system calls run on this thread's kernel stack, outside
    * interrupt context. Reserved operations go through the IRQ dispatcher.
    */

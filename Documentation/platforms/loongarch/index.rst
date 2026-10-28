@@ -70,6 +70,32 @@ translations belonging to inactive environments. Final environment
 destruction releases its ASID context storage after all CPU references are
 dropped; retired identifiers remain unavailable until local rollover.
 
+Demand-zero and copy-on-write
+=============================
+
+``CONFIG_LOONGARCH_DEMAND_PAGING`` reserves heap extensions without backing
+storage. A read fault maps an immutable zero page; a write fault allocates
+and clears a private page. ``CONFIG_LOONGARCH_INITIAL_HEAP_SIZE`` keeps a
+page-aligned bootstrap heap resident (64 KiB by default), because the ELF
+loader initializes its allocator and initial stack with interrupts masked.
+Text and data loading remain eager. This is anonymous demand-zero paging;
+file-backed faults, swapping and reclaim policies are not implemented.
+
+``loongarch_addrenv_cow`` creates an independently owned root with counted
+backing-page references. Writable shared leaves clear both D and W, making
+software refill and hardware PTW trap on writes. The fault path copies a
+shared page, or restores write permission when only one owner remains.
+Permission updates finish synchronous SMP shootdown before releasing old
+storage. Allocation failure leaves the original mapping usable. Callers
+must quiesce source writers when they need an atomic whole-process snapshot.
+This interface does not create a task group or implement POSIX ``fork``;
+NuttX's ``up_addrenv_clone`` keeps its existing descriptor-sharing semantics.
+
+Page exceptions run on the interrupted thread's kernel stack, before IRQ
+context is entered. Allocation requires interrupts enabled; faults in IRQ
+handlers or IRQ-masked kernel code remain fatal. User permission violations
+continue through the normal process-termination path.
+
 User processes and system calls
 ===============================
 
@@ -130,13 +156,25 @@ Current scope and limitations:
 * A user CPU fault terminates that process through ``_exit(SIGSEGV)`` on
   its kernel stack. The test checks the resulting exit status; this is not
   POSIX signal-termination status or recoverable fault-signal delivery.
-* Syscall arguments follow the existing NuttX stub ABI. This port does not
-  add general copy-in/copy-out validation or fault recovery for arbitrary
-  user pointers passed to kernel services. Direct PLV3 memory permissions
-  are tested, but the syscall interface is not a hardened security boundary
-  against malicious pointer arguments.
-* Demand paging, copy-on-write, kernel-build process ``fork``, shared-memory
-  page ownership and CPU hotplug are not implemented. Constructor startup
+* ``CONFIG_LOONGARCH_USER_ACCESS`` defaults to strict syscall policies.
+  Supported buffers, fixed structures, strings and exec vectors are copied
+  into bounded kernel-owned storage before dispatch. Output uses checked
+  physical aliases and resolves COW while holding the VM mutex. Unknown
+  interfaces return ENOSYS; there is no unchecked fallback in strict mode.
+  ``CONFIG_LOONGARCH_USER_COPY_MAX`` bounds staging bytes (64 KiB by default),
+  paths use PATH_MAX, and exec vectors are limited to 32 strings each.
+* Unadapted interfaces include device ioctls, asynchronous I/O, retained
+  buffers, general nested objects, user-supplied pthread stacks and blocking
+  user synchronization queues. Uncontended semaphore counter operations
+  never follow user wait-list pointers; contention requiring such queues
+  returns ENOSYS. Disabling strict checking restores the old stub ABI.
+* This architecture-only validation does not redesign NuttX's user heap,
+  TLS or kernel services that internally use user-resident allocator and
+  synchronization metadata. It is not a complete malicious-process security
+  boundary. Staging storage is attached to the architecture thread context
+  and released on return or kernel-stack destruction, including exec/exit.
+* Kernel-build process ``fork``, shared-memory page ownership and CPU hotplug
+  are not implemented. Constructor startup
   hooks are present; C++ application and compiler TLS support have not been
   validated in the user-process configuration.
 * QEMU results do not validate noncoherent caches. Additional cache
@@ -277,8 +315,20 @@ The supervisor installs the embedded executable in tmpfs and checks:
   the current image and runs the new executable successfully.
 * Direct kernel reads/writes, text writes, data execution and an exception
   with SP zero terminate the offending process while the supervisor lives.
-* Twenty-four further process lifetimes allocate more total heap storage
-  than fits in the page pool, exercising release and reuse of old roots.
+* Invalid syscall buffers, wrapping ranges, kernel pathnames, nested exec
+  pointers and nonexecutable pthread callbacks are rejected. An unadapted
+  ioctl returns ENOSYS without reaching the driver.
+* Heap allocations grow beyond the resident bootstrap. Explicit reservations
+  verify zero reads, private writes and syscall output into untouched pages.
+* Twenty-four further process lifetimes exercise release and reuse of roots.
+  With demand paging disabled their total eager heaps exceed the page pool.
+
+``CONFIG_LOONGARCH_VM_TEST`` additionally checks actual demand-zero and COW
+faults, parent/child isolation, sole-owner reuse, copyout into COW pages,
+read-only and cross-page range rejection, and allocation failure with an
+exhausted page pool. Sixty-four snapshot/copyout/destruction cycles exercise
+backing-page ownership. It reports
+``LoongArch demand-zero/COW/user-copy tests: PASS``.
 
 Success is reported as
 ``LoongArch userspace isolation/syscall tests: PASS``.
@@ -312,6 +362,13 @@ images passed the complete user-process regression, including migration
 and repeated environment destruction. A Make four-CPU image passed with
 PTW. The default ten-bit limit also passed the four-CPU user regression in
 both modes. A flat four-CPU MMU image continued to pass with PTW.
+
+Strict syscall argument validation, demand-zero heaps and COW passed the
+single-CPU and four-CPU user-process regressions with software refill and
+hardware PTW. The VM checks include exhausted-page-pool failures and
+repeated COW snapshot/copyout/destruction. These results use the compatible
+apps 12.9.0 checkout; broader testing of the supplied apps branch is tracked
+separately and is not implied by these architecture regressions.
 
 LS2K0300 migration
 ==================

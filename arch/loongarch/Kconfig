@@ -71,6 +71,50 @@ config LOONGARCH_ASID_BITS
 		ASID zero is reserved for the boot mappings. Normally use all ten
 		bits; smaller values allow regression tests to force ASID reuse.
 
+config LOONGARCH_USER_ACCESS
+	bool "Strict user syscall argument validation"
+	default y
+	depends on BUILD_KERNEL
+	---help---
+		Stage supported syscall arguments in kernel-owned buffers. Reject
+		interfaces without an argument policy with ENOSYS. Device ioctls,
+		asynchronous operations and complex user synchronization objects
+		require separate adapters before they can be enabled safely.
+
+config LOONGARCH_USER_COPY_MAX
+	int "Maximum staged bytes per user syscall"
+	default 65536
+	range 4096 1048576
+	depends on LOONGARCH_USER_ACCESS
+
+config LOONGARCH_DEMAND_PAGING
+	bool "Demand-zero process heaps and copy-on-write pages"
+	default y
+	depends on BUILD_KERNEL
+	---help---
+		Reserve process heap pages without allocating physical storage.
+		Reads share an immutable zero page; writes allocate private pages.
+		Resolve page faults in thread context and synchronize all CPUs
+		before releasing replaced backing pages.
+
+config LOONGARCH_VM_TEST
+	bool "Test demand-zero pages, COW and checked user copies"
+	default y if LOONGARCH_USER_TEST
+	depends on LOONGARCH_DEMAND_PAGING
+	---help---
+		Exercise actual page faults and independent COW roots before user
+		startup in the QEMU regression configuration.
+
+config LOONGARCH_INITIAL_HEAP_SIZE
+	hex "Initially resident user heap size"
+	default 0x10000
+	depends on LOONGARCH_DEMAND_PAGING
+	---help---
+		Keep this page-aligned bootstrap heap resident for the ELF loader,
+		which initializes allocator metadata and the initial user stack
+		with interrupts masked. Later heap extensions are demand-zero.
+		This must accommodate the initial stack and allocator overhead.
+
 config LOONGARCH_ASID_TEST
 	bool "Test ASID retention and rollover before user startup"
 	depends on LOONGARCH_USER_TEST && LOONGARCH_ASID_BITS <= 3

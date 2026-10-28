@@ -28,6 +28,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <string.h>
 #include <sched.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -101,6 +102,127 @@ static void *user_thread(void *arg)
 
   return arg;
 }
+
+/****************************************************************************
+ * Name: check_user_access
+ *
+ * Description:
+ *   Verify strict syscall rejection before any service follows an invalid
+ *   pointer. Exercise input, output, strings, nested exec arguments and
+ *   executable callbacks using their documented error conventions.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_LOONGARCH_USER_ACCESS
+static void check_user_access(void)
+{
+  uintptr_t kernel = 0x9000000000200000ul;
+  char *badargv[] =
+  {
+    (char *)kernel, NULL
+  };
+
+  pthread_t thread;
+
+  errno = 0;
+  if ((intptr_t)sys_call3(SYS_write, 1, kernel, 8) != -1 || errno != EFAULT)
+    {
+      finish(11);
+    }
+
+  errno = 0;
+  if ((intptr_t)sys_call3(SYS_read, 0, (uintptr_t)handler, 4) != -1 ||
+      errno != EFAULT)
+    {
+      finish(12);
+    }
+
+  errno = 0;
+  if ((intptr_t)sys_call3(SYS_write, 1, UINTPTR_MAX - 1, 8) != -1 ||
+      errno != EFAULT)
+    {
+      finish(13);
+    }
+
+  errno = 0;
+  if ((intptr_t)sys_call3(SYS_open, kernel, 0, 0) != -1 || errno != EFAULT)
+    {
+      finish(14);
+    }
+
+  errno = 0;
+  if (execve("/test/user", badargv, NULL) != -1 || errno != EFAULT)
+    {
+      finish(15);
+    }
+
+  errno = 0;
+  if ((intptr_t)sys_call3(SYS_ioctl, 1, 0, kernel) != -1 || errno != ENOSYS)
+    {
+      finish(16);
+    }
+
+  if (pthread_create(&thread, NULL, (pthread_startroutine_t)kernel,
+                     NULL) != EFAULT)
+    {
+      finish(17);
+    }
+}
+#endif
+
+/****************************************************************************
+ * Name: check_demand_heap
+ *
+ * Description:
+ *   Grow the libc heap beyond its resident bootstrap and touch each page.
+ *   Separately reserve the final two heap pages to verify zero-fill on read,
+ *   private allocation on write and syscall output into a lazy user page.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_LOONGARCH_DEMAND_PAGING
+static void check_demand_heap(void)
+{
+  const size_t size = 128 * 1024;
+  volatile uint8_t *memory = malloc(size);
+  uintptr_t base = ARCH_HEAP_VEND - 2 * CONFIG_MM_PGSIZE;
+  volatile uintptr_t *lazy = (volatile uintptr_t *)base;
+  unsigned int i;
+
+  if (memory == NULL || sys_call2(SYS_pgalloc, base, 2) != base)
+    {
+      finish(18);
+    }
+
+  for (i = 0; i < size; i += CONFIG_MM_PGSIZE)
+    {
+      memory[i] = i / CONFIG_MM_PGSIZE;
+    }
+
+  for (i = 0; i < size; i += CONFIG_MM_PGSIZE)
+    {
+      if (memory[i] != i / CONFIG_MM_PGSIZE)
+        {
+          finish(19);
+        }
+    }
+
+  if (*lazy != 0)
+    {
+      finish(20);
+    }
+
+  *lazy = 0xabcd;
+  if (*lazy != 0xabcd ||
+      sys_call2(SYS_clock_gettime, CLOCK_MONOTONIC,
+                 base + CONFIG_MM_PGSIZE) != 0)
+    {
+      finish(21);
+    }
+
+  free((void *)memory);
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -217,6 +339,13 @@ int main(int argc, char **argv)
     }
 
   free(allocation);
+
+#ifdef CONFIG_LOONGARCH_USER_ACCESS
+  check_user_access();
+#endif
+#ifdef CONFIG_LOONGARCH_DEMAND_PAGING
+  check_demand_heap();
+#endif
 
   switch (mode)
     {

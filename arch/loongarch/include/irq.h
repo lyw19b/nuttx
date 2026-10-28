@@ -256,6 +256,9 @@ struct xcptcontext
   uintptr_t ustkptr;      /* Initial user SP prepared before PLV3 entry */
   uintreg_t *sregs;       /* User frame retained while a syscall executes */
   uintreg_t *sigregs;     /* Kernel continuation for user signal return */
+#ifdef CONFIG_LOONGARCH_USER_ACCESS
+  struct loongarch_uaccess_s *uaccess; /* Owned syscall staging buffers */
+#endif
 #endif
 };
 

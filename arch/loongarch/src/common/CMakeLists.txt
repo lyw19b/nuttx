@@ -86,5 +86,13 @@ if(CONFIG_LOONGARCH_ASID_TEST)
 endif()
 
 if(CONFIG_BUILD_KERNEL)
-  target_sources(arch PRIVATE loongarch_user.c)
+  target_sources(arch PRIVATE loongarch_user.c loongarch_pagefault.c)
+endif()
+
+if(CONFIG_LOONGARCH_USER_ACCESS)
+  target_sources(arch PRIVATE loongarch_uaccess.c)
+endif()
+
+if(CONFIG_LOONGARCH_VM_TEST)
+  target_sources(arch PRIVATE loongarch_vmtest.c)
 endif()

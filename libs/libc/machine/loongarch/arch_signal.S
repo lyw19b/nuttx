@@ -53,8 +53,12 @@ up_signal_handler:
   move    $a0, $a1
   move    $a1, $a2
   move    $a2, $a3
+
   jirl    $ra, $t0, 0
+
   li.w    $a0, SYS_signal_handler_return
+
   syscall 0
+
   break   0
   .size up_signal_handler, . - up_signal_handler

@@ -80,6 +80,14 @@ CMN_CSRCS += loongarch_asidtest.c
 endif
 
 ifeq ($(CONFIG_BUILD_KERNEL),y)
-CMN_CSRCS += loongarch_user.c
+CMN_CSRCS += loongarch_user.c loongarch_pagefault.c
 STARTUP_OBJS = crt0$(OBJEXT)
+endif
+
+ifeq ($(CONFIG_LOONGARCH_USER_ACCESS),y)
+CMN_CSRCS += loongarch_uaccess.c
+endif
+
+ifeq ($(CONFIG_LOONGARCH_VM_TEST),y)
+CMN_CSRCS += loongarch_vmtest.c
 endif

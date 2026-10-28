@@ -162,6 +162,10 @@ void board_late_initialize(void)
   loongarch_asid_test();
 #endif
 
+#ifdef CONFIG_LOONGARCH_VM_TEST
+  loongarch_vm_test();
+#endif
+
   ASSERT(mount(NULL, "/test", "tmpfs", 0, NULL) == OK);
   fd = open("/test/user", O_WRONLY | O_CREAT | O_TRUNC, 0755);
   ASSERT(fd >= 0);
