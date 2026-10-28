@@ -1,0 +1,173 @@
+{
+  "cases": [
+    {
+      "name": "iozone",
+      "command": "iozone -i 0 -i 1 -r 4k -s 256k -f /data/iozone.tmp",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ],
+      "expect": [
+        "Iozone: Performance Test",
+        "iozone test complete."
+      ],
+      "reject": [
+        "Error",
+        "ERROR"
+      ],
+      "timeout": 90
+    },
+    {
+      "name": "mqjs",
+      "command": "mqjs -e \"print(6 * 7)\"",
+      "expect": [
+        "(?m)^42$"
+      ],
+      "reject": [
+        "Error"
+      ],
+      "timeout": 30
+    },
+    {
+      "name": "toywasm",
+      "command": "toywasm --load /data/answer.wasm --invoke answer",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo \":100000000061736D010000000105016000017F03C4\" > /data/module.hex",
+        "echo \":10001000020100070A0106616E7377657200000A2B\" >> /data/module.hex",
+        "echo \":0A00200009010700410641076C0BBF\" >> /data/module.hex",
+        "echo \":00000001FF\" >> /data/module.hex",
+        "hex2bin /data/module.hex /data/answer.wasm"
+      ],
+      "expect": [
+        "Result: 42:i32"
+      ],
+      "reject": [
+        "Error:"
+      ],
+      "timeout": 30
+    },
+    {
+      "name": "wasm3",
+      "command": "wasm3 --func answer /data/answer.wasm",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo \":100000000061736D010000000105016000017F03C4\" > /data/module.hex",
+        "echo \":10001000020100070A0106616E7377657200000A2B\" >> /data/module.hex",
+        "echo \":0A00200009010700410641076C0BBF\" >> /data/module.hex",
+        "echo \":00000001FF\" >> /data/module.hex",
+        "hex2bin /data/module.hex /data/answer.wasm"
+      ],
+      "reject": [
+        "Error:"
+      ],
+      "timeout": 30
+    },
+    {
+      "name": "mbedselftest",
+      "command": "mbedselftest",
+      "expect": [
+        "All tests PASS"
+      ],
+      "reject": [
+        "FAILED"
+      ],
+      "timeout": 300
+    },
+    {
+      "name": "embedlog-simple",
+      "command": "el_demo_print_simple",
+      "expect": [
+        "Info message",
+        "additional argument 42",
+        "But now debug"
+      ],
+      "timeout": 30
+    },
+    {
+      "name": "core",
+      "command": "core -i1 -c1 -b1 -v1",
+      "reject": [
+        "ERROR",
+        "FAIL",
+        "Error",
+        ":fails=[1-9]",
+        "Failure:"
+      ],
+      "timeout": 120,
+      "expect": [
+        ":fails=0",
+        "-- Done:"
+      ]
+    },
+    {
+      "name": "linear_alg_mid_100x100_sp",
+      "command": "linear_alg_mid_100x100_sp -i1 -c1 -b1 -v1",
+      "reject": [
+        "ERROR",
+        "FAIL",
+        "Error",
+        ":fails=[1-9]",
+        "Failure:"
+      ],
+      "timeout": 120,
+      "expect": [
+        ":fails=0",
+        "-- Done:"
+      ]
+    },
+    {
+      "name": "sha_test",
+      "command": "sha_test -i1 -c1 -b1 -v1",
+      "reject": [
+        "ERROR",
+        "FAIL",
+        "Error",
+        ":fails=[1-9]",
+        "Failure:"
+      ],
+      "timeout": 120,
+      "expect": [
+        ":fails=0",
+        "-- Done:"
+      ]
+    },
+    {
+      "name": "zip_test",
+      "command": "zip_test -i1 -c1 -b1 -v1",
+      "reject": [
+        "ERROR",
+        "FAIL",
+        "Error",
+        ":fails=[1-9]",
+        "Failure:"
+      ],
+      "timeout": 120,
+      "expect": [
+        ":fails=0",
+        "-- Done:"
+      ]
+    },
+    {
+      "name": "libuv",
+      "command": "/bin/uv_run_tests",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "mkdir /bin",
+        "mount -t binfs /bin",
+        "set PATH /bin",
+        "cd /tmp",
+        "sleep 1"
+      ],
+      "reject": [
+        "not ok",
+        "Assertion",
+        "FAIL"
+      ],
+      "timeout": 600
+    }
+  ]
+}

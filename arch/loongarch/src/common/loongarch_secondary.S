@@ -51,24 +51,31 @@
  ****************************************************************************/
 
 loongarch_secondary_entry:
+  # Set DMW
   li.d    $t0, 0x8000000000000001
   csrwr   $t0, LOONGARCH_CSR_DMWIN0
   li.d    $t0, 0x9000000000000011
   csrwr   $t0, LOONGARCH_CSR_DMWIN1
+
   li.w    $t0, 0xb0
   csrwr   $t0, LOONGARCH_CSR_CRMD
   li.w    $t0, CSR_EUEN_FPEN
   csrwr   $t0, LOONGARCH_CSR_EUEN
+
   csrrd   $t0, LOONGARCH_CSR_CPUID
   andi    $t0, $t0, 0x3ff
+
   li.w    $t1, CONFIG_SMP_NCPUS
   bgeu    $t0, $t1, .Lpark
+
   addi.d  $t0, $t0, 1
   li.d    $t1, SMP_STACK_SIZE
   mul.d   $t0, $t0, $t1
+
   la.local $sp, _ebss
   add.d   $sp, $sp, $t0
   bl      loongarch_secondary_start
+
 .Lpark:
   idle    0
   b       .Lpark

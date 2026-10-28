@@ -106,6 +106,12 @@ CROSSDEV ?= loongarch64-linux-gnu-
 
 ARCHCPUFLAGS = -march=loongarch64 -mabi=lp64d -mcmodel=normal -mstrict-align
 
+# Linux-targeted cross compilers also define operating system macros.  Remove
+# them so portable libraries select their NuttX implementations.
+
+ARCHDEFINES += -U__linux__ -U__linux -Ulinux -U__gnu_linux__
+ARCHDEFINES += -U__unix__ -U__unix -Uunix
+
 CC      = $(CROSSDEV)gcc
 CXX     = $(CROSSDEV)g++
 CPP     = $(CROSSDEV)gcc -E -P -x c
@@ -139,22 +145,28 @@ endif
 # Loadable module definitions
 
 CMODULEFLAGS = $(CFLAGS) -fvisibility=hidden
-LDMODULEFLAGS = -r -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/modlib/gnu-elf.ld)
+LDMODULEFLAGS = -r -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/elf/gnu-elf.ld)
 LDMODULEFLAGS += --oformat elf64-loongarch
 
 # ELF module definitions
 
 CELFFLAGS = $(CFLAGS) -fvisibility=hidden
-CXXELFFLAGS = $(CXXFLAGS) -fvisibility=hidden
+CXXELFFLAGS = $(CXXFLAGS) -fvisibility=hidden -fno-use-cxa-atexit
 
 LDELFFLAGS = -e __start
+
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  # Kernel applications obtain their startup object from the export package.
+
+  LDELFFLAGS += $(TOPDIR)/arch/loongarch/src/crt0$(OBJEXT)
+endif
 
 ifeq ($(CONFIG_BINFMT_ELF_RELOCATABLE),y)
   LDELFFLAGS += -r
 endif
 
 LDELFFLAGS += --oformat elf64-loongarch
-LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/modlib/gnu-elf.ld)
+LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/libs/libc/elf/gnu-elf.ld)
 
 ifneq ($(CONFIG_BINFMT_ELF_RELOCATABLE)$(CONFIG_LTO_FULL),)
   CMODULEFLAGS += -fno-lto

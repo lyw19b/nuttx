@@ -35,18 +35,24 @@
  ****************************************************************************/
 
 int main(int argc, char *argv[]);
+#ifdef CONFIG_BUILD_KERNEL
 void up_signal_handler(_sa_sigaction_t handler, int signo,
                        siginfo_t *info, void *context);
+#endif
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 #ifdef CONFIG_HAVE_CXX
-extern initializer_t _sctors[];
-extern initializer_t _ectors[];
-extern initializer_t _sdtors[];
-extern initializer_t _edtors[];
+/* These bounds belong to this ELF, including in a relocatable flat build.
+ * Hidden visibility lets the compiler address them without a runtime GOT.
+ */
+
+extern initializer_t _sctors[] visibility_hidden;
+extern initializer_t _ectors[] visibility_hidden;
+extern initializer_t _sdtors[] visibility_hidden;
+extern initializer_t _edtors[] visibility_hidden;
 
 /****************************************************************************
  * Name: user_destructors
@@ -76,9 +82,9 @@ static void user_destructors(void)
  * Name: __start
  *
  * Description:
- *   Enter a statically linked user ELF at PLV3 with argc and argv prepared
- *   by the loader. Install its signal trampoline in the reserved user data
- *   page, run optional constructors and call main. Normal return from main
+ *   Enter a loaded ELF with argc and argv prepared by the loader. Kernel
+ *   builds also install a signal trampoline in the reserved user data page.
+ *   Run optional constructors and call main. Normal return from main
  *   passes through libc exit so thread-local and registered cleanup runs.
  *   This function does not return to the kernel startup frame.
  *
@@ -91,12 +97,18 @@ void __start(int argc, char *argv[])
 #endif
   int status;
 
+#ifdef CONFIG_BUILD_KERNEL
+  /* Only a kernel-build user address space has a reserved data page. */
+
   ARCH_DATA_RESERVE->ar_sigtramp = up_signal_handler;
+#endif
 
 #ifdef CONFIG_HAVE_CXX
   /* Register finalizers before invoking constructors that may call exit. */
 
+#  if CONFIG_LIBC_MAX_EXITFUNS > 0
   atexit(user_destructors);
+#  endif
 
   for (entry = _sctors; entry != _ectors; entry++)
     {
@@ -105,5 +117,10 @@ void __start(int argc, char *argv[])
 #endif
 
   status = main(argc, argv);
+
+#if defined(CONFIG_HAVE_CXX) && CONFIG_LIBC_MAX_EXITFUNS <= 0
+  user_destructors();
+#endif
+
   exit(status);
 }

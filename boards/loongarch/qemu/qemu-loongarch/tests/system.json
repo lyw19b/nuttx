@@ -1,0 +1,151 @@
+{
+  "cases": [
+    {
+      "name": "cachetest",
+      "command": "cachetest -s65536 -n3",
+      "expect": [
+        "comparison success!"
+      ],
+      "reject": [
+        "failed"
+      ]
+    },
+    {
+      "name": "etl",
+      "command": "etl",
+      "expect": [
+        "HelloWorld"
+      ],
+      "reject": [
+        "ERROR"
+      ]
+    },
+    {
+      "name": "smart-file",
+      "command": "smart_test -s 40 -w 40 -l 50 /data/test.txt",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ],
+      "reject": [
+        "Error",
+        "ERROR",
+        "failed"
+      ],
+      "timeout": 60
+    },
+    {
+      "name": "nxdiag",
+      "command": "nxdiag -n -c",
+      "expect": [
+        "NuttX",
+        "CONFIG_ARCH_LOONGARCH"
+      ]
+    },
+    {
+      "name": "stackmonitor",
+      "setup": [
+        "stackmonitor_start",
+        "sleep 3"
+      ],
+      "command": "stackmonitor_stop",
+      "expect": [
+        "Stack Monitor: Stopped"
+      ],
+      "reject": [
+        "ERROR"
+      ]
+    },
+    {
+      "name": "iptables",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "iptables -A INPUT -p tcp --dport 12345 -j DROP"
+      ],
+      "command": "iptables -L",
+      "expect": [
+        "12345",
+        "DROP"
+      ],
+      "reject": [
+        "Failed",
+        "ERROR"
+      ]
+    },
+    {
+      "name": "ip6tables",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "ip6tables -A INPUT -p udp --dport 12345 -j DROP"
+      ],
+      "command": "ip6tables -L",
+      "expect": [
+        "12345",
+        "DROP"
+      ],
+      "reject": [
+        "Failed",
+        "ERROR"
+      ]
+    },
+    {
+      "name": "conntrack4",
+      "command": "conntrack -L -f ipv4",
+      "reject": [
+        "[Ee]rror",
+        "[Ff]ailed"
+      ]
+    },
+    {
+      "name": "conntrack6",
+      "command": "conntrack -L -f ipv6",
+      "reject": [
+        "[Ee]rror",
+        "[Ff]ailed"
+      ]
+    },
+    {
+      "name": "mtd-config-nvs",
+      "command": "mtdconfig_fs_test",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "dd if=/dev/zero of=/data/flash.bin bs=4096 count=3",
+        "lomtd -e 4096 -b 32 /dev/mtdnvs_flash /data/flash.bin",
+        "flash_eraseall /dev/mtdnvs_flash"
+      ],
+      "expect": [
+        "test_nvs_gc_not_touched_expired_ate: success"
+      ],
+      "reject": [
+        "[Ee]rror",
+        "[Ff]ailed",
+        "unexpected"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "smartfs-file",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "dd if=/dev/zero of=/data/smart.bin bs=4096 count=128",
+        "losmart -m 0 -e 4096 -s 512 /data/smart.bin",
+        "mksmartfs /dev/smart0",
+        "mkdir /smart",
+        "mount -t smartfs /dev/smart0 /smart"
+      ],
+      "command": "smart_test -s 40 -w 40 -l 50 /smart/test.txt",
+      "reject": [
+        "Error",
+        "ERROR",
+        "failed"
+      ],
+      "timeout": 90
+    }
+  ]
+}

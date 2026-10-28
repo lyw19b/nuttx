@@ -1,0 +1,378 @@
+{
+  "cases": [
+    {
+      "name": "cxx-array",
+      "command": "array",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-condition_variable",
+      "command": "condition_variable",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-deque",
+      "command": "deque",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-exception",
+      "command": "exception",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-forward_list",
+      "command": "forward_list",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-future",
+      "command": "future",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-iostream",
+      "command": "iostream < /data/input",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo 42 > /data/input"
+      ]
+    },
+    {
+      "name": "cxx-list",
+      "command": "list",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-map",
+      "command": "map",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-multiset",
+      "command": "multiset",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-mutex",
+      "command": "mutex",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-rtti",
+      "command": "rtti",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-semaphore",
+      "command": "semaphore",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-set",
+      "command": "set",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-shared_ptr",
+      "command": "shared_ptr",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-string",
+      "command": "string",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-string_view",
+      "command": "string_view",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-thread",
+      "command": "thread",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-unordered_map",
+      "command": "unordered_map",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-unordered_multimap",
+      "command": "unordered_multimap",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-unordered_multiset",
+      "command": "unordered_multiset",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-unordered_set",
+      "command": "unordered_set",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-vector",
+      "command": "vector",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxx-weak_ptr",
+      "command": "weak_ptr",
+      "timeout": 20,
+      "reject": [
+        "Assertion failed"
+      ]
+    },
+    {
+      "name": "cxxtest",
+      "command": "cxxtest",
+      "expect": [
+        "Test RTTI"
+      ],
+      "reject": [
+        "Assertion failed"
+      ],
+      "timeout": 60
+    },
+    {
+      "name": "settings",
+      "command": "settings",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp"
+      ],
+      "expect": [
+        "exiting settings example app"
+      ],
+      "reject": [
+        "Failed",
+        "failed"
+      ]
+    },
+    {
+      "name": "mtdpart",
+      "command": "mtdpart",
+      "expect": [
+        "PASS: Everything looks good"
+      ],
+      "reject": [
+        "ERROR"
+      ],
+      "timeout": 90
+    },
+    {
+      "name": "configdata",
+      "command": "configdata",
+      "expect": [
+        "Number passed: 1048  Failed: 0"
+      ],
+      "reject": [
+        "ERROR"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "nxffs",
+      "command": "nxffs",
+      "expect": [
+        "=== FILLING 3"
+      ],
+      "reject": [
+        "ERROR"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "fatutf8",
+      "command": "fatutf8 /data",
+      "setup": [
+        "mkrd -m 1 -s 512 4096",
+        "mkfatfs /dev/ram1",
+        "mkdir /data",
+        "mount -t vfat /dev/ram1 /data"
+      ],
+      "expect": [
+        "read\\(",
+        "successful"
+      ],
+      "reject": [
+        "failed"
+      ],
+      "timeout": 60
+    },
+    {
+      "name": "mbedbenchmark",
+      "command": "mbedbenchmark sha256",
+      "expect": [
+        "SHA-256"
+      ],
+      "reject": [
+        "FAILED"
+      ],
+      "timeout": 30
+    },
+    {
+      "name": "fdtdump",
+      "command": "fdtdump /data/base.dtb",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo \":40000000D00DFEED00000085000000380000007400000028000000110000001000000000000000110000003C00000000000000000000000000000000000000010000000030\" > /data/d.hex",
+        "echo \":40004000000000030000000F000000006C6F6F6E67617263682D74657374000000000003000000040000000B0000002A0000000200000009636F6D70617469626C650076E7\" >> /data/d.hex",
+        "echo \":05008000616C756500D4\" >> /data/d.hex",
+        "echo \":00000001FF\" >> /data/d.hex",
+        "hex2bin /data/d.hex /data/base.dtb",
+        "echo \":40000000D00DFEED000000A20000003800000090000000280000001100000010000000000000001200000058000000000000000000000000000000000000000100000000DA\" > /data/d.hex",
+        "echo \":4000400000000001667261676D656E74403000000000000300000002000000002F000000000000015F5F6F7665726C61795F5F0000000003000000040000000C0000002BCA\" >> /data/d.hex",
+        "echo \":22008000000000020000000200000002000000097461726765742D706174680076616C756500D1\" >> /data/d.hex",
+        "echo \":00000001FF\" >> /data/d.hex",
+        "hex2bin /data/d.hex /data/overlay.dtb"
+      ],
+      "expect": [
+        "loongarch-test"
+      ],
+      "reject": [
+        "ERROR"
+      ]
+    },
+    {
+      "name": "fdtget",
+      "command": "fdtget -t i /data/base.dtb / value",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo \":40000000D00DFEED00000085000000380000007400000028000000110000001000000000000000110000003C00000000000000000000000000000000000000010000000030\" > /data/d.hex",
+        "echo \":40004000000000030000000F000000006C6F6F6E67617263682D74657374000000000003000000040000000B0000002A0000000200000009636F6D70617469626C650076E7\" >> /data/d.hex",
+        "echo \":05008000616C756500D4\" >> /data/d.hex",
+        "echo \":00000001FF\" >> /data/d.hex",
+        "hex2bin /data/d.hex /data/base.dtb",
+        "echo \":40000000D00DFEED000000A20000003800000090000000280000001100000010000000000000001200000058000000000000000000000000000000000000000100000000DA\" > /data/d.hex",
+        "echo \":4000400000000001667261676D656E74403000000000000300000002000000002F000000000000015F5F6F7665726C61795F5F0000000003000000040000000C0000002BCA\" >> /data/d.hex",
+        "echo \":22008000000000020000000200000002000000097461726765742D706174680076616C756500D1\" >> /data/d.hex",
+        "echo \":00000001FF\" >> /data/d.hex",
+        "hex2bin /data/d.hex /data/overlay.dtb"
+      ],
+      "expect": [
+        "(?m)^42$"
+      ]
+    },
+    {
+      "name": "fdtput",
+      "command": "fdtget -t i /data/base.dtb / value",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo \":40000000D00DFEED00000085000000380000007400000028000000110000001000000000000000110000003C00000000000000000000000000000000000000010000000030\" > /data/d.hex",
+        "echo \":40004000000000030000000F000000006C6F6F6E67617263682D74657374000000000003000000040000000B0000002A0000000200000009636F6D70617469626C650076E7\" >> /data/d.hex",
+        "echo \":05008000616C756500D4\" >> /data/d.hex",
+        "echo \":00000001FF\" >> /data/d.hex",
+        "hex2bin /data/d.hex /data/base.dtb",
+        "echo \":40000000D00DFEED000000A20000003800000090000000280000001100000010000000000000001200000058000000000000000000000000000000000000000100000000DA\" > /data/d.hex",
+        "echo \":4000400000000001667261676D656E74403000000000000300000002000000002F000000000000015F5F6F7665726C61795F5F0000000003000000040000000C0000002BCA\" >> /data/d.hex",
+        "echo \":22008000000000020000000200000002000000097461726765742D706174680076616C756500D1\" >> /data/d.hex",
+        "echo \":00000001FF\" >> /data/d.hex",
+        "hex2bin /data/d.hex /data/overlay.dtb",
+        "fdtput -t i /data/base.dtb / value 44"
+      ],
+      "expect": [
+        "(?m)^44$"
+      ]
+    },
+    {
+      "name": "fdtoverlay",
+      "command": "fdtget -t i /data/out.dtb / value",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo \":40000000D00DFEED00000085000000380000007400000028000000110000001000000000000000110000003C00000000000000000000000000000000000000010000000030\" > /data/d.hex",
+        "echo \":40004000000000030000000F000000006C6F6F6E67617263682D74657374000000000003000000040000000B0000002A0000000200000009636F6D70617469626C650076E7\" >> /data/d.hex",
+        "echo \":05008000616C756500D4\" >> /data/d.hex",
+        "echo \":00000001FF\" >> /data/d.hex",
+        "hex2bin /data/d.hex /data/base.dtb",
+        "echo \":40000000D00DFEED000000A20000003800000090000000280000001100000010000000000000001200000058000000000000000000000000000000000000000100000000DA\" > /data/d.hex",
+        "echo \":4000400000000001667261676D656E74403000000000000300000002000000002F000000000000015F5F6F7665726C61795F5F0000000003000000040000000C0000002BCA\" >> /data/d.hex",
+        "echo \":22008000000000020000000200000002000000097461726765742D706174680076616C756500D1\" >> /data/d.hex",
+        "echo \":00000001FF\" >> /data/d.hex",
+        "hex2bin /data/d.hex /data/overlay.dtb",
+        "fdtoverlay -i /data/base.dtb -o /data/out.dtb /data/overlay.dtb"
+      ],
+      "expect": [
+        "(?m)^43$"
+      ]
+    }
+  ]
+}

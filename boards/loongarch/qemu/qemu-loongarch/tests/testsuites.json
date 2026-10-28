@@ -1,0 +1,184 @@
+{
+  "cases": [
+    {
+      "name": "iob",
+      "command": "iob",
+      "reject": [
+        "ERROR",
+        "FAIL"
+      ]
+    },
+    {
+      "name": "mutex-perf",
+      "command": "pmutexp",
+      "timeout": 180
+    },
+    {
+      "name": "nuts",
+      "command": "nuts",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    },
+    {
+      "name": "mm",
+      "command": "cmocka_mm_test",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    },
+    {
+      "name": "pthread",
+      "command": "cmocka_pthread_test",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    },
+    {
+      "name": "mutex",
+      "command": "cmocka_mutex_test",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    },
+    {
+      "name": "sched",
+      "command": "cmocka_sched_test",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    },
+    {
+      "name": "time",
+      "command": "cmocka_time_test",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    },
+    {
+      "name": "fs",
+      "command": "cmocka_fs_test",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    },
+    {
+      "name": "syscall",
+      "command": "cmocka_syscall_test",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]",
+        "erron=.*experrno="
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "cd /data"
+      ]
+    },
+    {
+      "name": "net-local",
+      "command": "cmocka_net_local",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    },
+    {
+      "name": "net-tcp",
+      "command": "cmocka_net_tcp",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    },
+    {
+      "name": "epoll",
+      "command": "cmocka_epoll",
+      "timeout": 180,
+      "expect": [
+        "\\[\\s*PASSED\\s*\\]"
+      ],
+      "reject": [
+        "\\[\\s*FAILED\\s*\\]"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ]
+    }
+  ]
+}

@@ -20,6 +20,8 @@
 #
 ############################################################################
 
+STARTUP_OBJS = crt0$(OBJEXT)
+
 CMN_ASRCS += loongarch_vectors.S loongarch_saveusercontext.S
 
 CMN_CSRCS += loongarch_vector.c loongarch_initialize.c loongarch_syscall.c
@@ -81,7 +83,6 @@ endif
 
 ifeq ($(CONFIG_BUILD_KERNEL),y)
 CMN_CSRCS += loongarch_user.c loongarch_pagefault.c
-STARTUP_OBJS = crt0$(OBJEXT)
 endif
 
 ifeq ($(CONFIG_LOONGARCH_USER_ACCESS),y)

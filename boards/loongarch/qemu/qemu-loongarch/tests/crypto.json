@@ -1,0 +1,210 @@
+{
+  "cases": [
+    {
+      "name": "tinycrypt-aes",
+      "command": "tinycrypt_test_aes",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-cbc_mode",
+      "command": "tinycrypt_test_cbc_mode",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-ccm_mode",
+      "command": "tinycrypt_test_ccm_mode",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-cmac_mode",
+      "command": "tinycrypt_test_cmac_mode",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-ctr_mode",
+      "command": "tinycrypt_test_ctr_mode",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-ctr_prng",
+      "command": "tinycrypt_test_ctr_prng",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-ecc_dh",
+      "command": "tinycrypt_test_ecc_dh",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-ecc_dsa",
+      "command": "tinycrypt_test_ecc_dsa",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-hmac",
+      "command": "tinycrypt_test_hmac",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-hmac_prng",
+      "command": "tinycrypt_test_hmac_prng",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "cd /data"
+      ],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tinycrypt-sha256",
+      "command": "tinycrypt_test_sha256",
+      "expect": [
+        "PROJECT EXECUTION SUCCESSFUL"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "libtomcrypt",
+      "command": "libtomcrypt_test",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "cd /data",
+        "mkdir tests",
+        "cd tests",
+        "echo \"-----BEGIN RSA PRIVATE KEY-----\" > k",
+        "echo \"MIICXgIBAAKBgQDPmt5kitrIMyCp14MxGVSymoWnobd1M7aprIQks97bfYUtlmXl\" >> k",
+        "echo \"P3KVJJ8oaMpP20QcPmASit0mpev/C17UiDhJKm5bvxI3R70Fa7zb8+7kEY5BaHxh\" >> k",
+        "echo \"E9dCyIC+No/cCItPrKTidgzJY2xJWJPtzKrcJTsKYD+LVDrDTTHnlKRE/QIDAQAB\" >> k",
+        "echo \"AoGBAMhiuereRFMdVpfZl54azzAeCohFhikwo02fYWVz4NaHj7bzBqOC3Hys/pso\" >> k",
+        "echo \"mq79+/4vDtiXBOO7H9HsDbqjSX9HrIpEBH6GtzlCP60etw6lUfRAYx79veqfQZ+o\" >> k",
+        "echo \"kB1vClqVExENgK9fZJiKLHhoZbAri6JTh8rxZASr8nvbg8iBAkEA975eI8MyP7+L\" >> k",
+        "echo \"jjru/PzL5ffxC7xCgq7Vej7K99VpP2Qloh+3dXUFkkLruPHzCgXjlNFVeDWgNqCb\" >> k",
+        "echo \"fJKEbN3cTQJBANaGDoVCCwQIhCFg8A4NiP0eNhBlTx5TtAhygFw/WWYX5pjy6Wx6\" >> k",
+        "echo \"Bkysdj3tjKHOrRu9tH0ovOMOOI2Z2AW1o3ECQG3rwy0u8F6kiDEFKQCK0ZUpm4PP\" >> k",
+        "echo \"ddsx43on3jp0MAx2TNRQKkAtOdmZY6ldgK5TypQ/BSMe+AUE4bg18hezoIkCQQCr\" >> k",
+        "echo \"kIj6YAgpUJpDi6BQzNha/pdkY3F0IqMgAlrP68YWlVTRy6uNGsYA+giSnHHVUlI1\" >> k",
+        "echo \"lnFLi5IM0Om/rWMLpemxAkEA3MwnyOTcYkjVm6/1q2D2If1T4rddCckaoQSp/GEs\" >> k",
+        "echo \"XQRYOlo58UohVmf9zCCjj3gYWnk9Lo5+hgrmqDPBBBdKnw==\" >> k",
+        "echo \"-----END RSA PRIVATE KEY-----\" >> k",
+        "mv k test.key",
+        "cd /data"
+      ],
+      "expect": [
+        "SUCCESS: passed=10 failed=0"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "libtommath",
+      "command": "tommath_test",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp"
+      ],
+      "expect": [
+        "Tests OK/NOP/FAIL: [0-9]+/[0-9]+/0"
+      ],
+      "reject": [
+        "FAIL ",
+        "ERROR"
+      ],
+      "timeout": 300
+    }
+  ]
+}

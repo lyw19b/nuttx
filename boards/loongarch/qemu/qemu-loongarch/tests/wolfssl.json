@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "name": "wolfcrypt-selftest",
+      "command": "wolfcrypt_test",
+      "reject": [
+        "ERROR:",
+        "[Ff]ailed"
+      ],
+      "timeout": 180,
+      "expect": [
+        "Test complete",
+        "Exiting main with return code: 0"
+      ]
+    },
+    {
+      "name": "wolfssl-tls-pair",
+      "command": "wolfssl_client_server",
+      "setup": [
+        "date -u -s \"Oct 28 12:00:00 2026\""
+      ],
+      "reject": [
+        "[Ee]rror",
+        "[Ff][Aa][Ii][Ll]"
+      ],
+      "timeout": 90,
+      "expect": [
+        "wolfSSL has successfully performed handshake!",
+        "Client Received:",
+        "Done"
+      ]
+    }
+  ]
+}

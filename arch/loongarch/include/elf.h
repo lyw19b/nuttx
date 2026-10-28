@@ -40,7 +40,30 @@
 #define R_LARCH_TLS_TPREL32       10
 #define R_LARCH_TLS_TPREL64       11
 
-#define R_LARCH_32_PCREL          57
+#define R_LARCH_ADD8             47
+#define R_LARCH_ADD16            48
+#define R_LARCH_ADD24            49
+#define R_LARCH_ADD32            50
+#define R_LARCH_ADD64            51
+#define R_LARCH_SUB8             52
+#define R_LARCH_SUB16            53
+#define R_LARCH_SUB24            54
+#define R_LARCH_SUB32            55
+#define R_LARCH_SUB64            56
+#define R_LARCH_B16              64
+#define R_LARCH_B21              65
+#define R_LARCH_B26              66
+#define R_LARCH_ABS_HI20         67
+#define R_LARCH_ABS_LO12         68
+#define R_LARCH_ABS64_LO20       69
+#define R_LARCH_ABS64_HI12       70
+#define R_LARCH_PCALA_HI20       71
+#define R_LARCH_PCALA_LO12       72
+#define R_LARCH_32_PCREL         99
+#define R_LARCH_RELAX           100
+#define R_LARCH_PCREL20_S2      103
+#define R_LARCH_ADD6            105
+#define R_LARCH_SUB6            106
 
 #define EM_ARCH                   EM_LOONGARCH
 #define EF_LARCH_ABI_MODIFIER_MASK 0x07

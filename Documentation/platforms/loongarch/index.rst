@@ -408,6 +408,174 @@ a complete apps-tree test. Network services, hardware-dependent programs,
 external-package applications and other configurations require additional
 coverage.
 
+Extended application checks
+---------------------------
+
+The broader application inventory, additional profiles and failure analyses
+are recorded separately:
+
+.. toctree::
+   :maxdepth: 1
+
+   apps-testing
+
+The ``apps-extended`` and ``smp-apps-extended`` configurations add a
+repeatable flat-build application suite. Build with CMake, for example::
+
+  cmake -S . -B build-apps -GNinja \
+    -DBOARD_CONFIG=qemu-loongarch:apps-extended \
+    -DNUTTX_APPS_DIR=../nuttx-apps
+  cmake --build build-apps -j8
+  python3 tools/loongarch_apps_test.py \
+    --kernel build-apps/nuttx --cpus 1 --ptw \
+    --suite boards/loongarch/qemu/qemu-loongarch/tests/apps.json \
+    --output /tmp/loongarch-apps-results
+
+Use ``smp-apps-extended`` and ``--cpus 4`` for SMP. Set ``--qemu`` to the
+compatible QEMU executable when it is not on PATH. The runner starts a new
+guest for each case, prepares its filesystem, checks the NSH exit status
+and output, and bounds execution time. The output directory must be new.
+It retains serial logs (including a bounded drain after a guest assertion),
+image SHA-256, the suite and the adjacent kernel
+``.config`` when present. A failing case does not prevent subsequent cases
+from running. Use ``--case NAME`` to repeat an individual case.
+
+On NuttX/apps 13.1.0, GCC 15.2.0 and the local QEMU 11.1.50 build, the
+following 13 cases passed on both one and four CPUs:
+
+* ``arch_libctest``, including the selected LoongArch assembly routines;
+* ``scanftest`` (164 checks) and ``wcstombs``;
+* ``popen_test`` (seven checks);
+* ``ramtest`` with byte, halfword and word accesses to 64 KiB;
+* four-thread ``getprime``;
+* signal and pthread variants of ``timerjitter`` (100 samples each);
+* CRC tests and three iterations of ``fstest`` on tmpfs;
+* ``helloxx``, including dynamic, stack and static object construction.
+
+The SMP barrier application also passed with eight threads on four CPUs.
+Run it using the same SMP image and ``tests/smp.json`` as the suite.
+
+The ``apps-testsuites`` and ``smp-apps-testsuites`` configurations require
+Make because some selected upstream applications lack complete CMake
+integration. Configure and build them with the normal Make workflow, then
+run ``tools/loongarch_apps_test.py`` with ``tests/testsuites.json``. These
+configurations enable a software loopback interface, Unix sockets, a worker
+queue and a 64-character filename limit for the generated test names.
+They use tmpfs at ``/data``. No external network device is required.
+
+The following additional Make tests passed on one and four CPUs:
+
+* IOB operations and the pthread mutex performance application;
+* CMocka memory management (eight cases), pthread (eight cases), mutex
+  (two enabled cases), scheduling (16 cases), and timers (seven cases);
+* TCP IPv4 loopback connection and Unix socket descriptor passing.
+
+Known failures remain visible in the manifest and produce a failed runner
+result. They must not be treated as a fully passing testsuites run:
+
+* NUTS: 54 of 55 checks pass. ``overwrite_out_of_bounds`` expects 16 from
+  ``circbuf_overwrite``; the current common implementation returns the
+  eight overwritten bytes. List and enabled device checks pass.
+* Filesystem: 45 of 46 checks pass. ``fs_stat01`` requires an mtime close
+  to the current clock. ``tmpfs_stat_common`` clears the stat structure
+  and never supplies timestamps, leaving mtime zero. A diagnostic run of
+  the unmodified suite on an attribute-enabled littlefs RAM disk passed
+  46 of 46 on both one and four CPUs. This comparison does not replace
+  the original tmpfs failure or establish that tmpfs was fixed.
+* Epoll: two of three checks pass. ``epoll03`` requires nonblocking Unix
+  ``connect`` to return ``EINPROGRESS``; the common local-socket connection
+  path can complete immediately. A GDB breakpoint at the unchanged
+  assertion confirmed ``ret == 0`` (and argument register ``a0 == 0``).
+  The failure occurs before any epoll wait; it does not demonstrate an
+  interrupt, scheduler or epoll-readiness failure.
+* With ``NAME_MAX=64``, the syscall suite passes its 83 CMocka assertions,
+  but prints five socket errno mismatches without failing the assertions.
+  The runner rejects those diagnostics even when the application returns
+  zero. Socket type 75 is rejected with ``EINVAL`` by the common socket
+  flag check. Unsupported INET type/protocol combinations return
+  ``EPROTONOSUPPORT`` from ``inet_setup``. The test expects
+  ``EAFNOSUPPORT`` for these cases. The initial 32-character configuration
+  failed six cases whose
+  generated filenames exceeded that limit.
+
+These diagnoses do not authorize changing shared code or test assertions.
+The original tests remain unchanged, and no LoongArch implementation
+change has been justified by these four failures. Diagnostic filesystem
+comparisons are not substituted for the original regression environment.
+
+Upstream build limitations encountered, without changes to common code:
+
+* CMake IOB lacks its internal ``mm/iob`` include directory; NUTS lacks
+  the CMocka header dependency; the mutex performance application uses
+  ``PROGNMAE`` instead of ``PROGNAME``. These applications were tested with
+  Make. ``fopencookie_test`` also needs Make in this release.
+* ``fdsantest_simple.c`` includes ``cmocka.h`` without first declaring
+  ``jmp_buf``. It was excluded after the compile failure.
+* ``nettest/others/test_others_bufpool.c`` assumes a fixed relative kernel
+  path. That optional group was excluded; TCP and local tests were enabled.
+
+These are selected flat-build application tests. In particular,
+``cmocka_syscall_test`` calls the flat API and does not validate PLV3 syscall
+pointer checking. C++ coverage here is limited to the basic runtime and
+constructors, without STL, exceptions or RTTI. Hardware-dependent apps,
+external services/packages and the remaining apps configurations are not
+covered by this matrix. The separate user-process regressions above cover
+the strict syscall entry, address spaces, demand paging and COW.
+
+Additional application and I/O coverage
+--------------------------------------
+
+The board's ``tests/io.config`` fragment extends ``apps-testsuites`` or
+``smp-apps-testsuites`` for another set of actual apps programs. It enables
+AIO, cancellation points and cleanup handlers, pthread keys, recursive
+mutexes, priority inheritance, round-robin scheduling, shared memory and
+ROMFS. It does not change application sources or assertions. In an isolated
+Make build, append the fragment to the configured ``.config``, run
+``make olddefconfig`` and rebuild. The host needs ``genromfs`` for the ROMFS
+example. Run ``tools/loongarch_apps_test.py`` with ``tests/io.json`` and the
+matching CPU count.
+
+With GCC 15.2.0, QEMU runs on one and four CPUs passed all six commands
+in this manifest: ``posix_stdio``, ``shm_test``, ``romfs``, ``cctype``, ``helloxx``
+and the extended ``ostest``. The C++ character example is a completion/output
+smoke check, not an exhaustive validation of its character classification
+table. The OS test also exercises FPU preservation, robust mutexes, message
+queues, nested signals, POSIX timers, setjmp/longjmp and cross-CPU calls.
+The four-CPU OS test completed in approximately 257 seconds; its timeout
+is 420 seconds to accommodate the work-queue and timer tests.
+
+Two other apps in the fragment run indefinitely and are not part of the
+finite completion manifest:
+
+* ``netloop``: 35-second observations on one and four CPUs reached at least five
+  matching TCP echo exchanges without error diagnostics. This is bounded
+  observation, not proof that the application completes or remains stable
+  indefinitely.
+* ``poll``: the 35-second runs on one and four CPUs stopped making progress
+  after FIFO creation. On four CPUs, ``ps`` showed its task waiting on a
+  semaphore while NSH and
+  the CPUs remained responsive. ``examples/poll/poll_main.c`` opens both
+  FIFOs with blocking ``O_WRONLY`` before creating the reader threads;
+  ``pipecommon_open`` waits for a reader. The application therefore never
+  reaches its listener-thread creation. No source or assertion was changed
+  to bypass this failure.
+
+The optional ``memtester`` application was tested separately. Its downloaded
+4.5.1 source fails to compile with the GCC 15 default C23 language mode:
+old-style empty parameter lists in function pointers and declarations now
+mean no parameters. Both incompatible function-pointer initializations and
+calls with excess arguments are rejected. The same unmodified source built
+with GCC 14.1.0 (default GNU C17) and passed ``memtester 1M 1`` on one and
+four CPUs, including the narrow-write tests. This compiler comparison does
+not resolve or hide the GCC 15 build failure. The downloaded archive used
+for the comparison has SHA-256
+``03f8b53523d91156bb42607de3781fc88030a72cc1dada1154878b8b0bb0a22a``;
+the upstream build rule downloads a moving branch rather than a fixed tag.
+
+No LoongArch implementation change was justified by these additional
+results. These flat-build checks still do not establish full apps-tree or
+PLV3 application coverage.
+
 Earlier baseline validation
 ---------------------------
 

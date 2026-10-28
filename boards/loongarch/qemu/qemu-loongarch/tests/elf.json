@@ -1,0 +1,52 @@
+{
+  "cases": [
+    {
+      "name": "elf",
+      "command": "elf",
+      "reject": [
+        "ERROR:",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "timeout": 120,
+      "expect": [
+        "End-of-Test"
+      ],
+      "completion": "Memory Usage End-of-Test:[^\\n]*\\n[^\\n]*\\n"
+    },
+    {
+      "name": "module",
+      "command": "module",
+      "reject": [
+        "ERROR",
+        "FAIL",
+        "failed",
+        "not found"
+      ],
+      "timeout": 120,
+      "expect": [
+        "module_initialize",
+        "main: Read 36 bytes",
+        "main: Wrote 26 bytes",
+        "module_uninitialize"
+      ]
+    },
+    {
+      "name": "sotest",
+      "command": "sotest",
+      "reject": [
+        "ERROR",
+        "FAIL",
+        "failed",
+        "not found"
+      ],
+      "timeout": 120,
+      "expect": [
+        "testfunc1: Hello, everyone!",
+        "testfunc2: Hope you are having a great day!",
+        "testfunc3: Let",
+        "module_uninitialize"
+      ]
+    }
+  ]
+}

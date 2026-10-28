@@ -24,6 +24,12 @@ set(CMAKE_SYSTEM_VERSION 1)
 add_compile_options(-march=loongarch64 -mabi=lp64d -mcmodel=normal
                     -mstrict-align)
 
+# Linux-targeted cross compilers also define operating system macros.  Remove
+# them so portable libraries select their NuttX implementations.
+
+add_compile_options(-U__linux__ -U__linux -Ulinux -U__gnu_linux__
+                    -U__unix__ -U__unix -Uunix)
+
 # include the toolchain specific cmake file
 
 if(CONFIG_ARCH_TOOLCHAIN_CLANG)

@@ -113,7 +113,7 @@ VPATH += common
 VPATH += $(ARCH_SUBDIR)
 VPATH += $(CHIP_DIR)
 
-all: $(HEAD_OBJ) $(BIN)
+all: $(HEAD_OBJ) $(STARTUP_OBJS) $(BIN)
 
 .PHONY: board/libboard$(LIBEXT)
 
@@ -127,16 +127,16 @@ $(UAOBJS): %$(UOBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
 crt0$(OBJEXT): common/crt0.c $(TOPDIR)/include/nuttx/config.h
-	$(call COMPILE, $<, $@, -U__KERNEL__)
+	$(call COMPILE, $<, $@, -U__KERNEL__ -fvisibility=hidden -fno-lto)
 
 $(UCOBJS): %$(UOBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 ifeq ($(CONFIG_BUILD_FLAT),y)
-$(BIN): $(OBJS)
+$(BIN): $(STARTUP_OBJS) $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 else
-$(BIN): $(UOBJS)
+$(BIN): $(STARTUP_OBJS) $(UOBJS)
 	$(call ARCHIVE, $@, $(UOBJS))
 endif
 

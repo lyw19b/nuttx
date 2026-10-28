@@ -22,6 +22,10 @@
 
 set(SRCS loongarch_fpucmp.c)
 
+nuttx_add_aux_library(STARTUP_OBJS crt0.c)
+target_compile_options(STARTUP_OBJS PRIVATE -U__KERNEL__ -fvisibility=hidden
+                                           -fno-lto)
+
 list(APPEND SRCS loongarch_vectors.S)
 list(APPEND SRCS loongarch_saveusercontext.S)
 list(APPEND SRCS loongarch_allocateheap.c loongarch_cpuidlestack.c)

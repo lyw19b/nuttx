@@ -1,0 +1,121 @@
+{
+  "cases": [
+    {
+      "name": "arch-libc",
+      "command": "arch_libctest",
+      "timeout": 180,
+      "expect": [
+        "arch_libc_test Passed"
+      ],
+      "reject": [
+        "arch_libc_test Failed"
+      ]
+    },
+    {
+      "name": "scanf",
+      "command": "scanftest",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ],
+      "reject": [
+        "Test #[0-9]+ FAILED"
+      ],
+      "expect": [
+        "Scanf tests done.*FAILED: 0"
+      ]
+    },
+    {
+      "name": "wcstombs",
+      "command": "wcstombs",
+      "reject": [
+        "not the expected"
+      ]
+    },
+    {
+      "name": "popen",
+      "command": "popen_test",
+      "expect": [
+        "Results: 0 failed"
+      ],
+      "reject": [
+        "\\[FAIL\\]"
+      ]
+    },
+    {
+      "name": "ram-b",
+      "command": "ramtest -b -s 65536",
+      "reject": [
+        "ERROR",
+        "FAIL"
+      ]
+    },
+    {
+      "name": "ram-h",
+      "command": "ramtest -h -s 65536",
+      "reject": [
+        "ERROR",
+        "FAIL"
+      ]
+    },
+    {
+      "name": "ram-w",
+      "command": "ramtest -w -s 65536",
+      "reject": [
+        "ERROR",
+        "FAIL"
+      ]
+    },
+    {
+      "name": "getprime",
+      "command": "getprime 4",
+      "timeout": 90,
+      "expect": [
+        "took .* msec"
+      ]
+    },
+    {
+      "name": "timer-signal",
+      "command": "timerjitter 10000 100",
+      "timeout": 30
+    },
+    {
+      "name": "timer-thread",
+      "command": "timerjitter -p 10000 100",
+      "timeout": 30
+    },
+    {
+      "name": "crc",
+      "command": "cmocka_crctest",
+      "expect": [
+        "PASSED"
+      ],
+      "reject": [
+        "\\[  FAILED  \\]"
+      ]
+    },
+    {
+      "name": "tmpfs",
+      "command": "fstest",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ],
+      "timeout": 120,
+      "expect": [
+        "File system tests done.*FAILED: 0"
+      ]
+    },
+    {
+      "name": "helloxx",
+      "command": "helloxx",
+      "expect": [
+        "statically constructed instance",
+        "CHelloWorld::HelloWorld: Hello, World!!"
+      ],
+      "reject": [
+        "CONSTRUCTION FAILED"
+      ]
+    }
+  ]
+}

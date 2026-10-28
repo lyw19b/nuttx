@@ -1,0 +1,1622 @@
+{
+  "description": "Each original cmptest.h compares its output byte-for-byte with the unchanged upstream .exp file.",
+  "cases": [
+    {
+      "name": "sodium-aead_aes256gcm",
+      "command": "aead_aes256gcm",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/aead_aes256gcm.exp",
+          "target": "/tmp/aead_aes256gcm.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-aead_aes256gcm2",
+      "command": "aead_aes256gcm2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/aead_aes256gcm2.exp",
+          "target": "/tmp/aead_aes256gcm2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-aead_chacha20poly1305",
+      "command": "aead_chacha20poly1305",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/aead_chacha20poly1305.exp",
+          "target": "/tmp/aead_chacha20poly1305.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-aead_chacha20poly13052",
+      "command": "aead_chacha20poly13052",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/aead_chacha20poly13052.exp",
+          "target": "/tmp/aead_chacha20poly13052.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-aead_xchacha20poly1305",
+      "command": "aead_xchacha20poly1305",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/aead_xchacha20poly1305.exp",
+          "target": "/tmp/aead_xchacha20poly1305.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-auth",
+      "command": "auth",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/auth.exp",
+          "target": "/tmp/auth.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-auth2",
+      "command": "auth2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/auth2.exp",
+          "target": "/tmp/auth2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-auth3",
+      "command": "auth3",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/auth3.exp",
+          "target": "/tmp/auth3.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-auth5",
+      "command": "auth5",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/auth5.exp",
+          "target": "/tmp/auth5.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-auth6",
+      "command": "auth6",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/auth6.exp",
+          "target": "/tmp/auth6.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-auth7",
+      "command": "auth7",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/auth7.exp",
+          "target": "/tmp/auth7.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-box",
+      "command": "box",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/box.exp",
+          "target": "/tmp/box.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-box2",
+      "command": "box2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/box2.exp",
+          "target": "/tmp/box2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-box7",
+      "command": "box7",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/box7.exp",
+          "target": "/tmp/box7.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-box8",
+      "command": "box8",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/box8.exp",
+          "target": "/tmp/box8.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-box_easy",
+      "command": "box_easy",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/box_easy.exp",
+          "target": "/tmp/box_easy.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-box_easy2",
+      "command": "box_easy2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/box_easy2.exp",
+          "target": "/tmp/box_easy2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-box_seal",
+      "command": "box_seal",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/box_seal.exp",
+          "target": "/tmp/box_seal.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-box_seed",
+      "command": "box_seed",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/box_seed.exp",
+          "target": "/tmp/box_seed.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-chacha20",
+      "command": "chacha20",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/chacha20.exp",
+          "target": "/tmp/chacha20.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-codecs",
+      "command": "codecs",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/codecs.exp",
+          "target": "/tmp/codecs.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-core1",
+      "command": "core1",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/core1.exp",
+          "target": "/tmp/core1.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-core2",
+      "command": "core2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/core2.exp",
+          "target": "/tmp/core2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-core3",
+      "command": "core3",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/core3.exp",
+          "target": "/tmp/core3.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-core4",
+      "command": "core4",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/core4.exp",
+          "target": "/tmp/core4.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-core5",
+      "command": "core5",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/core5.exp",
+          "target": "/tmp/core5.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-core6",
+      "command": "core6",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/core6.exp",
+          "target": "/tmp/core6.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-core_ed25519",
+      "command": "core_ed25519",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/core_ed25519.exp",
+          "target": "/tmp/core_ed25519.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-core_ristretto255",
+      "command": "core_ristretto255",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/core_ristretto255.exp",
+          "target": "/tmp/core_ristretto255.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-ed25519_convert",
+      "command": "ed25519_convert",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/ed25519_convert.exp",
+          "target": "/tmp/ed25519_convert.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-generichash",
+      "command": "generichash",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/generichash.exp",
+          "target": "/tmp/generichash.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-generichash2",
+      "command": "generichash2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/generichash2.exp",
+          "target": "/tmp/generichash2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-generichash3",
+      "command": "generichash3",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/generichash3.exp",
+          "target": "/tmp/generichash3.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-hash",
+      "command": "hash",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/hash.exp",
+          "target": "/tmp/hash.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-hash3",
+      "command": "hash3",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/hash3.exp",
+          "target": "/tmp/hash3.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-kdf",
+      "command": "kdf",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/kdf.exp",
+          "target": "/tmp/kdf.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-keygen",
+      "command": "keygen",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/keygen.exp",
+          "target": "/tmp/keygen.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-kx",
+      "command": "kx",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/kx.exp",
+          "target": "/tmp/kx.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-metamorphic",
+      "command": "metamorphic",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/metamorphic.exp",
+          "target": "/tmp/metamorphic.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-misuse",
+      "command": "misuse",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/misuse.exp",
+          "target": "/tmp/misuse.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-onetimeauth",
+      "command": "onetimeauth",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/onetimeauth.exp",
+          "target": "/tmp/onetimeauth.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-onetimeauth2",
+      "command": "onetimeauth2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/onetimeauth2.exp",
+          "target": "/tmp/onetimeauth2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-onetimeauth7",
+      "command": "onetimeauth7",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/onetimeauth7.exp",
+          "target": "/tmp/onetimeauth7.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-pwhash_argon2i",
+      "command": "pwhash_argon2i",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/pwhash_argon2i.exp",
+          "target": "/tmp/pwhash_argon2i.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-pwhash_argon2id",
+      "command": "pwhash_argon2id",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/pwhash_argon2id.exp",
+          "target": "/tmp/pwhash_argon2id.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-pwhash_scrypt",
+      "command": "pwhash_scrypt",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/pwhash_scrypt.exp",
+          "target": "/tmp/pwhash_scrypt.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-pwhash_scrypt_ll",
+      "command": "pwhash_scrypt_ll",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/pwhash_scrypt_ll.exp",
+          "target": "/tmp/pwhash_scrypt_ll.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-randombytes",
+      "command": "randombytes",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/randombytes.exp",
+          "target": "/tmp/randombytes.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-scalarmult",
+      "command": "scalarmult",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/scalarmult.exp",
+          "target": "/tmp/scalarmult.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-scalarmult2",
+      "command": "scalarmult2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/scalarmult2.exp",
+          "target": "/tmp/scalarmult2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-scalarmult5",
+      "command": "scalarmult5",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/scalarmult5.exp",
+          "target": "/tmp/scalarmult5.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-scalarmult6",
+      "command": "scalarmult6",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/scalarmult6.exp",
+          "target": "/tmp/scalarmult6.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-scalarmult7",
+      "command": "scalarmult7",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/scalarmult7.exp",
+          "target": "/tmp/scalarmult7.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-scalarmult8",
+      "command": "scalarmult8",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/scalarmult8.exp",
+          "target": "/tmp/scalarmult8.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-scalarmult_ed25519",
+      "command": "scalarmult_ed25519",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/scalarmult_ed25519.exp",
+          "target": "/tmp/scalarmult_ed25519.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-scalarmult_ristretto255",
+      "command": "scalarmult_ristretto255",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/scalarmult_ristretto255.exp",
+          "target": "/tmp/scalarmult_ristretto255.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-secretbox",
+      "command": "secretbox",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/secretbox.exp",
+          "target": "/tmp/secretbox.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-secretbox2",
+      "command": "secretbox2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/secretbox2.exp",
+          "target": "/tmp/secretbox2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-secretbox7",
+      "command": "secretbox7",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/secretbox7.exp",
+          "target": "/tmp/secretbox7.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-secretbox8",
+      "command": "secretbox8",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/secretbox8.exp",
+          "target": "/tmp/secretbox8.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-secretbox_easy",
+      "command": "secretbox_easy",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/secretbox_easy.exp",
+          "target": "/tmp/secretbox_easy.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-secretbox_easy2",
+      "command": "secretbox_easy2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/secretbox_easy2.exp",
+          "target": "/tmp/secretbox_easy2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-secretstream",
+      "command": "secretstream",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/secretstream.exp",
+          "target": "/tmp/secretstream.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-shorthash",
+      "command": "shorthash",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/shorthash.exp",
+          "target": "/tmp/shorthash.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-sign",
+      "command": "sign",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/sign.exp",
+          "target": "/tmp/sign.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-siphashx24",
+      "command": "siphashx24",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/siphashx24.exp",
+          "target": "/tmp/siphashx24.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-sodium_core",
+      "command": "sodium_core",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/sodium_core.exp",
+          "target": "/tmp/sodium_core.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-sodium_utils",
+      "command": "sodium_utils",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/sodium_utils.exp",
+          "target": "/tmp/sodium_utils.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-sodium_utils2",
+      "command": "sodium_utils2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/sodium_utils2.exp",
+          "target": "/tmp/sodium_utils2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-sodium_utils3",
+      "command": "sodium_utils3",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/sodium_utils3.exp",
+          "target": "/tmp/sodium_utils3.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-sodium_version",
+      "command": "sodium_version",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/sodium_version.exp",
+          "target": "/tmp/sodium_version.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-stream",
+      "command": "stream",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/stream.exp",
+          "target": "/tmp/stream.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-stream2",
+      "command": "stream2",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/stream2.exp",
+          "target": "/tmp/stream2.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-stream3",
+      "command": "stream3",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/stream3.exp",
+          "target": "/tmp/stream3.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-stream4",
+      "command": "stream4",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/stream4.exp",
+          "target": "/tmp/stream4.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-verify1",
+      "command": "verify1",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/verify1.exp",
+          "target": "/tmp/verify1.exp"
+        }
+      ]
+    },
+    {
+      "name": "sodium-xchacha20",
+      "command": "xchacha20",
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "cd /tmp"
+      ],
+      "timeout": 180,
+      "reject": [
+        "Assertion failed",
+        "EXCEPTION:",
+        "memory leaks detected"
+      ],
+      "fixtures": [
+        {
+          "source": "crypto/libsodium/libsodium/test/default/xchacha20.exp",
+          "target": "/tmp/xchacha20.exp"
+        }
+      ]
+    }
+  ]
+}

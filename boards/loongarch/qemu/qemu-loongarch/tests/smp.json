@@ -1,0 +1,17 @@
+{
+  "cases": [
+    {
+      "name": "smp-barrier",
+      "command": "smp",
+      "timeout": 60,
+      "expect": [
+        "Thread 8 completed"
+      ],
+      "reject": [
+        "failed",
+        "Error",
+        "aborted"
+      ]
+    }
+  ]
+}

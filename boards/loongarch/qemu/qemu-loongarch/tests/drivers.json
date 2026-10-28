@@ -1,0 +1,54 @@
+{
+  "cases": [
+    {
+      "name": "rt-tests-cyclictest",
+      "command": "cyclictest -l 100 -i 1000 -t1 -q --default-system",
+      "expect": [
+        "Min:",
+        "Avg:",
+        "Max:"
+      ],
+      "reject": [
+        "ERROR",
+        "FATAL"
+      ],
+      "timeout": 30
+    },
+    {
+      "name": "driver-simple",
+      "command": "cmocka_driver_simple",
+      "expect": [
+        "2 test\\(s\\) run",
+        "PASSED"
+      ],
+      "reject": [
+        "FAILED"
+      ]
+    },
+    {
+      "name": "driver-posix-timer",
+      "command": "cmocka_posix_timer",
+      "expect": [
+        "PASSED"
+      ],
+      "reject": [
+        "FAILED"
+      ],
+      "timeout": 60
+    },
+    {
+      "name": "driver-block",
+      "command": "cmocka_driver_block -m /dev/ram0",
+      "setup": [
+        "mkrd -m 0 -s 512 128"
+      ],
+      "expect": [
+        "PASSED"
+      ],
+      "reject": [
+        "FAILED"
+      ],
+      "timeout": 60
+    }
+  ]
+}

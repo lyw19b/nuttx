@@ -1,0 +1,278 @@
+{
+  "setup": [
+    "mkdir /tmp",
+    "mount -t tmpfs /tmp"
+  ],
+  "cases": [
+    {
+      "name": "cryptodev-des3cbc",
+      "command": "des3cbc",
+      "expect": [
+        "ok, encrypt"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-aescbc",
+      "command": "aescbc",
+      "expect": [
+        "aescbc test ok"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-aesctr",
+      "command": "aesctr",
+      "expect": [
+        "OK test vector"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-aesxts",
+      "command": "aesxts",
+      "expect": [
+        "OK"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-hmac",
+      "command": "hmac",
+      "expect": [
+        "hmac sha256 success"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-hash",
+      "command": "hash",
+      "expect": [
+        "hash sha512 success"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-chacha20",
+      "command": "chacha20",
+      "expect": [
+        "chacha20: all tests passed"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-chachapoly",
+      "command": "chachapoly",
+      "expect": [
+        "all tests passed"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-crc32",
+      "command": "crc32",
+      "expect": [
+        "crc32 test case 8 success"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-aescmac",
+      "command": "aescmac",
+      "expect": [
+        "aescbc test 3 ok"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-ecdsa",
+      "command": "ecdsa",
+      "expect": [
+        "success"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-dhm",
+      "command": "dhm",
+      "expect": [
+        "test dh compute key ok"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-rsa",
+      "command": "rsa",
+      "expect": [
+        "rsa test success"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "cryptodev-pbkdf2",
+      "command": "pbkdf2",
+      "expect": [
+        "PBKDF2 SHA256 success"
+      ],
+      "reject": [
+        "(?i)fail",
+        "(?i)error",
+        "(?i)not supported"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "mtdrwb",
+      "command": "mtdrwb",
+      "expect": [
+        "PASS: Everything looks good"
+      ],
+      "reject": [
+        "ERROR"
+      ],
+      "timeout": 60
+    },
+    {
+      "name": "smart-stress-100",
+      "command": "smart",
+      "expect": [
+        "Final memory usage:",
+        "=== FILLING 100"
+      ],
+      "reject": [
+        "ERROR:"
+      ],
+      "timeout": 60
+    },
+    {
+      "name": "memstress-5s-smoke",
+      "setup": [
+        "memstress -d -m 8192 -n 128 -x4 -t 10000 &"
+      ],
+      "command": "sleep 5",
+      "expect": [
+        "MemoryStress:malloc",
+        "MemoryStress:free",
+        "MemoryStress:realloc",
+        "MemoryStress:aligned_alloc"
+      ],
+      "reject": [
+        "ERROR",
+        "Failed"
+      ]
+    },
+    {
+      "name": "resmonitor-3s-smoke",
+      "setup": [
+        "showinfo -i 1 -d /tmp &"
+      ],
+      "command": "sleep 3",
+      "expect": [
+        "total",
+        "/tmp"
+      ],
+      "reject": [
+        "(?i)fail",
+        "ERROR"
+      ]
+    },
+    {
+      "name": "cpuhog-3s-smoke",
+      "setup": [
+        "cpuhog > /tmp/consumer.log 2>&1 &",
+        "cpuhog > /tmp/producer.log 2>&1 &",
+        "sleep 3"
+      ],
+      "command": "cat /tmp/consumer.log /tmp/producer.log",
+      "expect": [
+        "consumer",
+        "producer",
+        "-+",
+        "[+]"
+      ],
+      "reject": [
+        "fifo:",
+        "ERROR"
+      ]
+    },
+    {
+      "name": "cpuload-3s-smoke",
+      "setup": [
+        "cpuload -p 20 &",
+        "sleep 3"
+      ],
+      "command": "ps",
+      "expect": [
+        "cpuload -p 20"
+      ],
+      "reject": [
+        "ERROR"
+      ]
+    }
+  ]
+}

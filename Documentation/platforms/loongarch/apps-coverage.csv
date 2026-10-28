@@ -1,0 +1,493 @@
+directory,coverage_status,recorded_outcomes,kconfig_dependencies,device_defaults,evidence
+benchmarks/cachespeed,NOT_RUN,,ARCH_ICACHE && ARCH_DCACHE,,
+benchmarks/coremark,EXECUTED_OR_ATTEMPTED,PASS,COREMARK_MULTITHREAD_OVERRIDE; COREMARK_ITERATIONS_OVERRIDE,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+benchmarks/coremark-pro,EXECUTED_OR_ATTEMPTED,FAIL; PASS,LIBC_FLOATINGPOINT; SMP && !BENCHMARK_COREMARK_PRO_USE_SINGLE_CONTEXT; LIB_ZLIB,,/tmp/loongarch-all-apps/run-i-up/report.json; /tmp/loongarch-all-apps/run-i2-up/report.json; /tmp/loongarch-all-apps/run-i3-up/report.json; /tmp/loongarch-all-apps/run-i4-up/report.json; /tmp/loongarch-all-apps/run-libuv-default-signals/report.json; /tmp/loongarch-all-apps/run-libuv-test-stack/report.json; /tmp/loongarch-all-apps/run-libuv-worker-stack/report.json
+benchmarks/cyclictest,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-cyclic/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+benchmarks/dhrystone,EXECUTED_OR_ATTEMPTED,BUILD_BLOCKED; FAIL,,,/tmp/loongarch-all-apps/build-a.log; /tmp/loongarch-all-apps/run-dhrystone/report.json
+benchmarks/fio,NOT_RUN,,LIBC_ELF && LIBC_DLFCN,,
+benchmarks/iozone,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/run-i-up/report.json; /tmp/loongarch-all-apps/run-i2-up/report.json; /tmp/loongarch-all-apps/run-i3-up/report.json; /tmp/loongarch-all-apps/run-i4-up/report.json; /tmp/loongarch-all-apps/run-libuv-default-signals/report.json; /tmp/loongarch-all-apps/run-libuv-test-stack/report.json; /tmp/loongarch-all-apps/run-libuv-worker-stack/report.json
+benchmarks/mtd,NOT_RUN,,BUILD_FLAT && MTD && LIBC_FLOATINGPOINT,,
+benchmarks/osperf,EXECUTED_OR_ATTEMPTED,PASS,PIPES; SCHED_HPWORK,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+benchmarks/ramspeed,EXECUTED_OR_ATTEMPTED,PASS,LIBC_FLOATINGPOINT,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+benchmarks/rt-tests,EXECUTED_OR_ATTEMPTED,PASS,PIPES && ALLOW_GPL_COMPONENTS,,/tmp/loongarch-all-apps/run-m5/report.json; /tmp/loongarch-all-apps/run-m8/report.json
+benchmarks/sd_bench,NOT_RUN,,ALLOW_BSD_COMPONENTS,,
+benchmarks/spinlock_bench,EXECUTED_OR_ATTEMPTED,FAIL,BUILD_FLAT,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+benchmarks/superpi,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json
+benchmarks/tacle-bench,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+benchmarks/test-tlb,BUILD_BLOCKED,BUILD_BLOCKED,ALLOW_GPL_COMPONENTS,,/tmp/loongarch-all-apps/build-m4.log
+benchmarks/tinymembench,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-tinymem/report.json
+benchmarks/whetstone,EXECUTED_OR_ATTEMPTED,PASS,ALLOW_CUSTOM_PERMISSIVE_COMPONENTS,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+boot/mcuboot,NOT_RUN,,CRYPTO_MBEDTLS; MCUBOOT_BOOTLOADER; MCUBOOT_SWAP; MCUBOOT_OVERWRITE_ONLY; MCUBOOT_DIRECT_XIP; WATCHDOG; MCUBOOT_WATCHDOG,/dev/watchdog0; /dev/ota0; /dev/ota1; /dev/otascratch,
+boot/miniboot,NOT_RUN,,,/dev/ota0,
+boot/nxboot,NOT_RUN,,NXBOOT_COPY_TO_RAM; NXBOOT_PRINTF_PROGRESS,/dev/ota0; /dev/ota1; /dev/ota2,
+canutils/candump,NOT_RUN,,NET_CAN && CANUTILS_LIBCANUTILS && ENABLE_ALL_SIGNALS,,
+canutils/cansend,NOT_RUN,,NET_CAN && CANUTILS_LIBCANUTILS,,
+canutils/lely-canopen,NOT_RUN,,CANUTILS_LELYCANOPEN_OBJNAME; CANUTILS_LELYCANOPEN_TPDO; CANUTILS_LELYCANOPEN_EMCY; CANUTILS_LELYCANOPEN_MASTER && CANUTILS_LELYCANOPEN_CSDO; CANUTILS_LELYCANOPEN_MASTER && CANUTILS_LELYCANOPEN_CSDO; NET_CAN; SERIAL_TERMIOS; SYSTEM_READLINE,,
+canutils/slcan,NOT_RUN,,NET_CAN,,
+crypto/controlse,NOT_RUN,,"DEV_SE05X; CRYPTO_MBEDTLS; MBEDTLS_VERSION = ""3.6.2""",,
+crypto/libsodium,EXECUTED_OR_ATTEMPTED,PASS,ALLOW_ICS_COMPONENTS,,/tmp/loongarch-all-apps/run-n2/report.json; /tmp/loongarch-all-apps/run-sodium-m8/report.json; /tmp/loongarch-all-apps/run-sodium-shard0/report.json; /tmp/loongarch-all-apps/run-sodium-shard1/report.json; /tmp/loongarch-all-apps/run-sodium-shard2/report.json; /tmp/loongarch-all-apps/run-sodium-shard3/report.json; /tmp/loongarch-all-apps/run-sodium-wolfssl-image/report.json
+crypto/libtomcrypt,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-f-smp/report.json; /tmp/loongarch-all-apps/run-libtomcrypt/report.json
+crypto/mbedtls,EXECUTED_OR_ATTEMPTED,FAIL; PASS,MBEDTLS_PLATFORM_C; DEV_RANDOM; MBEDTLS_ECP_C; MBEDTLS_SSL_DTLS_HELLO_VERIFY; MBEDTLS_SSL_DTLS_CONNECTION_ID; ARCH_X86_64; MBEDTLS_MD_C && MBEDTLS_RSA_C && MBEDTLS_ECP_C; MBEDTLS_ASN1_PARSE_C && MBEDTLS_OID_C && MBEDTLS_PK_C; MBEDTLS_ASN1_WRITE_C && MBEDTLS_OID_C && MBEDTLS_PK_C; MBEDTLS_X509_CREATE_C; MBEDTLS_X509_CREATE_C; MBEDTLS_THREADING_C; MBEDTLS_HMAC_DRBG_C && MBEDTLS_ECDSA_C; MBEDTLS_DHM_C; MBEDTLS_ECDH_C; MBEDTLS_DHM_C; MBEDTLS_ECDH_C; MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C; MBEDTLS_ECDH_C; DEV_RANDOM; MBEDTLS_PSA_CRYPTO_C; MBEDTLS_GCM_C || MBEDTLS_CCM_C || MBEDTLS_CHACHAPOLY_C; (MBEDTLS_USE_PSA_CRYPTO ||\; MBEDTLS_SSL_KEEP_PEER_CERTIFICATE && MBEDTLS_PSA_CRYPTO_C; MBEDTLS_X509_CRT_PARSE_C && \; MBEDTLS_THREADING_C; MBEDTLS_PSA_CRYPTO_C; MBEDTLS_VERSION_C; MBEDTLS_PKCS1_V21; MBEDTLS_AES_C; MBEDTLS_CHACHA20_C && MBEDTLS_POLY1305_C; MBEDTLS_ECP_C; MBEDTLS_ECP_C; MBEDTLS_ECP_C; MBEDTLS_ECP_DP_SECP256R1_ENABLED || MBEDTLS_ECP_DP_SECP192R1_ENABLED \; MBEDTLS_PSA_CRYPTO_C; MBEDTLS_MD5_C || MBEDTLS_RIPEMD160_C || MBEDTLS_SHA1_C ||\; MBEDTLS_ASN1_PARSE_C && MBEDTLS_OID_C && MBEDTLS_PK_PARSE_C &&\; MBEDTLS_ASN1_PARSE_C && (MBEDTLS_MD_C || MBEDTLS_PSA_CRYPTO_C); MBEDTLS_PSA_CRYPTO_C; MBEDTLS_OID_C; (MBEDTLS_CIPHER_C || MBEDTLS_USE_PSA_CRYPTO) && \; MBEDTLS_ASN1_PARSE_C && MBEDTLS_OID_C && MBEDTLS_PK_PARSE_C &&\,,/tmp/loongarch-all-apps/run-i-up/report.json; /tmp/loongarch-all-apps/run-i2-up/report.json; /tmp/loongarch-all-apps/run-i3-up/report.json; /tmp/loongarch-all-apps/run-i4-up/report.json; /tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json; /tmp/loongarch-all-apps/run-libuv-default-signals/report.json; /tmp/loongarch-all-apps/run-libuv-test-stack/report.json; /tmp/loongarch-all-apps/run-libuv-worker-stack/report.json
+crypto/tinycrypt,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json
+crypto/wolfssl,EXECUTED_OR_ATTEMPTED,FAIL; PASS,ALLOW_GPL_COMPONENTS,,/tmp/loongarch-all-apps/run-wolfssl-date/report.json; /tmp/loongarch-all-apps/run-wolfssl-m8/report.json; /tmp/loongarch-all-apps/run-wolfssl/report.json
+database/sqlite,BUILD_BLOCKED,BUILD_BLOCKED,CONFIG_FS_LOCK_BUCKET_SIZE > 0; UTILS_SQLITE,,/tmp/loongarch-all-apps/build-i-fixed.log
+examples/abntcodi,NOT_RUN,,,,
+examples/adc,NOT_RUN,,ADC && BOARDCTL,/dev/adc0,
+examples/adjtime,EXECUTED_OR_ATTEMPTED,FAIL,CLOCK_ADJTIME,,/tmp/loongarch-all-apps/run-j-up/report.json; /tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json
+examples/ads7046,NOT_RUN,,ADC_ADS7046,/dev/adc0,
+examples/adxl372_test,NOT_RUN,,SENSORS_ADXL372,,
+examples/ajoystick,NOT_RUN,,INPUT_AJOYSTICK,/dev/ajoy0,
+examples/alarm,NOT_RUN,,RTC_DRIVER && RTC_ALARM,/dev/rtc0,
+examples/amg88xx,NOT_RUN,,SENSORS_AMG88XX,,
+examples/apa102,NOT_RUN,,LEDS_APA102,,
+examples/apds9960,NOT_RUN,,SENSORS_APDS9960,/dev/gest0,
+examples/audio_rttl,NOT_RUN,,AUDIO; AUDIOUTILS_RTTTL_C,,
+examples/baromonitor,NOT_RUN,,UORB; LIBC_FLOATINGPOINT; GRAPHICS_LVGL; LV_USE_NUTTX; LV_FONT_MONTSERRAT_24; LV_FONT_MONTSERRAT_32,,
+examples/bastest,EXECUTED_OR_ATTEMPTED,PASS,FS_ROMFS && INTERPRETERS_BAS,/dev/ram0,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/battery,NOT_RUN,,BATTERY_CHARGER || BATTERY_GAUGE || BATTERY_MONITOR,/dev/batt0,
+examples/ble,NOT_RUN,,WIRELESS_BLUETOOTH; SENSORS_BME680,,
+examples/bme680,NOT_RUN,,SENSORS_BME680,,
+examples/bmi160,NOT_RUN,,SENSORS_BMI160; SENSORS_BMI160_UORB,,
+examples/bmp180,NOT_RUN,,SENSORS_BMP180,,
+examples/bmp280,NOT_RUN,,SENSORS_BMP280,,
+examples/bridge,NOT_RUN,,NET_UDP && !NET_IPv6; EXAMPLES_BRIDGE_NET1_NOMAC; !EXAMPLES_BRIDGE_NET1_DHCPC; EXAMPLES_BRIDGE_NET2_NOMAC; !EXAMPLES_BRIDGE_NET2_DHCPC,,
+examples/buttons,NOT_RUN,,INPUT_BUTTONS,/dev/buttons,
+examples/calculator,NOT_RUN,,GRAPHICS_LVGL && INPUT_TOUCHSCREEN,/dev/input0; /dev/fb0,
+examples/calib_udelay,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-e-smp/report.json
+examples/camera,NOT_RUN,,DRIVERS_VIDEO,,
+examples/can,NOT_RUN,,CAN,/dev/can0,
+examples/capture,NOT_RUN,,CAPTURE,/dev/capture0,
+examples/cbortest,BUILD_BLOCKED,BUILD_BLOCKED,FSUTILS_TINYCBOR_LIB,,/tmp/loongarch-all-apps/build-e2.log
+examples/cctype,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-apps-next-smp/report.json; /tmp/loongarch-apps-next-up/report.json
+examples/charger,NOT_RUN,,,/dev/bat,
+examples/chat,NOT_RUN,,,/dev/ttyS1,
+examples/chrono,NOT_RUN,,SLCD && ENABLE_ALL_SIGNALS,,
+examples/configdata,EXECUTED_OR_ATTEMPTED,FAIL; PASS,!EXAMPLES_CONFIGDATA_ARCHINIT,,/tmp/loongarch-all-apps/run-j-up/report.json; /tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json
+examples/cordic,NOT_RUN,,,/dev/cordic0,
+examples/cpuhog,EXECUTED_OR_ATTEMPTED,PASS,PIPES,,/tmp/loongarch-all-apps/run-n-smoke/report.json
+examples/dac,NOT_RUN,,DAC,/dev/dac0,
+examples/dhcpd,NOT_RUN,,,,
+examples/dhtxx,NOT_RUN,,SENSORS_DHTXX,/dev/hum0,
+examples/discover,NOT_RUN,,NET_UDP; EXAMPLES_DISCOVER && !NSH_NETINIT; EXAMPLES_DISCOVER && !NSH_NETINIT; EXAMPLES_DISCOVER && !NSH_NETINIT && !EXAMPLES_DISCOVER_DHCPC; EXAMPLES_DISCOVER && !NSH_NETINIT; EXAMPLES_DISCOVER && !NSH_NETINIT,,
+examples/djoystick,NOT_RUN,,INPUT_DJOYSTICK && ENABLE_ALL_SIGNALS,/dev/djoy0,
+examples/dronecan,NOT_RUN,,CANUTILS_LIBDRONECAN; CAN,/dev/can0,
+examples/elf/main,EXECUTED_OR_ATTEMPTED,FAIL,ELF; FS_ROMFS && BUILD_FLAT; FS_CROMFS && BUILD_FLAT; EXAMPLES_ELF_EXTERN; EXAMPLES_ELF_FSMOUNT; EXAMPLES_ELF_ROMFS; EXAMPLES_ELF_FSMOUNT; EXAMPLES_ELF_ROMFS || EXAMPLES_ELF_FSMOUNT; LIB_SYSCALL; UCLIBCXX || LIBCXX,/dev/ram0; /dev/mmcsd0,/tmp/loongarch-all-apps/run-k-smp/report.json; /tmp/loongarch-all-apps/run-k5-full/report.json
+examples/elf/tests/errno,EXECUTED_OR_ATTEMPTED,FAIL,,,/tmp/loongarch-all-apps/run-k5-full/000.log
+examples/elf/tests/hello,EXECUTED_OR_ATTEMPTED,FAIL,,,/tmp/loongarch-all-apps/run-k5-full/000.log
+examples/elf/tests/helloxx,EXECUTED_OR_ATTEMPTED,FAIL; OBSERVED,,,/tmp/loongarch-all-apps/run-k5-full/000.log
+examples/elf/tests/longjmp,NOT_RUN,,,,
+examples/elf/tests/mutex,EXECUTED_OR_ATTEMPTED,OBSERVED,,,/tmp/loongarch-all-apps/run-k5-full/000.log
+examples/elf/tests/pthread,EXECUTED_OR_ATTEMPTED,FAIL,,,/tmp/loongarch-all-apps/run-k5-full/000.log
+examples/elf/tests/signal,EXECUTED_OR_ATTEMPTED,OBSERVED,,,/tmp/loongarch-all-apps/run-k5-full/000.log
+examples/elf/tests/struct,EXECUTED_OR_ATTEMPTED,OBSERVED,,,/tmp/loongarch-all-apps/run-k5-full/000.log
+examples/elf/tests/task,EXECUTED_OR_ATTEMPTED,OBSERVED,,,/tmp/loongarch-all-apps/run-k5-full/000.log
+examples/embedlog,NOT_RUN,,,,
+examples/esp32_himem,NOT_RUN,,,,
+examples/etl,EXECUTED_OR_ATTEMPTED,PASS,HAVE_CXX && ETL,,/tmp/loongarch-all-apps/run-l5/report.json; /tmp/loongarch-all-apps/run-l6/report.json; /tmp/loongarch-all-apps/run-l7-smp/report.json; /tmp/loongarch-all-apps/run-l7-up/report.json
+examples/fb,NOT_RUN,,VIDEO_FB,/dev/fb0,
+examples/fbcon,NOT_RUN,,EXAMPLES_FBCON_CUSTOM_BPP; !NX_DISABLE_1BPP; !NX_DISABLE_2BPP; !NX_DISABLE_4BPP; !NX_DISABLE_8BPP; !NX_DISABLE_16BPP; !NX_DISABLE_24BPP; !NX_DISABLE_32BPP; EXAMPLES_FBCON_CUSTOM_FONTID ,/dev/fb0,
+examples/fboverlay,NOT_RUN,,FB_OVERLAY,,
+examples/fdpicxip,NOT_RUN,,FS_XIPFS && FDPIC && LIBC_EXECFUNCS,,
+examples/flash_test,NOT_RUN,,BUILD_FLAT && MTD_SMART,,
+examples/flowc,NOT_RUN,,SERIAL_TERMIOS,/dev/ttyACM0; /dev/ttyACM0,
+examples/fmsynth,NOT_RUN,,,,
+examples/foc,NOT_RUN,,MOTOR_FOC; INDUSTRY_FOC; INDUSTRY_FOC_FLOAT; INDUSTRY_FOC_FIXED16; BUILD_FLAT; INDUSTRY_FOC_HANDLER_PRINT; INDUSTRY_FOC_MODEL_PMSM; EXAMPLES_FOC_ANGOBS; ADC; ADC; INPUT_BUTTONS; EXAMPLES_FOC_HAVE_OPENLOOP; LOGGING_NXSCOPE,/dev/foc; /dev/qe; /dev/hall; /dev/adc0; /dev/buttons; /dev/ttyS0,
+examples/ft80x,NOT_RUN,,LCD_FT80X,/dev/ft800; /dev/ft801,
+examples/ftpc,NOT_RUN,,,,
+examples/ftpd,NOT_RUN,,,,
+examples/fxos8700cq_test,NOT_RUN,,,,
+examples/gpio,NOT_RUN,,DEV_GPIO,,
+examples/gps,NOT_RUN,,GNSSUTILS_MINMEA_LIB,,
+examples/hall,NOT_RUN,,SENSORS_HALL3PHASE,/dev/hall0,
+examples/hdc1008_demo,NOT_RUN,,SENSORS_HDC1008,,
+examples/hello,EXECUTED_OR_ATTEMPTED,EARLIER_SERIAL_EVIDENCE,SCHED_USER_IDENTITY,,/tmp/loongarch-13-apps-1.log; /tmp/loongarch-13-apps-4.log; /tmp/loongarch-13-heap-1.log
+examples/hello_d,NOT_RUN,,,,
+examples/hello_nim,NOT_RUN,,,,
+examples/hello_swift,NOT_RUN,,,,
+examples/hello_wasm,NOT_RUN,,,,
+examples/hello_zig,NOT_RUN,,,,
+examples/helloxx,EXECUTED_OR_ATTEMPTED,PASS,HAVE_CXX,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-next-smp/report.json; /tmp/loongarch-apps-next-up/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+examples/hidkbd,NOT_RUN,,USBHOST_HIDKBD; INPUT_KEYBOARD_BYTESTREAM,/dev/kbda,
+examples/hts221_reader,NOT_RUN,,SENSORS_HTS221,,
+examples/hx711,NOT_RUN,,,,
+examples/i2schar,NOT_RUN,,I2S && AUDIO && DRIVERS_AUDIO && AUDIO_I2SCHAR; BUILD_FLAT,/dev/i2schar0,
+examples/i2sloop,NOT_RUN,,I2S && AUDIO && DRIVERS_AUDIO && AUDIO_I2SCHAR && ENABLE_ALL_SIGNALS,,
+examples/igmp,NOT_RUN,,,,
+examples/ina219,NOT_RUN,,SENSORS_INA219,,
+examples/ina226,NOT_RUN,,SENSORS_INA226,/dev/ina226,
+examples/ini_dumper,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/ipcfg,EXECUTED_OR_ATTEMPTED,PASS,FSUTILS_IPCFG,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/ipforward,NOT_RUN,,NET_TUN && (NET_TCP || NET_ICMPv6); NET_TCP; NET_ICMPv6,,
+examples/isl29023,NOT_RUN,,SENSORS_ISL29023,,
+examples/json,EXECUTED_OR_ATTEMPTED,PASS,NETUTILS_CJSON || NETUTILS_JSON,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/keyboard,NOT_RUN,,,/dev/kbd0,
+examples/leds,NOT_RUN,,USERLED,/dev/userleds,
+examples/leds_rust,NOT_RUN,,USERLED,,
+examples/leds_zig,NOT_RUN,,USERLED,,
+examples/lely_master,NOT_RUN,,CANUTILS_LELYCANOPEN && CANUTILS_LELYCANOPEN_SDEV; CANUTILS_LELYCANOPEN_TIME && CANUTILS_LELYCANOPEN_OBJUPLOAD; CANUTILS_LELYCANOPEN_MASTER; CAN; NET_CAN; EXAMPLES_LELYMASTER_CHARDEV; EXAMPLES_LELYMASTER_SOCKET,/dev/can0,
+examples/lely_slave,NOT_RUN,,CANUTILS_LELYCANOPEN && CANUTILS_LELYCANOPEN_SDEV; CANUTILS_LELYCANOPEN_TIME && CANUTILS_LELYCANOPEN_OBJUPLOAD; CAN; NET_CAN; EXAMPLES_LELYSLAVE_CHARDEV; EXAMPLES_LELYSLAVE_SOCKET,/dev/can0,
+examples/libtest,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/lis3dsh_reader,NOT_RUN,,LIS3DSH; SPI_EXCHANGE,,
+examples/lp503x,NOT_RUN,,LP503X,/dev/leddrv0,
+examples/lsm303_reader,NOT_RUN,,SENSORS_LSM303AGR,,
+examples/lsm330spi_test,NOT_RUN,,SENSORS_LSM330SPI,,
+examples/lsm6dsl_reader,NOT_RUN,,SENSORS_LSM6DSL,,
+examples/ltr308,NOT_RUN,,SENSORS_LTR308,,
+examples/lvgldemo,NOT_RUN,,GRAPHICS_LVGL; INPUT_TOUCHSCREEN,/dev/input0,
+examples/lvglterm,NOT_RUN,,GRAPHICS_LVGL; PSEUDOTERM; INPUT_KEYBOARD; EXAMPLES_LVGLTERM_INPUT_KBD; EXAMPLES_LVGLTERM,/dev/kbd0,
+examples/lvgltouch,NOT_RUN,,GRAPHICS_LVGL && INPUT_TOUCHSCREEN; !LV_USE_NUTTX_LCD,/dev/input0; /dev/fb0,
+examples/lws_echo,NOT_RUN,,NETUTILS_LIBWEBSOCKETS && NETUTILS_LIBWEBSOCKETS_SERVER,,
+examples/max31855,NOT_RUN,,,,
+examples/mcuboot/slot_confirm,NOT_RUN,,,,
+examples/mcuboot/swap_test,NOT_RUN,,,,
+examples/mcuboot/update_agent,NOT_RUN,,NET_TCP; CODECS_HASH_MD5; EXAMPLES_MCUBOOT_UPDATE_AGENT_DL_VERIFY_MD5,,
+examples/mcuboot/update_agent_local,NOT_RUN,,BOOT_MCUBOOT,,
+examples/mdnsd,NOT_RUN,,NETUTILS_MDNS_DAEMON,,
+examples/media,NOT_RUN,,,/dev/mtd0,
+examples/microros_pub,NOT_RUN,,SYSTEM_MICROROS,,
+examples/microros_sub,NOT_RUN,,SYSTEM_MICROROS,,
+examples/microwindows,NOT_RUN,,GRAPHICS_MICROWINDOWS; MICROWINDOWS_MWIN,,
+examples/mld,NOT_RUN,,NET_UDP && NET_MLD,,
+examples/mlx90614,NOT_RUN,,,,
+examples/mml_parser,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/modbus,NOT_RUN,,USERLED,,
+examples/modbusmaster,NOT_RUN,,,,
+examples/module/chardev,EXECUTED_OR_ATTEMPTED,OBSERVED,,,/tmp/loongarch-all-apps/run-k5-full/001.log
+examples/module/main,EXECUTED_OR_ATTEMPTED,PASS,MODULE && BOARDCTL; (FS_ROMFS || FS_CROMFS) && BUILD_FLAT; EXAMPLES_MODULE_BUILTINFS; FS_ROMFS && BUILD_FLAT; FS_CROMFS && BUILD_FLAT; EXAMPLES_MODULE_ROMFS; !EXAMPLES_MODULE_BUILTINFS; EXAMPLES_MODULE_FSMOUNT; EXAMPLES_MODULE_FSMOUNT; EXAMPLES_MODULE_ROMFS || EXAMPLES_MODULE_FSMOUNT; !EXAMPLES_MODULE_BUILTINFS && !EXAMPLES_MODULE_FSMOUNT; EXAMPLES_MODULE_FSMOUNT; EXPERIMENTAL; EXPERIMENTAL,/dev/ram0; /dev/mmcsd0,/tmp/loongarch-all-apps/run-k-smp/report.json; /tmp/loongarch-all-apps/run-k5-full/report.json
+examples/mount,NOT_RUN,,,/dev/mtdblock0,
+examples/mqttc,NOT_RUN,,NETUTILS_MQTTC; EXAMPLES_MQTTC_SUB; NETUTILS_MQTTC_WITH_MBEDTLS,,
+examples/mtdpart,EXECUTED_OR_ATTEMPTED,PASS,MTD_PARTITION && BUILD_FLAT; !EXAMPLES_MTDPART_ARCHINIT,,/tmp/loongarch-all-apps/run-j-up/report.json; /tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json
+examples/mtdrwb,EXECUTED_OR_ATTEMPTED,FAIL,(MTD_WRBUFFER || MTD_READAHEAD) && BUILD_FLAT; !EXAMPLES_MTDRWB_ARCHINIT; !EXAMPLES_MTDRWB_ARCHINIT,,/tmp/loongarch-all-apps/run-n-storage/report.json; /tmp/loongarch-all-apps/run-n2/report.json; /tmp/loongarch-all-apps/run-n3-storage/report.json
+examples/nanoxcalc,NOT_RUN,,MICROWINDOWS_NANOX && LIBC_FLOATINGPOINT,,
+examples/nanoxterm,NOT_RUN,,MICROWINDOWS_NANOX && PSEUDOTERM && LIBC_EXECFUNCS,,
+examples/netlink_route,EXECUTED_OR_ATTEMPTED,FAIL,NETLINK_ROUTE,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/netloop,EXECUTED_OR_ATTEMPTED,OBSERVED,NET_LOOPBACK && NET_TCP && NET_TCPBACKLOG && NET_TCP_WRITE_BUFFERS && NET_IPv4; NET_TCP_KEEPALIVE,,/tmp/loongarch-apps-observe-netloop/report.json; /tmp/loongarch-apps-observe-up-netloop/report.json
+examples/netpkt,NOT_RUN,,NET_PKT,,
+examples/nettest,EXECUTED_OR_ATTEMPTED,FAIL; PASS,NET_TCP; NET_SOCKOPTS; NET_LOOPBACK || IEEE802154_LOOPBACK || PKTRADIO_LOOPBACK; !EXAMPLES_NETTEST_LOOPBACK; NET_IPv4; NET_IPv6; !EXAMPLES_NETTEST_LOOPBACK; EXAMPLES_NETTEST_INIT,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-g-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/nimble,NOT_RUN,,,,
+examples/nimble_blecent,NOT_RUN,,,,
+examples/nimble_bleprph,NOT_RUN,,,,
+examples/nng_test,NOT_RUN,,,,
+examples/noteprintf,NOT_RUN,,SCHED_INSTRUMENTATION_DUMP,,
+examples/nrf24l01_btle,NOT_RUN,,DRIVERS_WIRELESS; SENSORS_DHTXX,,
+examples/nrf24l01_term,NOT_RUN,,DRIVERS_WIRELESS,,
+examples/null,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/nunchuck,NOT_RUN,,INPUT_NUNCHUCK,/dev/nunchuck0,
+examples/nx,NOT_RUN,,NX; !EXAMPLES_NX_DEFAULT_FONT; !EXAMPLES_NX_RAWWINDOWS,,
+examples/nxdemo,NOT_RUN,,BOARDCTL,,
+examples/nxflat,NOT_RUN,,NXFLAT,,
+examples/nxflatxip,NOT_RUN,,FS_XIPFS && NXFLAT && LIBC_EXECFUNCS,/dev/rpflash,
+examples/nxhello,NOT_RUN,,NX; config EXAMPLES_NXHELLO_BPP.,,
+examples/nximage,NOT_RUN,,NX,,
+examples/nxlines,NOT_RUN,,NX; !EXAMPLES_NXLINES_DEFAULT_COLORS; !EXAMPLES_NXLINES_DEFAULT_COLORS; EXAMPLES_NXLINES_BPP (there really is no meaningful default).; !EXAMPLES_NXLINES_DEFAULT_COLORS; EXAMPLES_NXLINES_BPP (there really is no meaningful default).; !EXAMPLES_NXLINES_DEFAULT_COLORS; EXAMPLES_NXLINES_BPP (there really is no meaningful default).,,
+examples/nxmbserver,NOT_RUN,,NXMODBUS_SERVER,,
+examples/nxscope,NOT_RUN,,LOGGING_NXSCOPE; CDCACM; LOGGING_NXSCOPE_CRICHANNELS,/dev/ttyUSB0; /dev/timer0,
+examples/nxterm,NOT_RUN,,NXTERM; PSEUDOTERM && INPUT_KEYBOARD; !INPUT_KEYBOARD_BYTESTREAM; !NSH_ALTCONDEV && !NSH_USBKBD; NSH_CONSOLE; EXAMPLES_NXTERM_NSH_FALLBACK; EXAMPLES_NXTERM_PTYCONSOLE,/dev/kbda,
+examples/nxtext,NOT_RUN,,NX; config EXAMPLES_NXTEXT_BPP.; config EXAMPLES_NXTEXT_BPP.,,
+examples/obd2,NOT_RUN,,,,
+examples/oneshot,NOT_RUN,,ONESHOT && ENABLE_ALL_SIGNALS,/dev/oneshot,
+examples/opencyphal,NOT_RUN,,CANUTILS_LIBOPENCYPHAL,,
+examples/optee,NOT_RUN,,,,
+examples/optee_gp,NOT_RUN,,LIBTEEC,,
+examples/pca9635,NOT_RUN,,PCA9635PW,,
+examples/pdcurses,NOT_RUN,,,,
+examples/pf_ieee802154,NOT_RUN,,NET_IEEE802154,,
+examples/pipe,EXECUTED_OR_ATTEMPTED,EARLIER_SERIAL_EVIDENCE,PIPES,,/tmp/loongarch-13-apps-1.log; /tmp/loongarch-13-apps-4.log; /tmp/loongarch-13-heap-1.log
+examples/poll,EXECUTED_OR_ATTEMPTED,FAIL,PIPES,,/tmp/loongarch-apps-observe-poll/report.json; /tmp/loongarch-apps-observe-up-poll/report.json
+examples/popen,EXECUTED_OR_ATTEMPTED,PASS,SYSTEM_POPEN; !DISABLE_POSIX_TIMERS,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/posix_spawn,NOT_RUN,,!BINFMT_DISABLE; !DISABLE_MOUNTPOINT; BOARDCTL; BOARDCTL_APP_SYMTAB; ELF; FS_ROMFS,/dev/ram0,
+examples/posix_stdio,EXECUTED_OR_ATTEMPTED,PASS,EXAMPLES_POSIX_STDIO; EXAMPLES_POSIX_STDIO; EXAMPLES_POSIX_STDIO,,/tmp/loongarch-apps-next-smp/report.json; /tmp/loongarch-apps-next-up/report.json
+examples/powerled,NOT_RUN,,DRIVERS_POWERLED; LIBC_FLOATINGPOINT,,
+examples/powermonitor,NOT_RUN,,SENSORS_LTC4151,,
+examples/pppd,NOT_RUN,,,,
+examples/pty_test,NOT_RUN,,PSEUDOTERM,/dev/ttyS1,
+examples/pulsecount,NOT_RUN,,PULSECOUNT,/dev/pulsecount0,
+examples/pwfb,NOT_RUN,,NX; !EXAMPLES_PWFB_DEFAULT_FONT,,
+examples/pwlines,NOT_RUN,,NX,,
+examples/pwm,NOT_RUN,,PWM,/dev/pwm0,
+examples/qencoder,NOT_RUN,,SENSORS_QENCODER; EXAMPLES_QENCODER_HAVE_MAXPOS,/dev/qe0,
+examples/random,NOT_RUN,,DEV_RANDOM,,
+examples/relays,NOT_RUN,,NETUTILS_JSON; ARCH_RELAYS,,
+examples/rfid_readuid,NOT_RUN,,CL_MFRC522,,
+examples/rgbled,NOT_RUN,,,/dev/rgbled0,
+examples/rng90,NOT_RUN,,DEV_RNG90,/dev/rng0,
+examples/romfs,EXECUTED_OR_ATTEMPTED,PASS,FS_ROMFS && BUILD_FLAT && BOARDCTL_ROMDISK,,/tmp/loongarch-apps-next-smp/report.json; /tmp/loongarch-apps-next-up/report.json
+examples/rpmsgsocket,NOT_RUN,,NET_RPMSG,,
+examples/rust/baremetal,NOT_RUN,,,,
+examples/rust/hello,NOT_RUN,,,,
+examples/rust/slint,NOT_RUN,,,,
+examples/scd41,NOT_RUN,,SENSORS_SCD41,/dev/co2,
+examples/sendmail,NOT_RUN,,NET_IPv4; NET_TCP,,
+examples/sensor_fusion,NOT_RUN,,,,
+examples/serialblaster,NOT_RUN,,,/dev/ttyS2,
+examples/serialrx,NOT_RUN,,,/dev/ttyS0,
+examples/serloop,NOT_RUN,,,,
+examples/settings,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-j-up/report.json; /tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json
+examples/shm_test,EXECUTED_OR_ATTEMPTED,PASS,FS_SHMFS,,/tmp/loongarch-apps-next-smp/report.json; /tmp/loongarch-apps-next-up/report.json
+examples/sht3x,NOT_RUN,,SENSORS_SHT3X,,
+examples/shv-nxboot-updater,NOT_RUN,,NETUTILS_LIBSHVC && ENABLE_ALL_SIGNALS,,
+examples/shv-test,NOT_RUN,,NETUTILS_LIBSHVC,,
+examples/slcd,NOT_RUN,,SLCD,/dev/slcd0,
+examples/smf,EXECUTED_OR_ATTEMPTED,PASS,NSH_BUILTIN_APPS; SYSTEM_SMF; SYSTEM_SMF_ANCESTOR_SUPPORT; SYSTEM_SMF_INITIAL_TRANSITION,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/smps,NOT_RUN,,DRIVERS_SMPS; LIBC_FLOATINGPOINT,,
+examples/sotest/main,EXECUTED_OR_ATTEMPTED,PASS,LIBC_DLFCN; FS_ROMFS && BUILD_FLAT && BOARDCTL_ROMDISK; EXPERIMENTAL; EXPERIMENTAL,,/tmp/loongarch-all-apps/run-k-smp/report.json; /tmp/loongarch-all-apps/run-k5-full/report.json
+examples/sotest/modprint,EXECUTED_OR_ATTEMPTED,OBSERVED,,,/tmp/loongarch-all-apps/run-k5-full/002.log
+examples/sotest/sotest,EXECUTED_OR_ATTEMPTED,OBSERVED,,,/tmp/loongarch-all-apps/run-k5-full/002.log
+examples/spislv_test,NOT_RUN,,,/dev/spislv0,
+examples/stat,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/stepper,NOT_RUN,,,,
+examples/sx127x_demo,NOT_RUN,,LPWAN_SX127X,,
+examples/system,EXECUTED_OR_ATTEMPTED,PASS,SYSTEM_SYSTEM,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/tcp_ipc_client,NOT_RUN,,EXAMPLES_TCP_IPC_CLIENT; EXAMPLES_TCP_IPC_CLIENT; EXAMPLES_TCP_IPC_CLIENT,,
+examples/tcp_ipc_server,BUILD_BLOCKED,BUILD_BLOCKED,EXAMPLES_TCP_IPC_SERVER; EXAMPLES_TCP_IPC_SERVER; EXAMPLES_TCP_IPC_SERVER,,/tmp/loongarch-all-apps/build-e.log
+examples/tcpblaster,NOT_RUN,,NET_TCP; NET_LOOPBACK || IEEE802154_LOOPBACK || PKTRADIO_LOOPBACK; !EXAMPLES_TCPBLASTER_LOOPBACK; NET_IPv4; NET_IPv6; !EXAMPLES_TCPBLASTER_LOOPBACK; EXAMPLES_TCPBLASTER_INIT,,
+examples/tcpecho,NOT_RUN,,EXAMPLES_TCPECHO; EXAMPLES_TCPECHO; EXAMPLES_TCPECHO; EXAMPLES_TCPECHO && !NSH_NETINIT; EXAMPLES_TCPECHO && !NSH_NETINIT; EXAMPLES_TCPECHO && !NSH_NETINIT && !EXAMPLES_TCPECHO_DHCPC; EXAMPLES_TCPECHO && !NSH_NETINIT; EXAMPLES_TCPECHO && !NSH_NETINIT,,
+examples/telnetd,NOT_RUN,,NETUTILS_TELNETD,,
+examples/termios,NOT_RUN,,,,
+examples/thttpd,NOT_RUN,,FS_ROMFS && BUILD_FLAT,,
+examples/tiff,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/timer,NOT_RUN,,TIMER,/dev/timer0,
+examples/timer_gpio,NOT_RUN,,TIMER && DEV_GPIO,/dev/timer0; /dev/gpio0,
+examples/tlpi,NOT_RUN,,ALLOW_GPL_COMPONENTS,,
+examples/tmp112,NOT_RUN,,SENSORS_TMP112,/dev/temp0,
+examples/touchscreen,NOT_RUN,,,/dev/input0,
+examples/txmorse,NOT_RUN,,AUDIOUTILS_MORSEY,,
+examples/udgram,EXECUTED_OR_ATTEMPTED,FAIL,NET_LOCAL,/dev/fifo,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/udp,EXECUTED_OR_ATTEMPTED,FAIL; PASS,NET_UDP; NET_IPv4; NET_IPv6; NET_BROADCAST,,/tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-udp/report.json
+examples/udpblaster,NOT_RUN,,NET_UDP; NET_IPv4; NET_IPv6; !EXAMPLES_UDPBLASTER_LOOPBACK; EXAMPLES_UDPBLASTER_INIT,,
+examples/uid,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/unionfs,EXECUTED_OR_ATTEMPTED,PASS,FS_ROMFS && FS_UNIONFS && BUILD_FLAT,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/usbserial,NOT_RUN,,BOARDCTL; USBDEV_TRACE || DEBUG_USB; USBDEV_TRACE || DEBUG_USB; USBDEV_TRACE || DEBUG_USB; USBDEV_TRACE || DEBUG_USB; USBDEV_TRACE || DEBUG_USB,,
+examples/userfs,EXECUTED_OR_ATTEMPTED,PASS,FS_USERFS,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/usrsocktest,EXECUTED_OR_ATTEMPTED,FAIL,NET && NET_USRSOCK,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/ustream,EXECUTED_OR_ATTEMPTED,PASS,NET_LOCAL,/dev/fifo,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+examples/uvc_cam,NOT_RUN,,USBUVC && VIDEO,,
+examples/veml6070,NOT_RUN,,SENSORS_VEML6070,,
+examples/watchdog,NOT_RUN,,WATCHDOG,/dev/watchdog0,
+examples/watched,NOT_RUN,,EXAMPLES_WATCHER,,
+examples/watcher,NOT_RUN,,DRIVERS_NOTERAM; FSUTILS_MKFATFS,/dev/watchdog0,
+examples/webpanel,NOT_RUN,,NET_TCP; NETUTILS_THTTPD; NETUTILS_LIBWEBSOCKETS; NETUTILS_LIBWEBSOCKETS_SERVER; FS_BINFS; FS_UNIONFS; PSEUDOTERM; PSEUDOTERM_SUSV1,,
+examples/webserver,NOT_RUN,,,,
+examples/wget,NOT_RUN,,NET_TCP; !NSH_NETINIT,,
+examples/wgetjson,NOT_RUN,,NETUTILS_CJSON,,
+examples/wiegand,NOT_RUN,,,,
+examples/ws2812,NOT_RUN,,WS2812,/dev/leds0,
+examples/ws2812esp32rmt,NOT_RUN,,ESP32_RMT,,
+examples/xbc_test,NOT_RUN,,USBHOST; !USBHOST_INT_DISABLE,/dev/xboxa,
+examples/xedge_demo,NOT_RUN,,NETUTILS_XEDGE && ALLOW_GPL_COMPONENTS && ENABLE_ALL_SIGNALS,,
+examples/xmlrpc,NOT_RUN,,NET_TCP; EXAMPLES_XMLRPC; EXAMPLES_XMLRPC && !NSH_NETINIT; EXAMPLES_XMLRPC && !NSH_NETINIT; EXAMPLES_XMLRPC && !NSH_NETINIT && !EXAMPLES_XMLRPC_DHCPC; EXAMPLES_XMLRPC && !NSH_NETINIT; EXAMPLES_XMLRPC && !NSH_NETINIT,,
+examples/zerocross,NOT_RUN,,SENSORS_ZEROCROSS && ENABLE_ALL_SIGNALS,/dev/zc0,
+fsutils/flashtool,NOT_RUN,,MTD; BCH,,
+fsutils/mkgpt,EXECUTED_OR_ATTEMPTED,FAIL,,,/tmp/loongarch-all-apps/run-e-smp/report.json
+fsutils/mkmbr,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+games/NXDoom,NOT_RUN,,ALLOW_GPL_COMPONENTS; VIDEO_FB; CRYPTO; LIBC_LOCALE; AUDIOUTILS_RTTTL_C; !DISABLE_PTHREAD; GAMES_NXDOOM_RTTTL_MUSIC,/dev/pwm0; /dev/fb0; /dev/kbd0,
+games/brickmatch,NOT_RUN,,!INPUT_DJOYSTICK && !SENSORS_APDS9960; INPUT_DJOYSTICK; SENSORS_APDS9960; INPUT_TOUCHSCREEN,/dev/leds0; /dev/gpio0; /dev/gpio1; /dev/gpio2; /dev/gpio3; /dev/input0,
+games/cgol,NOT_RUN,,VIDEO_FB,/dev/fb0,
+games/match4,NOT_RUN,,,/dev/leds0; /dev/gpio1; /dev/gpio2; /dev/gpio3,
+games/snake,NOT_RUN,,,/dev/leds0; /dev/gpio0; /dev/gpio1; /dev/gpio2; /dev/gpio3,
+graphics/input,NOT_RUN,,,,
+graphics/jpgresizetool,NOT_RUN,,libjpeg,,
+graphics/nxwidgets/UnitTests/CButton,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CButtonArray,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CCheckBox,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CGlyphButton,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CGlyphSliderHorizontal,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CImage,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CKeypad,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CLabel,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CLatchButton,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CLatchButtonArray,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CListBox,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CProgressBar,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CRadioButton,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CScrollbarHorizontal,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CScrollbarVertical,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CSliderHorizonal,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CSliderVertical,NOT_RUN,,,,
+graphics/nxwidgets/UnitTests/CTextBox,NOT_RUN,,,,
+graphics/nxwm,NOT_RUN,,NXWIDGETS; !NXWM_DISABLE_BACKGROUND_IMAGE; PLATFORM_CONFIGDATA; SYSTEM_NXPLAYER; NXPLAYER_INCLUDE_PREFERRED_DEVICE,/dev/input0; /dev/console,
+graphics/screenshot,NOT_RUN,,TIFF && NX,,
+graphics/twm4nx,NOT_RUN,,NX && HAVE_CXX; NET; !NSH_NETINIT; VNCSERVER; !TWM4NX_NOMOUSE; NX_SWCURSOR; !TWM4NX_NOKEYBOARD; DEBUG_FEATURES,/dev/mouse0; /dev/input0; /dev/kbd0,
+industry/scpi,NOT_RUN,,,,
+interpreters/bas,EXECUTED_OR_ATTEMPTED,PASS,ARCH_HAVE_FORK && EXPERIMENTAL; EXAMPLES_BAS_SHELL,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+interpreters/berry,EXECUTED_OR_ATTEMPTED,PASS,ARCH_SETJMP_H; LIBC_FLOATINGPOINT; SYSTEM_SYSTEM,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+interpreters/duktape,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+interpreters/jimtcl,BUILD_BLOCKED,BUILD_BLOCKED,,,/tmp/loongarch-all-apps/build-c.log
+interpreters/lua,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+interpreters/luajit,NOT_RUN,,,,
+interpreters/minibasic,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+interpreters/mquickjs,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-i-up/report.json; /tmp/loongarch-all-apps/run-i2-up/report.json; /tmp/loongarch-all-apps/run-i3-up/report.json; /tmp/loongarch-all-apps/run-i4-up/report.json; /tmp/loongarch-all-apps/run-libuv-default-signals/report.json; /tmp/loongarch-all-apps/run-libuv-test-stack/report.json; /tmp/loongarch-all-apps/run-libuv-worker-stack/report.json
+interpreters/python,NOT_RUN,,LIB_ZLIB; !LIBC_DLFCN || LIB_LIBFFI; EXPERIMENTAL,,
+interpreters/quickjs,BUILD_BLOCKED,BUILD_BLOCKED,INTERPRETERS_QUICKJS_MINI,,/tmp/loongarch-all-apps/build-c3.log
+interpreters/toywasm,EXECUTED_OR_ATTEMPTED,PASS,!DISABLE_PTHREAD,,/tmp/loongarch-all-apps/run-i-up/report.json; /tmp/loongarch-all-apps/run-i2-up/report.json; /tmp/loongarch-all-apps/run-i3-up/report.json; /tmp/loongarch-all-apps/run-i4-up/report.json; /tmp/loongarch-all-apps/run-libuv-default-signals/report.json; /tmp/loongarch-all-apps/run-libuv-test-stack/report.json; /tmp/loongarch-all-apps/run-libuv-worker-stack/report.json
+interpreters/wamr,BUILD_BLOCKED,BUILD_BLOCKED,INTERPRETERS_WAMR_AOT; INTERPRETERS_WAMR_AOT; INTERPRETERS_WAMR_AOT; INTERPRETERS_WAMR_CLASSIC; INTERPRETERS_WAMR_THREAD_MGR; NET_TCP; NET_SOLINGER; INTERPRETERS_WAMR_LIBC_BUILTIN; INTERPRETERS_WAMR_LIB_PTHREAD,,/tmp/loongarch-all-apps/build-m2.log
+interpreters/wasm3,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-i-up/report.json; /tmp/loongarch-all-apps/run-i2-up/report.json; /tmp/loongarch-all-apps/run-i3-up/report.json; /tmp/loongarch-all-apps/run-i4-up/report.json; /tmp/loongarch-all-apps/run-libuv-default-signals/report.json; /tmp/loongarch-all-apps/run-libuv-test-stack/report.json; /tmp/loongarch-all-apps/run-libuv-worker-stack/report.json
+logging/embedlog,EXECUTED_OR_ATTEMPTED,PASS,!DISABLE_PTHREAD; DISABLE_PTHREAD; !EMBEDLOG_ENABLE_FINFO,,/tmp/loongarch-all-apps/run-i-up/report.json; /tmp/loongarch-all-apps/run-i2-up/report.json; /tmp/loongarch-all-apps/run-i3-up/report.json; /tmp/loongarch-all-apps/run-i4-up/report.json; /tmp/loongarch-all-apps/run-libuv-default-signals/report.json; /tmp/loongarch-all-apps/run-libuv-test-stack/report.json; /tmp/loongarch-all-apps/run-libuv-worker-stack/report.json
+lte/alt1250,NOT_RUN,,NET_USRSOCK && MODEM_ALT1250; PM; LTE_ALT1250_SMS_TOA; LTE_ALT1250_SMS_TOA,,
+math/libtommath,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-f-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json
+mlearning/tflite-micro,NOT_RUN,,SYSTEM_FLATBUFFERS && MATH_GEMMLOWP && MATH_KISSFFT && MATH_RUY,,
+netutils/bare,NOT_RUN,,ALLOW_MIT_COMPONENTS,,
+netutils/cjson,BUILD_BLOCKED,BUILD_BLOCKED,,,/tmp/loongarch-all-apps/build-c2.log
+netutils/connectedhomeip,NOT_RUN,,,,
+netutils/dropbear,NOT_RUN,,NET && NET_TCP; !DISABLE_PSEUDOFS_OPERATIONS; !DISABLE_PTHREAD; SCHED_WAITPID; SCHED_HAVE_PARENT; SCHED_CHILD_STATUS; NSH_LIBRARY; FSUTILS_PASSWD; PSEUDOTERM; SERIAL; DEV_URANDOM; LIBC_NETDB; LIBC_GAISTRERROR; CRYPTO; CRYPTO_RANDOM_POOL; ALLOW_BSD_COMPONENTS; CRYPTO_CRYPTODEV; CRYPTO_CRYPTODEV_SOFTWARE_CRYPTO; PIPES; NETUTILS_DROPBEAR_SCP; NETUTILS_DROPBEAR_SCP; LIB_ZLIB,,
+netutils/iperf,EXECUTED_OR_ATTEMPTED,FAIL; PASS,NET,,/tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-iperf-smp/report.json; /tmp/loongarch-all-apps/run-iperf/report.json
+netutils/libcoap,NOT_RUN,,,,
+netutils/mdns,NOT_RUN,,NETUTILS_MDNS; NETUTILS_MDNS_DAEMON,,
+netutils/mqttc,NOT_RUN,,!NETUTILS_MQTTC_WITH_MBEDTLS; CRYPTO_MBEDTLS,,
+netutils/nanopb,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+netutils/netcat,EXECUTED_OR_ATTEMPTED,FAIL; PASS,NET_TCP; NET_SENDFILE,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-g-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+netutils/paho_mqtt,NOT_RUN,,LIB_MQTT5; LIB_MQTT5; LIB_MQTT5,,
+netutils/plcatool,NOT_RUN,,,,
+netutils/rexec,NOT_RUN,,,,
+netutils/rexecd,NOT_RUN,,,,
+netutils/rtptools,NOT_RUN,,,,
+netutils/thttpd,NOT_RUN,,NXFLAT || FS_BINFS; NXFLAT; FS_BINFS; THTTPD_USE_AUTH_FILE; DEBUG_FEATURES && DEBUG_NET; THTTPD_USE_TILDE_MAP1; THTTPD_USE_TILDE_MAP2; THTTPD_USE_URLPATTERN,,
+netutils/wakeonlan,NOT_RUN,,NET_UDP && NET_SOCKOPTS,,
+system/adb,NOT_RUN,,LIBUV; !BOARDCTL_UNIQUEID; NET_TCP_NO_STACK || NET_TCPBACKLOG; ADBD_TCP_SERVER; USBADB; ADBD_USB_SERVER; ADBD_USB_SERVER; FS_NOTIFY; GOLDFISH_PIPE; ADBD_QEMU_SERVER; RAMLOG_SYSLOG; ADBD_FILE_SERVICE; FS_LINKS; SYSTEM_NSH; LIBC_EXECFUNCS; PSEUDOTERM; SCHED_CHILD_STATUS; ADBD_SHELL_SERVICE; ADBD_SHELL_SERVICE; NET; BOARDCTL; ADBD_USB_SERVER; NET,,
+system/adcscope,NOT_RUN,,ADC && LOGGING_NXSCOPE; CDCACM,/dev/ttyUSB0; /dev/adc0,
+system/argtable3,EXECUTED_OR_ATTEMPTED,FAIL,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/postfix-argtable/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/batterydump,NOT_RUN,,,,
+system/cdcacm,NOT_RUN,,BOARDCTL && CDCACM; USBDEV_TRACE || DEBUG_USB; USBDEV_TRACE || DEBUG_USB; USBDEV_TRACE || DEBUG_USB; USBDEV_TRACE || DEBUG_USB; USBDEV_TRACE || DEBUG_USB,,
+system/cfgdata,NOT_RUN,,!MTD_CONFIG_NONE,,
+system/composite,NOT_RUN,,BOARDCTL && USBDEV_COMPOSITE && BUILD_FLAT,,
+system/conntrack,EXECUTED_OR_ATTEMPTED,PASS,NETLINK_NETFILTER,,/tmp/loongarch-all-apps/run-l5/report.json; /tmp/loongarch-all-apps/run-l6/report.json; /tmp/loongarch-all-apps/run-l7-smp/report.json; /tmp/loongarch-all-apps/run-l7-up/report.json
+system/coredump,NOT_RUN,,COREDUMP; SYSTEM_COREDUMP_RESTORE,,
+system/cpuload,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-n-smoke/report.json
+system/critmon,NOT_RUN,,FS_PROCFS && !FS_PROCFS_EXCLUDE_PROCESS && SCHED_CRITMONITOR,,
+system/cu,NOT_RUN,,,/dev/ttyS0,
+system/curl,NOT_RUN,,NETUTILS_WEBCLIENT,,
+system/dd,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-g-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/debugpoint,NOT_RUN,,ARCH_HAVE_DEBUG; LIB_GDBSTUB,,
+system/dhcp6c,NOT_RUN,,NET_UDP && NET_IPv6 && NET_ICMPv6_AUTOCONF,,
+system/dhcpc,NOT_RUN,,NET_UDP,,
+system/dumpstack,BUILD_BLOCKED,BUILD_BLOCKED,SCHED_BACKTRACE,,/tmp/loongarch-all-apps/build-d2.log
+system/fastboot,NOT_RUN,,USBFASTBOOT || (NET_TCP && NET_TCPBACKLOG); BOARDCTL; BOARDCTL_USBDEVCTRL; USBFASTBOOT; SCHED_CHILD_STATUS; SYSTEM_POPEN,,
+system/fdt,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json
+system/flash_eraseall,EXECUTED_OR_ATTEMPTED,OBSERVED,MTD,,/tmp/loongarch-all-apps/run-l7-up/009.log
+system/gcov,NOT_RUN,,!COVERAGE_NONE,,
+system/gdbstub,NOT_RUN,,LIB_GDBSTUB,,
+system/gprof,NOT_RUN,,!PROFILE_NONE || SIM_GPROF,,
+system/hex2bin,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-g-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/hexed,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/hostname,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/i2c,NOT_RUN,,I2C,,
+system/iptables,EXECUTED_OR_ATTEMPTED,PASS,NET_IPTABLES && NET_IPv4; NET_IPTABLES && NET_IPv6; FS_LOCK_BUCKET_SIZE > 0,,/tmp/loongarch-all-apps/run-l5/report.json; /tmp/loongarch-all-apps/run-l6/report.json; /tmp/loongarch-all-apps/run-l7-smp/report.json; /tmp/loongarch-all-apps/run-l7-up/report.json
+system/irtest,NOT_RUN,,DRIVERS_RC,,
+system/kbd,NOT_RUN,,INPUT_KEYBOARD,/dev/kbd0,
+system/libuv,EXECUTED_OR_ATTEMPTED,FAIL; PASS,PIPES,,/tmp/loongarch-all-apps/run-i-up/report.json; /tmp/loongarch-all-apps/run-i2-up/report.json; /tmp/loongarch-all-apps/run-i3-up/report.json; /tmp/loongarch-all-apps/run-i4-up/report.json; /tmp/loongarch-all-apps/run-libuv-default-signals/report.json; /tmp/loongarch-all-apps/run-libuv-fixtures2/report.json; /tmp/loongarch-all-apps/run-libuv-parts/report.json; /tmp/loongarch-all-apps/run-libuv-parts2/report.json; /tmp/loongarch-all-apps/run-libuv-shard0-v2/report.json; /tmp/loongarch-all-apps/run-libuv-shard1-v2/report.json; /tmp/loongarch-all-apps/run-libuv-shard2-v2/report.json; /tmp/loongarch-all-apps/run-libuv-shard3-v2/report.json; /tmp/loongarch-all-apps/run-libuv-test-stack/report.json; /tmp/loongarch-all-apps/run-libuv-worker-stack/report.json; /tmp/loongarch-all-apps/run-libuv/report.json
+system/lm75,NOT_RUN,,LM75_I2C,/dev/temp,
+system/lsan,NOT_RUN,,SIM_ASAN,,
+system/lzf,EXECUTED_OR_ATTEMPTED,PASS,LIBC_LZF,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/mdio,NOT_RUN,,NETDEV_PHY_IOCTL,,
+system/netdb,EXECUTED_OR_ATTEMPTED,PASS,LIBC_NETDB,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/nsh,EXECUTED_OR_ATTEMPTED,OBSERVED,,,/tmp/loongarch-all-apps/run-l7-up/003.log
+system/ntpc,NOT_RUN,,NET_UDP,,
+system/nxcamera,NOT_RUN,,VIDEO,,
+system/nxcodec,NOT_RUN,,,,
+system/nxdiag,EXECUTED_OR_ATTEMPTED,FAIL; PASS,ARCH_CHIP_ESP32 || ARCH_CHIP_ESP32S2 || ARCH_CHIP_ESP32S3 || ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2; ARCH_CHIP_ESP32 || ARCH_CHIP_ESP32S2 || ARCH_CHIP_ESP32S3 || ARCH_CHIP_ESP32C3 || ARCH_CHIP_ESP32C6 || ARCH_CHIP_ESP32H2; SYSTEM_NXDIAG_ESPRESSIF_CHIP,,/tmp/loongarch-all-apps/run-l5/report.json; /tmp/loongarch-all-apps/run-l6/report.json; /tmp/loongarch-all-apps/run-l7-smp/report.json; /tmp/loongarch-all-apps/run-l7-up/report.json
+system/nxinit,NOT_RUN,,EXPERIMENTAL; LIBC_EXECFUNCS; SCHED_CHILD_STATUS; SYSTEM_NXINIT_WARN; TESTING_CMOCKA; SYSTEM_NXINIT_ERR; SYSTEM_NXINIT_WARN; SYSTEM_NXINIT_INFO,/dev/console,
+system/nxlooper,NOT_RUN,,AUDIO,,
+system/nxmbclient,NOT_RUN,,NXMODBUS_CLIENT,,
+system/nxpkg,NOT_RUN,,,,
+system/nxplayer,NOT_RUN,,AUDIO; NET_IPv4 && NET_TCP,,
+system/nxrecorder,NOT_RUN,,AUDIO,,
+system/nxstore,NOT_RUN,,GRAPHICS_LVGL && SYSTEM_NXPKG && SCHED_WAITPID; NETUTILS_CJSON,/dev/fb0; /dev/input0,
+system/ofloader,NOT_RUN,,,,
+system/ping,EXECUTED_OR_ATTEMPTED,FAIL,NET_IPv4,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/ping6,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-d-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/psmq,NOT_RUN,,DISABLE_MQUEUE || !LOGGING_EMBEDLOG; !DISABLE_MQUEUE && LOGGING_EMBEDLOG,,
+system/ptpd,NOT_RUN,,,,
+system/resmonitor,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/run-n-storage/report.json; /tmp/loongarch-all-apps/run-n2/report.json; /tmp/loongarch-all-apps/run-n3-storage/report.json
+system/sched_note,NOT_RUN,,DRIVERS_NOTERAM,,
+system/sensorscope,NOT_RUN,,LOGGING_NXSCOPE; CDCACM,/dev/ttyUSB0,
+system/sensortest,NOT_RUN,,SENSORS && ENABLE_ALL_SIGNALS,,
+system/setlogmask,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/spi,NOT_RUN,,SPI; SPI_CMDDATA,,
+system/stackmonitor,EXECUTED_OR_ATTEMPTED,FAIL; PASS,FS_PROCFS && !FS_PROCFS_EXCLUDE_PROCESS && STACK_COLORATION,,/tmp/loongarch-all-apps/run-l5/report.json; /tmp/loongarch-all-apps/run-l6/report.json; /tmp/loongarch-all-apps/run-l7-smp/report.json; /tmp/loongarch-all-apps/run-l7-up/report.json
+system/stty,EXECUTED_OR_ATTEMPTED,FAIL; PASS,SERIAL_TERMIOS,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-g-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/sudo,NOT_RUN,,SCHED_USER_IDENTITY; LIBC_PASSWD_FILE; FSUTILS_PASSWD; LIBC_EXECFUNCS,,
+system/syslogd,NOT_RUN,,NET_UDP && SYSLOG_RFC5424,,
+system/taskset,EXECUTED_OR_ATTEMPTED,PASS,SMP && SYSTEM_SYSTEM,,/tmp/loongarch-all-apps/run-a-smp/report.json
+system/tcpdump,NOT_RUN,,NET_PKT,,
+system/tee,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-a-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/telnet,NOT_RUN,,NET && NET_TCP; NET && NET_TCP,,
+system/telnetd,NOT_RUN,,NETUTILS_TELNETD,,
+system/toybox,NOT_RUN,,SCHED_WAITPID; SCHED_HAVE_PARENT; !DISABLE_PSEUDOFS_OPERATIONS,,
+system/trace,NOT_RUN,,DRIVERS_NOTECTL,,
+system/ubloxmodem,NOT_RUN,,,/dev/ttyS1; /dev/ubxmdm,
+system/uniqueid,NOT_RUN,,BOARDCTL_UNIQUEID,,
+system/uorb,NOT_RUN,,SENSORS && USENSOR; EVENT_FD; LIBC_FLOATINGPOINT && SENSORS_USE_FLOAT; DEBUG_ALERT; DEBUG_ERROR; DEBUG_WARN; DEBUG_INFO,,
+system/usbmsc,NOT_RUN,,BOARDCTL && USBMSC && BUILD_FLAT; USBDEV_TRACE || DEBUG_USB,/dev/mmcsd0; /dev/mmcsd1; /dev/mmcsd2,
+system/vi,NOT_RUN,,,,
+system/vncviewer,NOT_RUN,,NET_TCP && LCD,,
+system/xipfs,NOT_RUN,,FS_XIPFS,,
+system/ymodem,NOT_RUN,,SYSTEM_YMODEM_DEBUG,,
+system/zlib,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/final-software-smp/report.json; /tmp/loongarch-all-apps/final-software-up/report.json; /tmp/loongarch-all-apps/run-b-smp/report.json; /tmp/loongarch-all-apps/run-c-smp/report.json; /tmp/loongarch-all-apps/run-e-smp/report.json; /tmp/loongarch-all-apps/run-h-up/report.json; /tmp/loongarch-all-apps/run-software-fixed-smp/report.json; /tmp/loongarch-all-apps/run-software-fixed-up/report.json
+system/zmodem,NOT_RUN,,SERIAL_TERMIOS; SERIAL_TERMIOS; RTC; DEBUG_ZMODEM,/dev/console,
+tee/optee_client,NOT_RUN,,LIBTEEC,,
+testing/arch/himem_test,NOT_RUN,,ESP32_SPIRAM_BANKSWITCH_ENABLE,,
+testing/arch/mtetest,NOT_RUN,,ARM64_MTE,,
+testing/arch/x86-64-ABI,NOT_RUN,,ALLOW_GPL_COMPONENTS,,
+testing/cmocka,NOT_RUN,,LIBC_REGEX,,
+testing/crypto/passwd,BUILD_BLOCKED,BUILD_BLOCKED,FSUTILS_PASSWD,,/tmp/loongarch-all-apps/config-n-passwd.log
+testing/cxx/cxxsize,EXECUTED_OR_ATTEMPTED,FAIL; PASS,HAVE_CXX,,/tmp/loongarch-all-apps/run-j-up/report.json; /tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json
+testing/cxx/cxxtest,EXECUTED_OR_ATTEMPTED,PASS,HAVE_CXX,,/tmp/loongarch-all-apps/run-j-up/report.json; /tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json
+testing/cxx/uclibcxx_test,NOT_RUN,,,,
+testing/drivers/crypto,EXECUTED_OR_ATTEMPTED,FAIL; PASS,!TESTING_CRYPTO_HASH_DISABLE_MD5; !TESTING_CRYPTO_HASH_DISABLE_SHA1; !TESTING_CRYPTO_HASH_DISABLE_SHA224; !TESTING_CRYPTO_HASH_DISABLE_SHA256; !TESTING_CRYPTO_HASH_DISABLE_SHA512,,/tmp/loongarch-all-apps/run-n2/report.json
+testing/drivers/drivertest,EXECUTED_OR_ATTEMPTED,PASS,TESTING_CMOCKA; ONESHOT,,/tmp/loongarch-all-apps/run-m5/report.json; /tmp/loongarch-all-apps/run-m8/report.json
+testing/drivers/fftest,NOT_RUN,,,,
+testing/drivers/nand_sim,NOT_RUN,,MTD_NAND_RAM && ENABLE_ALL_SIGNALS,,
+testing/drivers/pcitest,NOT_RUN,,PCI_EP_TEST,,
+testing/drivers/rng/nist-sts,NOT_RUN,,,,
+testing/drivers/rpmsgdev,NOT_RUN,,,,
+testing/drivers/sd_stress,NOT_RUN,,ALLOW_BSD_COMPONENTS,,
+testing/drivers/ser,NOT_RUN,,SERIAL_TIOCGICOUNT,/dev/ttyS1,
+testing/drivers/setest,NOT_RUN,,DEV_SE05X,,
+testing/enet,NOT_RUN,,TESTING_CMOCKA,,
+testing/fs/epoll,EXECUTED_OR_ATTEMPTED,FAIL,TESTING_CMOCKA && TIMER_FD && NET_LOCAL,,/tmp/loongarch-apps-make-extended-v2/report.json; /tmp/loongarch-apps-testsuites-smp/report.json
+testing/fs/fatutf8,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json
+testing/fs/fdsantest,BUILD_BLOCKED,BUILD_BLOCKED,TESTING_CMOCKA,,/tmp/loongarch-apps-make-build2.log
+testing/fs/fstest,EXECUTED_OR_ATTEMPTED,PASS,FS_SPIFFS && EXPERIMENTAL; BOARDCTL_POWEROFF,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+testing/fs/memfd,NOT_RUN,,!LIBC_MEMFD_ERROR && MM_KASAN,,
+testing/fs/mtd_config_fs,EXECUTED_OR_ATTEMPTED,FAIL; PASS,MTD_CONFIG_NVS,/dev/mtdnvs_flash,/tmp/loongarch-all-apps/run-l5/report.json; /tmp/loongarch-all-apps/run-l6/report.json; /tmp/loongarch-all-apps/run-l7-smp/report.json; /tmp/loongarch-all-apps/run-l7-up/report.json
+testing/fs/nxffs,EXECUTED_OR_ATTEMPTED,FAIL; PASS,FS_NXFFS && RAMMTD; !TESTING_NXFFS_ARCHINIT,,/tmp/loongarch-all-apps/run-j-up/report.json; /tmp/loongarch-all-apps/run-j2-up/report.json; /tmp/loongarch-all-apps/run-j6-smp/report.json; /tmp/loongarch-all-apps/run-j6-up/report.json
+testing/fs/smart,EXECUTED_OR_ATTEMPTED,FAIL,SMART_DEV_LOOP && RAMMTD && FS_SMARTFS; !TESTING_SMART_ARCHINIT,,/tmp/loongarch-all-apps/run-n-storage/report.json; /tmp/loongarch-all-apps/run-n2/report.json; /tmp/loongarch-all-apps/run-n3-storage/report.json
+testing/fs/smart_test,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/run-l5/report.json; /tmp/loongarch-all-apps/run-l6/report.json; /tmp/loongarch-all-apps/run-l7-smp/report.json; /tmp/loongarch-all-apps/run-l7-up/report.json
+testing/fs/xipfs,NOT_RUN,,FS_XIPFS,/dev/rammtd,
+testing/libc/arch_libc,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+testing/libc/atomic,EXECUTED_OR_ATTEMPTED,EARLIER_SERIAL_EVIDENCE,,,/tmp/loongarch-13-apps-1.log; /tmp/loongarch-13-apps-4.log; /tmp/loongarch-13-heap-1.log
+testing/libc/crctest,EXECUTED_OR_ATTEMPTED,PASS,TESTING_CMOCKA,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+testing/libc/fmemopen,EXECUTED_OR_ATTEMPTED,EARLIER_SERIAL_EVIDENCE,,,/tmp/loongarch-13-apps-1.log; /tmp/loongarch-13-apps-4.log; /tmp/loongarch-13-heap-1.log
+testing/libc/fopencookie,EXECUTED_OR_ATTEMPTED,EARLIER_SERIAL_EVIDENCE,,,/tmp/loongarch-13-make-apps-1.log
+testing/libc/open_memstream,EXECUTED_OR_ATTEMPTED,EARLIER_SERIAL_EVIDENCE,,,/tmp/loongarch-13-apps-1.log; /tmp/loongarch-13-apps-4.log; /tmp/loongarch-13-heap-1.log
+testing/libc/popen,EXECUTED_OR_ATTEMPTED,PASS,SYSTEM_POPEN,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+testing/libc/scanftest,EXECUTED_OR_ATTEMPTED,PASS,LIBC_SCANSET,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+testing/libc/stdbit,EXECUTED_OR_ATTEMPTED,EARLIER_SERIAL_EVIDENCE,,,/tmp/loongarch-13-apps-1.log; /tmp/loongarch-13-apps-4.log; /tmp/loongarch-13-heap-1.log
+testing/libc/wcstombs,EXECUTED_OR_ATTEMPTED,PASS,LIBC_LOCALE,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+testing/ltp,NOT_RUN,,,,
+testing/mm/cachetest,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-l5/report.json; /tmp/loongarch-all-apps/run-l6/report.json; /tmp/loongarch-all-apps/run-l7-smp/report.json; /tmp/loongarch-all-apps/run-l7-up/report.json
+testing/mm/heaptest,EXECUTED_OR_ATTEMPTED,EARLIER_SERIAL_EVIDENCE,BOARDCTL_POWEROFF,,/tmp/loongarch-13-apps-1.log; /tmp/loongarch-13-apps-4.log; /tmp/loongarch-13-heap-1.log
+testing/mm/iob,EXECUTED_OR_ATTEMPTED,PASS,MM_IOB,,/tmp/loongarch-apps-make-extended-v2/report.json; /tmp/loongarch-apps-testsuites-smp/report.json
+testing/mm/kasantest,NOT_RUN,,MM_KASAN,,
+testing/mm/memstress,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-all-apps/run-n-storage/report.json; /tmp/loongarch-all-apps/run-n2/report.json; /tmp/loongarch-all-apps/run-n3-storage/report.json
+testing/mm/memtester,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-memtester14-smp/report.json; /tmp/loongarch-memtester14-up/report.json
+testing/mm/ramtest,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+testing/mm/stressapptest,BUILD_BLOCKED,BUILD_BLOCKED,,,/tmp/loongarch-all-apps/build-j.log
+testing/nettest,EXECUTED_OR_ATTEMPTED,PASS,TESTING_CMOCKA; NET; NET_TCP && NET_TCPBACKLOG; NET_IPv4 || NET_IPv6; NET_LOCAL && NET_LOCAL_SCM,,/tmp/loongarch-apps-make-extended-v2/report.json; /tmp/loongarch-apps-testsuites-smp/report.json
+testing/nuts,EXECUTED_OR_ATTEMPTED,FAIL,TESTING_CMOCKA; DEV_NULL; DEV_ZERO; DEV_ASCII; DEV_CONSOLE; DEV_URANDOM,,/tmp/loongarch-apps-make-extended-v2/report.json; /tmp/loongarch-apps-testsuites-smp/report.json
+testing/ostest,EXECUTED_OR_ATTEMPTED,PASS,FS_AIO; SCHED_WAITPID; BOARDCTL_POWEROFF && TESTING_OSTEST_WAITRESULT; SCHED_USER_IDENTITY; LIBC_PASSWD_FILE,,/tmp/loongarch-apps-next-smp/report.json; /tmp/loongarch-apps-next-up/report.json
+testing/sched/getprime,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+testing/sched/pthread_mutex_perf,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-apps-make-extended-v2/report.json; /tmp/loongarch-apps-testsuites-smp/report.json
+testing/sched/smp,EXECUTED_OR_ATTEMPTED,PASS,SMP,,/tmp/loongarch-apps-smp-barrier-final/report.json
+testing/sched/timerjitter,EXECUTED_OR_ATTEMPTED,PASS,,,/tmp/loongarch-all-apps/run-cmake-crt0-smp/report.json; /tmp/loongarch-all-apps/run-cmake-crt0/report.json; /tmp/loongarch-all-apps/run-cmake-fixed-smp/report.json; /tmp/loongarch-all-apps/run-cmake-fixed/report.json; /tmp/loongarch-apps-smp-final/report.json; /tmp/loongarch-apps-up-final/report.json
+testing/sig_sp_test,NOT_RUN,,BUILD_FLAT && ARCH_ARM,,
+testing/testsuites,NOT_RUN,,TESTING_CMOCKA; FS_LINKS; !DISABLE_POSIX_TIMERS && SIG_EVTHREAD; NET && NETDEV_LATEINIT; PIPES && SCHED_HAVE_PARENT && FS_TMPFS && ARCH_SETJMP_H && FS_LINKS,,
+testing/testsuites/kernel,EXECUTED_OR_ATTEMPTED,FAIL; PASS,,,/tmp/loongarch-apps-make-extended-v2/report.json; /tmp/loongarch-apps-syscall-smp-final/report.json; /tmp/loongarch-apps-syscall-up-final/report.json; /tmp/loongarch-apps-testsuites-smp/report.json
+videoutils/x264,NOT_RUN,,,,
+wireless/bluetooth/btsak,NOT_RUN,,WIRELESS_BLUETOOTH_HOST,,
+wireless/gs2200m,NOT_RUN,,NET_USRSOCK && WL_GS2200M,,
+wireless/ieee802154/i8sak,NOT_RUN,,,,
+wireless/ieee802154/i8shark,NOT_RUN,,IEEE802154_MACDEV && NET_UDP && NET_IPv4,/dev/ieee0,
+wireless/iwpan,NOT_RUN,,NET && DRIVERS_WIRELESS,,
+wireless/lora_pkt_fwd,NOT_RUN,,LPWAN_LORA_GW && NET_UDP && NETUTILS_NETLIB,/dev/lora0,
+wireless/wapi,NOT_RUN,,NET && DRIVERS_WIRELESS; NETUTILS_CJSON,,

@@ -1,0 +1,7107 @@
+{
+  "setup": [
+    "mkdir /tmp",
+    "mount -t tmpfs /tmp",
+    "mkdir /bin",
+    "mount -t binfs /bin",
+    "set PATH /bin",
+    "cd /tmp",
+    "sleep 1",
+    "mkdir test",
+    "mkdir test/fixtures",
+    "mkdir test/fixtures/one_file"
+  ],
+  "cases": [
+    {
+      "name": "libuv-active",
+      "command": "/bin/uv_run_tests active",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - active(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-async",
+      "command": "/bin/uv_run_tests async",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - async(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-async_null_cb",
+      "command": "/bin/uv_run_tests async_null_cb",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - async_null_cb(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-async_ref",
+      "command": "/bin/uv_run_tests async_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - async_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-barrier_1",
+      "command": "/bin/uv_run_tests barrier_1",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - barrier_1(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-barrier_2",
+      "command": "/bin/uv_run_tests barrier_2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - barrier_2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-barrier_3",
+      "command": "/bin/uv_run_tests barrier_3",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - barrier_3(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-barrier_serial_thread",
+      "command": "/bin/uv_run_tests barrier_serial_thread",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - barrier_serial_thread(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-barrier_serial_thread_single",
+      "command": "/bin/uv_run_tests barrier_serial_thread_single",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - barrier_serial_thread_single(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-callback_stack",
+      "command": "/bin/uv_run_tests callback_stack",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - callback_stack(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-check_ref",
+      "command": "/bin/uv_run_tests check_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - check_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-clock_gettime",
+      "command": "/bin/uv_run_tests clock_gettime",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - clock_gettime(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-close_fd",
+      "command": "/bin/uv_run_tests close_fd",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - close_fd(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-close_order",
+      "command": "/bin/uv_run_tests close_order",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - close_order(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-closed_fd_events",
+      "command": "/bin/uv_run_tests closed_fd_events",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - closed_fd_events(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-condvar_1",
+      "command": "/bin/uv_run_tests condvar_1",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - condvar_1(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-condvar_2",
+      "command": "/bin/uv_run_tests condvar_2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - condvar_2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-condvar_3",
+      "command": "/bin/uv_run_tests condvar_3",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - condvar_3(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-condvar_4",
+      "command": "/bin/uv_run_tests condvar_4",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - condvar_4(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-condvar_5",
+      "command": "/bin/uv_run_tests condvar_5",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - condvar_5(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-connect_unspecified",
+      "command": "/bin/uv_run_tests connect_unspecified",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - connect_unspecified(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-connection_fail",
+      "command": "/bin/uv_run_tests connection_fail",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - connection_fail(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-connection_fail_doesnt_auto_close",
+      "command": "/bin/uv_run_tests connection_fail_doesnt_auto_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - connection_fail_doesnt_auto_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-cwd_and_chdir",
+      "command": "/bin/uv_run_tests cwd_and_chdir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - cwd_and_chdir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-default_loop_close",
+      "command": "/bin/uv_run_tests default_loop_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - default_loop_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-delayed_accept",
+      "command": "/bin/uv_run_tests delayed_accept",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - delayed_accept(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-dlerror",
+      "command": "/bin/uv_run_tests dlerror",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - dlerror(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-eintr_handling",
+      "command": "/bin/uv_run_tests eintr_handling",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - eintr_handling(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-embed",
+      "command": "/bin/uv_run_tests embed",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - embed(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-emfile",
+      "command": "/bin/uv_run_tests emfile",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - emfile(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-env_vars",
+      "command": "/bin/uv_run_tests env_vars",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - env_vars(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-error_message",
+      "command": "/bin/uv_run_tests error_message",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - error_message(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_access",
+      "command": "/bin/uv_run_tests fs_access",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_access(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_async_dir",
+      "command": "/bin/uv_run_tests fs_async_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_async_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_async_sendfile",
+      "command": "/bin/uv_run_tests fs_async_sendfile",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_async_sendfile(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_async_sendfile_nodata",
+      "command": "/bin/uv_run_tests fs_async_sendfile_nodata",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_async_sendfile_nodata(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_chmod",
+      "command": "/bin/uv_run_tests fs_chmod",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_chmod(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_chown",
+      "command": "/bin/uv_run_tests fs_chown",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_chown(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_copyfile",
+      "command": "/bin/uv_run_tests fs_copyfile",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_copyfile(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_close_in_callback",
+      "command": "/bin/uv_run_tests fs_event_close_in_callback",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_close_in_callback(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_close_with_pending_delete_event",
+      "command": "/bin/uv_run_tests fs_event_close_with_pending_delete_event",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_close_with_pending_delete_event(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_close_with_pending_event",
+      "command": "/bin/uv_run_tests fs_event_close_with_pending_event",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_close_with_pending_event(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_error_reporting",
+      "command": "/bin/uv_run_tests fs_event_error_reporting",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_error_reporting(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_getpath",
+      "command": "/bin/uv_run_tests fs_event_getpath",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_getpath(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_immediate_close",
+      "command": "/bin/uv_run_tests fs_event_immediate_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_immediate_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_no_callback_after_close",
+      "command": "/bin/uv_run_tests fs_event_no_callback_after_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_no_callback_after_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_no_callback_on_close",
+      "command": "/bin/uv_run_tests fs_event_no_callback_on_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_no_callback_on_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_ref",
+      "command": "/bin/uv_run_tests fs_event_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_start_and_close",
+      "command": "/bin/uv_run_tests fs_event_start_and_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_start_and_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_stop_in_cb",
+      "command": "/bin/uv_run_tests fs_event_stop_in_cb",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_stop_in_cb(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_watch_dir",
+      "command": "/bin/uv_run_tests fs_event_watch_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_watch_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_watch_dir_recursive",
+      "command": "/bin/uv_run_tests fs_event_watch_dir_recursive",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_watch_dir_recursive(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_watch_file",
+      "command": "/bin/uv_run_tests fs_event_watch_file",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_watch_file(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_watch_file_current_dir",
+      "command": "/bin/uv_run_tests fs_event_watch_file_current_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_watch_file_current_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_watch_file_exact_path",
+      "command": "/bin/uv_run_tests fs_event_watch_file_exact_path",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_watch_file_exact_path(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_watch_file_twice",
+      "command": "/bin/uv_run_tests fs_event_watch_file_twice",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_watch_file_twice(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_event_watch_invalid_path",
+      "command": "/bin/uv_run_tests fs_event_watch_invalid_path",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_event_watch_invalid_path(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_file_async",
+      "command": "/bin/uv_run_tests fs_file_async",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_file_async(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_file_loop",
+      "command": "/bin/uv_run_tests fs_file_loop",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_file_loop(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_file_nametoolong",
+      "command": "/bin/uv_run_tests fs_file_nametoolong",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_file_nametoolong(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_file_noent",
+      "command": "/bin/uv_run_tests fs_file_noent",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_file_noent(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_file_open_append",
+      "command": "/bin/uv_run_tests fs_file_open_append",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_file_open_append(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_file_pos_after_op_with_offset",
+      "command": "/bin/uv_run_tests fs_file_pos_after_op_with_offset",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_file_pos_after_op_with_offset(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_file_sync",
+      "command": "/bin/uv_run_tests fs_file_sync",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_file_sync(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_file_write_null_buffer",
+      "command": "/bin/uv_run_tests fs_file_write_null_buffer",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_file_write_null_buffer(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_fstat",
+      "command": "/bin/uv_run_tests fs_fstat",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_fstat(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_fstat_stdio",
+      "command": "/bin/uv_run_tests fs_fstat_stdio",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_fstat_stdio(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_futime",
+      "command": "/bin/uv_run_tests fs_futime",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_futime(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_get_system_error",
+      "command": "/bin/uv_run_tests fs_get_system_error",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_get_system_error(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_lutime",
+      "command": "/bin/uv_run_tests fs_lutime",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_lutime(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_mkdtemp",
+      "command": "/bin/uv_run_tests fs_mkdtemp",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_mkdtemp(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_mkstemp",
+      "command": "/bin/uv_run_tests fs_mkstemp",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_mkstemp(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_null_req",
+      "command": "/bin/uv_run_tests fs_null_req",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_null_req(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_open_dir",
+      "command": "/bin/uv_run_tests fs_open_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_open_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_partial_read",
+      "command": "/bin/uv_run_tests fs_partial_read",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_partial_read(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_partial_write",
+      "command": "/bin/uv_run_tests fs_partial_write",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_partial_write(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_poll",
+      "command": "/bin/uv_run_tests fs_poll",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_poll(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_poll_close_request",
+      "command": "/bin/uv_run_tests fs_poll_close_request",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_poll_close_request(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_poll_close_request_multi_start_stop",
+      "command": "/bin/uv_run_tests fs_poll_close_request_multi_start_stop",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_poll_close_request_multi_start_stop(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_poll_close_request_multi_stop_start",
+      "command": "/bin/uv_run_tests fs_poll_close_request_multi_stop_start",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_poll_close_request_multi_stop_start(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_poll_close_request_stop_when_active",
+      "command": "/bin/uv_run_tests fs_poll_close_request_stop_when_active",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_poll_close_request_stop_when_active(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_poll_getpath",
+      "command": "/bin/uv_run_tests fs_poll_getpath",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_poll_getpath(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_poll_ref",
+      "command": "/bin/uv_run_tests fs_poll_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_poll_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_read_bufs",
+      "command": "/bin/uv_run_tests fs_read_bufs",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_read_bufs(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_read_dir",
+      "command": "/bin/uv_run_tests fs_read_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_read_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_read_file_eof",
+      "command": "/bin/uv_run_tests fs_read_file_eof",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_read_file_eof(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_read_write_null_arguments",
+      "command": "/bin/uv_run_tests fs_read_write_null_arguments",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_read_write_null_arguments(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_readdir_empty_dir",
+      "command": "/bin/uv_run_tests fs_readdir_empty_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_readdir_empty_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_readdir_file",
+      "command": "/bin/uv_run_tests fs_readdir_file",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_readdir_file(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_readdir_non_empty_dir",
+      "command": "/bin/uv_run_tests fs_readdir_non_empty_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_readdir_non_empty_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_readdir_non_existing_dir",
+      "command": "/bin/uv_run_tests fs_readdir_non_existing_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_readdir_non_existing_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_readlink",
+      "command": "/bin/uv_run_tests fs_readlink",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_readlink(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_realpath",
+      "command": "/bin/uv_run_tests fs_realpath",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_realpath(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_rename_to_existing_file",
+      "command": "/bin/uv_run_tests fs_rename_to_existing_file",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_rename_to_existing_file(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_scandir_early_exit",
+      "command": "/bin/uv_run_tests fs_scandir_early_exit",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_scandir_early_exit(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_scandir_empty_dir",
+      "command": "/bin/uv_run_tests fs_scandir_empty_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_scandir_empty_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_scandir_file",
+      "command": "/bin/uv_run_tests fs_scandir_file",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_scandir_file(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_scandir_non_existent_dir",
+      "command": "/bin/uv_run_tests fs_scandir_non_existent_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_scandir_non_existent_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_stat_batch_multiple",
+      "command": "/bin/uv_run_tests fs_stat_batch_multiple",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_stat_batch_multiple(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_stat_missing_path",
+      "command": "/bin/uv_run_tests fs_stat_missing_path",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_stat_missing_path(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_statfs",
+      "command": "/bin/uv_run_tests fs_statfs",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_statfs(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_symlink",
+      "command": "/bin/uv_run_tests fs_symlink",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_symlink(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_symlink_dir",
+      "command": "/bin/uv_run_tests fs_symlink_dir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_symlink_dir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_unlink_readonly",
+      "command": "/bin/uv_run_tests fs_unlink_readonly",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_unlink_readonly(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_utime",
+      "command": "/bin/uv_run_tests fs_utime",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_utime(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_utime_round",
+      "command": "/bin/uv_run_tests fs_utime_round",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_utime_round(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_write_alotof_bufs",
+      "command": "/bin/uv_run_tests fs_write_alotof_bufs",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_write_alotof_bufs(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_write_alotof_bufs_with_offset",
+      "command": "/bin/uv_run_tests fs_write_alotof_bufs_with_offset",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_write_alotof_bufs_with_offset(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-fs_write_multiple_bufs",
+      "command": "/bin/uv_run_tests fs_write_multiple_bufs",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - fs_write_multiple_bufs(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-get_currentexe",
+      "command": "/bin/uv_run_tests get_currentexe",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - get_currentexe(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-get_group",
+      "command": "/bin/uv_run_tests get_group",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - get_group(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-get_loadavg",
+      "command": "/bin/uv_run_tests get_loadavg",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - get_loadavg(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-get_memory",
+      "command": "/bin/uv_run_tests get_memory",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - get_memory(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-get_osfhandle_valid_handle",
+      "command": "/bin/uv_run_tests get_osfhandle_valid_handle",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - get_osfhandle_valid_handle(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-get_passwd",
+      "command": "/bin/uv_run_tests get_passwd",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - get_passwd(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-get_passwd2",
+      "command": "/bin/uv_run_tests get_passwd2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - get_passwd2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getaddrinfo_basic",
+      "command": "/bin/uv_run_tests getaddrinfo_basic",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getaddrinfo_basic(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getaddrinfo_basic_sync",
+      "command": "/bin/uv_run_tests getaddrinfo_basic_sync",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getaddrinfo_basic_sync(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getaddrinfo_concurrent",
+      "command": "/bin/uv_run_tests getaddrinfo_concurrent",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getaddrinfo_concurrent(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getaddrinfo_fail",
+      "command": "/bin/uv_run_tests getaddrinfo_fail",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getaddrinfo_fail(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getaddrinfo_fail_sync",
+      "command": "/bin/uv_run_tests getaddrinfo_fail_sync",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getaddrinfo_fail_sync(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-gethostname",
+      "command": "/bin/uv_run_tests gethostname",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - gethostname(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getnameinfo_basic_ip4",
+      "command": "/bin/uv_run_tests getnameinfo_basic_ip4",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getnameinfo_basic_ip4(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getnameinfo_basic_ip4_sync",
+      "command": "/bin/uv_run_tests getnameinfo_basic_ip4_sync",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getnameinfo_basic_ip4_sync(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getnameinfo_basic_ip6",
+      "command": "/bin/uv_run_tests getnameinfo_basic_ip6",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getnameinfo_basic_ip6(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getsockname_tcp",
+      "command": "/bin/uv_run_tests getsockname_tcp",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getsockname_tcp(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getsockname_udp",
+      "command": "/bin/uv_run_tests getsockname_udp",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getsockname_udp(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-getters_setters",
+      "command": "/bin/uv_run_tests getters_setters",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - getters_setters(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-gettimeofday",
+      "command": "/bin/uv_run_tests gettimeofday",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - gettimeofday(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-handle_fileno",
+      "command": "/bin/uv_run_tests handle_fileno",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - handle_fileno(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-handle_type_name",
+      "command": "/bin/uv_run_tests handle_type_name",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - handle_type_name(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-has_ref",
+      "command": "/bin/uv_run_tests has_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - has_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-homedir",
+      "command": "/bin/uv_run_tests homedir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - homedir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-hrtime",
+      "command": "/bin/uv_run_tests hrtime",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - hrtime(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-idle_check",
+      "command": "/bin/uv_run_tests idle_check",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - idle_check(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-idle_ref",
+      "command": "/bin/uv_run_tests idle_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - idle_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-idle_starvation",
+      "command": "/bin/uv_run_tests idle_starvation",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - idle_starvation(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-idna_toascii",
+      "command": "/bin/uv_run_tests idna_toascii",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - idna_toascii(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ip4_addr",
+      "command": "/bin/uv_run_tests ip4_addr",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ip4_addr(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ip6_addr_link_local",
+      "command": "/bin/uv_run_tests ip6_addr_link_local",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ip6_addr_link_local(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ip6_pton",
+      "command": "/bin/uv_run_tests ip6_pton",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ip6_pton(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ip6_sin6_len",
+      "command": "/bin/uv_run_tests ip6_sin6_len",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ip6_sin6_len(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ip_name",
+      "command": "/bin/uv_run_tests ip_name",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ip_name(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ipc_heavy_traffic_deadlock_bug",
+      "command": "/bin/uv_run_tests ipc_heavy_traffic_deadlock_bug",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ipc_heavy_traffic_deadlock_bug(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ipc_listen_after_write",
+      "command": "/bin/uv_run_tests ipc_listen_after_write",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ipc_listen_after_write(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ipc_listen_before_write",
+      "command": "/bin/uv_run_tests ipc_listen_before_write",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ipc_listen_before_write(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ipc_send_recv_pipe",
+      "command": "/bin/uv_run_tests ipc_send_recv_pipe",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ipc_send_recv_pipe(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ipc_send_recv_pipe_inprocess",
+      "command": "/bin/uv_run_tests ipc_send_recv_pipe_inprocess",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ipc_send_recv_pipe_inprocess(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ipc_send_recv_tcp",
+      "command": "/bin/uv_run_tests ipc_send_recv_tcp",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ipc_send_recv_tcp(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ipc_send_recv_tcp_inprocess",
+      "command": "/bin/uv_run_tests ipc_send_recv_tcp_inprocess",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ipc_send_recv_tcp_inprocess(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ipc_send_zero",
+      "command": "/bin/uv_run_tests ipc_send_zero",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ipc_send_zero(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ipc_tcp_connection",
+      "command": "/bin/uv_run_tests ipc_tcp_connection",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ipc_tcp_connection(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-kill",
+      "command": "/bin/uv_run_tests kill",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - kill(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-kill_invalid_signum",
+      "command": "/bin/uv_run_tests kill_invalid_signum",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - kill_invalid_signum(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-loop_alive",
+      "command": "/bin/uv_run_tests loop_alive",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - loop_alive(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-loop_backend_timeout",
+      "command": "/bin/uv_run_tests loop_backend_timeout",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - loop_backend_timeout(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-loop_close",
+      "command": "/bin/uv_run_tests loop_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - loop_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-loop_configure",
+      "command": "/bin/uv_run_tests loop_configure",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - loop_configure(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-loop_handles",
+      "command": "/bin/uv_run_tests loop_handles",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - loop_handles(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-loop_instant_close",
+      "command": "/bin/uv_run_tests loop_instant_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - loop_instant_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-loop_stop",
+      "command": "/bin/uv_run_tests loop_stop",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - loop_stop(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-loop_stop_before_run",
+      "command": "/bin/uv_run_tests loop_stop_before_run",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - loop_stop_before_run(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-loop_update_time",
+      "command": "/bin/uv_run_tests loop_update_time",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - loop_update_time(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-metrics_idle_time",
+      "command": "/bin/uv_run_tests metrics_idle_time",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - metrics_idle_time(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-metrics_idle_time_thread",
+      "command": "/bin/uv_run_tests metrics_idle_time_thread",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - metrics_idle_time_thread(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-metrics_idle_time_zero",
+      "command": "/bin/uv_run_tests metrics_idle_time_zero",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - metrics_idle_time_zero(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-metrics_info_check",
+      "command": "/bin/uv_run_tests metrics_info_check",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - metrics_info_check(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-metrics_pool_events",
+      "command": "/bin/uv_run_tests metrics_pool_events",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - metrics_pool_events(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-multiple_listen",
+      "command": "/bin/uv_run_tests multiple_listen",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - multiple_listen(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-not_readable_nor_writable_on_read_error",
+      "command": "/bin/uv_run_tests not_readable_nor_writable_on_read_error",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - not_readable_nor_writable_on_read_error(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-not_writable_after_shutdown",
+      "command": "/bin/uv_run_tests not_writable_after_shutdown",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - not_writable_after_shutdown(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-open_osfhandle_valid_handle",
+      "command": "/bin/uv_run_tests open_osfhandle_valid_handle",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - open_osfhandle_valid_handle(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_bind_error_addrinuse",
+      "command": "/bin/uv_run_tests pipe_bind_error_addrinuse",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_bind_error_addrinuse(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_bind_error_addrnotavail",
+      "command": "/bin/uv_run_tests pipe_bind_error_addrnotavail",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_bind_error_addrnotavail(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_bind_error_inval",
+      "command": "/bin/uv_run_tests pipe_bind_error_inval",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_bind_error_inval(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_bind_or_listen_error_after_close",
+      "command": "/bin/uv_run_tests pipe_bind_or_listen_error_after_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_bind_or_listen_error_after_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_connect_bad_name",
+      "command": "/bin/uv_run_tests pipe_connect_bad_name",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_connect_bad_name(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_connect_close_multiple",
+      "command": "/bin/uv_run_tests pipe_connect_close_multiple",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_connect_close_multiple(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_connect_multiple",
+      "command": "/bin/uv_run_tests pipe_connect_multiple",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_connect_multiple(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_connect_on_prepare",
+      "command": "/bin/uv_run_tests pipe_connect_on_prepare",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_connect_on_prepare(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_connect_to_file",
+      "command": "/bin/uv_run_tests pipe_connect_to_file",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_connect_to_file(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_getsockname",
+      "command": "/bin/uv_run_tests pipe_getsockname",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_getsockname(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_getsockname_abstract",
+      "command": "/bin/uv_run_tests pipe_getsockname_abstract",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_getsockname_abstract(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_getsockname_blocking",
+      "command": "/bin/uv_run_tests pipe_getsockname_blocking",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_getsockname_blocking(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_listen_without_bind",
+      "command": "/bin/uv_run_tests pipe_listen_without_bind",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_listen_without_bind(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_overlong_path",
+      "command": "/bin/uv_run_tests pipe_overlong_path",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_overlong_path(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_pending_instances",
+      "command": "/bin/uv_run_tests pipe_pending_instances",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_pending_instances(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_ping_pong",
+      "command": "/bin/uv_run_tests pipe_ping_pong",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_ping_pong(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_ping_pong_vec",
+      "command": "/bin/uv_run_tests pipe_ping_pong_vec",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_ping_pong_vec(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_ref",
+      "command": "/bin/uv_run_tests pipe_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_ref2",
+      "command": "/bin/uv_run_tests pipe_ref2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_ref2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_ref3",
+      "command": "/bin/uv_run_tests pipe_ref3",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_ref3(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_ref4",
+      "command": "/bin/uv_run_tests pipe_ref4",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_ref4(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_sendmsg",
+      "command": "/bin/uv_run_tests pipe_sendmsg",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_sendmsg(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_server_close",
+      "command": "/bin/uv_run_tests pipe_server_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_server_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_set_chmod",
+      "command": "/bin/uv_run_tests pipe_set_chmod",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_set_chmod(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-pipe_set_non_blocking",
+      "command": "/bin/uv_run_tests pipe_set_non_blocking",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - pipe_set_non_blocking(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-platform_output",
+      "command": "/bin/uv_run_tests platform_output",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - platform_output(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-poll_bad_fdtype",
+      "command": "/bin/uv_run_tests poll_bad_fdtype",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - poll_bad_fdtype(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-poll_close",
+      "command": "/bin/uv_run_tests poll_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - poll_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-poll_close_doesnt_corrupt_stack",
+      "command": "/bin/uv_run_tests poll_close_doesnt_corrupt_stack",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - poll_close_doesnt_corrupt_stack(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-poll_closesocket",
+      "command": "/bin/uv_run_tests poll_closesocket",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - poll_closesocket(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-poll_duplex",
+      "command": "/bin/uv_run_tests poll_duplex",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - poll_duplex(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-poll_multiple_handles",
+      "command": "/bin/uv_run_tests poll_multiple_handles",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - poll_multiple_handles(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-poll_unidirectional",
+      "command": "/bin/uv_run_tests poll_unidirectional",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - poll_unidirectional(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-prepare_ref",
+      "command": "/bin/uv_run_tests prepare_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - prepare_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-process_priority",
+      "command": "/bin/uv_run_tests process_priority",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - process_priority(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-process_ref",
+      "command": "/bin/uv_run_tests process_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - process_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-process_title",
+      "command": "/bin/uv_run_tests process_title",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - process_title(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-process_title_big_argv",
+      "command": "/bin/uv_run_tests process_title_big_argv",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - process_title_big_argv(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-process_title_threadsafe",
+      "command": "/bin/uv_run_tests process_title_threadsafe",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - process_title_threadsafe(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-queue_foreach_delete",
+      "command": "/bin/uv_run_tests queue_foreach_delete",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - queue_foreach_delete(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-random_async",
+      "command": "/bin/uv_run_tests random_async",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - random_async(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-random_sync",
+      "command": "/bin/uv_run_tests random_sync",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - random_sync(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-readable_on_eof",
+      "command": "/bin/uv_run_tests readable_on_eof",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - readable_on_eof(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-ref",
+      "command": "/bin/uv_run_tests ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-req_type_name",
+      "command": "/bin/uv_run_tests req_type_name",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - req_type_name(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-run_nowait",
+      "command": "/bin/uv_run_tests run_nowait",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - run_nowait(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-run_once",
+      "command": "/bin/uv_run_tests run_once",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - run_once(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-semaphore_1",
+      "command": "/bin/uv_run_tests semaphore_1",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - semaphore_1(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-semaphore_2",
+      "command": "/bin/uv_run_tests semaphore_2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - semaphore_2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-semaphore_3",
+      "command": "/bin/uv_run_tests semaphore_3",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - semaphore_3(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-shutdown_close_pipe",
+      "command": "/bin/uv_run_tests shutdown_close_pipe",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - shutdown_close_pipe(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-shutdown_close_tcp",
+      "command": "/bin/uv_run_tests shutdown_close_tcp",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - shutdown_close_tcp(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-shutdown_eof",
+      "command": "/bin/uv_run_tests shutdown_eof",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - shutdown_eof(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-shutdown_simultaneous",
+      "command": "/bin/uv_run_tests shutdown_simultaneous",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - shutdown_simultaneous(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-shutdown_twice",
+      "command": "/bin/uv_run_tests shutdown_twice",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - shutdown_twice(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-signal_close_loop_alive",
+      "command": "/bin/uv_run_tests signal_close_loop_alive",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - signal_close_loop_alive(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-signal_multiple_loops",
+      "command": "/bin/uv_run_tests signal_multiple_loops",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - signal_multiple_loops(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-signal_pending_on_close",
+      "command": "/bin/uv_run_tests signal_pending_on_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - signal_pending_on_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-socket_buffer_size",
+      "command": "/bin/uv_run_tests socket_buffer_size",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - socket_buffer_size(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_and_kill",
+      "command": "/bin/uv_run_tests spawn_and_kill",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_and_kill(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_and_kill_with_std",
+      "command": "/bin/uv_run_tests spawn_and_kill_with_std",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_and_kill_with_std(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_and_ping",
+      "command": "/bin/uv_run_tests spawn_and_ping",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_and_ping(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_auto_unref",
+      "command": "/bin/uv_run_tests spawn_auto_unref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_auto_unref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_closed_process_io",
+      "command": "/bin/uv_run_tests spawn_closed_process_io",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_closed_process_io(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_detached",
+      "command": "/bin/uv_run_tests spawn_detached",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_detached(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_empty_env",
+      "command": "/bin/uv_run_tests spawn_empty_env",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_empty_env(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_exercise_sigchld_issue",
+      "command": "/bin/uv_run_tests spawn_exercise_sigchld_issue",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_exercise_sigchld_issue(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_exit_code",
+      "command": "/bin/uv_run_tests spawn_exit_code",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_exit_code(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_fails",
+      "command": "/bin/uv_run_tests spawn_fails",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_fails(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_fails_check_for_waitpid_cleanup",
+      "command": "/bin/uv_run_tests spawn_fails_check_for_waitpid_cleanup",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_fails_check_for_waitpid_cleanup(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_fs_open",
+      "command": "/bin/uv_run_tests spawn_fs_open",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_fs_open(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_ignored_stdio",
+      "command": "/bin/uv_run_tests spawn_ignored_stdio",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_ignored_stdio(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_inherit_streams",
+      "command": "/bin/uv_run_tests spawn_inherit_streams",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_inherit_streams(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_preserve_env",
+      "command": "/bin/uv_run_tests spawn_preserve_env",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_preserve_env(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_quoted_path",
+      "command": "/bin/uv_run_tests spawn_quoted_path",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_quoted_path(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_reads_child_path",
+      "command": "/bin/uv_run_tests spawn_reads_child_path",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_reads_child_path(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_relative_path",
+      "command": "/bin/uv_run_tests spawn_relative_path",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_relative_path(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_setgid_fails",
+      "command": "/bin/uv_run_tests spawn_setgid_fails",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_setgid_fails(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_setuid_fails",
+      "command": "/bin/uv_run_tests spawn_setuid_fails",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_setuid_fails(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_setuid_setgid",
+      "command": "/bin/uv_run_tests spawn_setuid_setgid",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_setuid_setgid(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_stdin",
+      "command": "/bin/uv_run_tests spawn_stdin",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_stdin(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_stdio_greater_than_3",
+      "command": "/bin/uv_run_tests spawn_stdio_greater_than_3",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_stdio_greater_than_3(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_stdout",
+      "command": "/bin/uv_run_tests spawn_stdout",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_stdout(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_stdout_and_stderr_to_file",
+      "command": "/bin/uv_run_tests spawn_stdout_and_stderr_to_file",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_stdout_and_stderr_to_file(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_stdout_and_stderr_to_file2",
+      "command": "/bin/uv_run_tests spawn_stdout_and_stderr_to_file2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_stdout_and_stderr_to_file2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_stdout_and_stderr_to_file_swap",
+      "command": "/bin/uv_run_tests spawn_stdout_and_stderr_to_file_swap",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_stdout_and_stderr_to_file_swap(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_stdout_to_file",
+      "command": "/bin/uv_run_tests spawn_stdout_to_file",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_stdout_to_file(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-spawn_tcp_server",
+      "command": "/bin/uv_run_tests spawn_tcp_server",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - spawn_tcp_server(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-stdio_emulate_iocp",
+      "command": "/bin/uv_run_tests stdio_emulate_iocp",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - stdio_emulate_iocp(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-stdio_over_pipes",
+      "command": "/bin/uv_run_tests stdio_over_pipes",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - stdio_over_pipes(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-strscpy",
+      "command": "/bin/uv_run_tests strscpy",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - strscpy(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-strtok",
+      "command": "/bin/uv_run_tests strtok",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - strtok(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-sys_error",
+      "command": "/bin/uv_run_tests sys_error",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - sys_error(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp6_local_connect_timeout",
+      "command": "/bin/uv_run_tests tcp6_local_connect_timeout",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp6_local_connect_timeout(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp6_ping_pong",
+      "command": "/bin/uv_run_tests tcp6_ping_pong",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp6_ping_pong(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp6_ping_pong_vec",
+      "command": "/bin/uv_run_tests tcp6_ping_pong_vec",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp6_ping_pong_vec(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_alloc_cb_fail",
+      "command": "/bin/uv_run_tests tcp_alloc_cb_fail",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_alloc_cb_fail(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind6_error_addrinuse",
+      "command": "/bin/uv_run_tests tcp_bind6_error_addrinuse",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind6_error_addrinuse(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind6_error_addrnotavail",
+      "command": "/bin/uv_run_tests tcp_bind6_error_addrnotavail",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind6_error_addrnotavail(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind6_error_fault",
+      "command": "/bin/uv_run_tests tcp_bind6_error_fault",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind6_error_fault(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind6_error_inval",
+      "command": "/bin/uv_run_tests tcp_bind6_error_inval",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind6_error_inval(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind6_localhost_ok",
+      "command": "/bin/uv_run_tests tcp_bind6_localhost_ok",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind6_localhost_ok(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_error_addrinuse_connect",
+      "command": "/bin/uv_run_tests tcp_bind_error_addrinuse_connect",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_error_addrinuse_connect(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_error_addrinuse_listen",
+      "command": "/bin/uv_run_tests tcp_bind_error_addrinuse_listen",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_error_addrinuse_listen(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_error_addrnotavail_1",
+      "command": "/bin/uv_run_tests tcp_bind_error_addrnotavail_1",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_error_addrnotavail_1(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_error_addrnotavail_2",
+      "command": "/bin/uv_run_tests tcp_bind_error_addrnotavail_2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_error_addrnotavail_2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_error_fault",
+      "command": "/bin/uv_run_tests tcp_bind_error_fault",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_error_fault(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_error_inval",
+      "command": "/bin/uv_run_tests tcp_bind_error_inval",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_error_inval(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_invalid_flags",
+      "command": "/bin/uv_run_tests tcp_bind_invalid_flags",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_invalid_flags(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_localhost_ok",
+      "command": "/bin/uv_run_tests tcp_bind_localhost_ok",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_localhost_ok(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_or_listen_error_after_close",
+      "command": "/bin/uv_run_tests tcp_bind_or_listen_error_after_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_or_listen_error_after_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_bind_writable_flags",
+      "command": "/bin/uv_run_tests tcp_bind_writable_flags",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_bind_writable_flags(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_close",
+      "command": "/bin/uv_run_tests tcp_close",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_close(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_close_accept",
+      "command": "/bin/uv_run_tests tcp_close_accept",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_close_accept(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_close_after_read_timeout",
+      "command": "/bin/uv_run_tests tcp_close_after_read_timeout",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_close_after_read_timeout(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_close_reset_accepted",
+      "command": "/bin/uv_run_tests tcp_close_reset_accepted",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_close_reset_accepted(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_close_reset_accepted_after_shutdown",
+      "command": "/bin/uv_run_tests tcp_close_reset_accepted_after_shutdown",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_close_reset_accepted_after_shutdown(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_close_reset_accepted_after_socket_shutdown",
+      "command": "/bin/uv_run_tests tcp_close_reset_accepted_after_socket_shutdown",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_close_reset_accepted_after_socket_shutdown(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_close_reset_client",
+      "command": "/bin/uv_run_tests tcp_close_reset_client",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_close_reset_client(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_close_reset_client_after_shutdown",
+      "command": "/bin/uv_run_tests tcp_close_reset_client_after_shutdown",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_close_reset_client_after_shutdown(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_close_while_connecting",
+      "command": "/bin/uv_run_tests tcp_close_while_connecting",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_close_while_connecting(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_connect_error_after_write",
+      "command": "/bin/uv_run_tests tcp_connect_error_after_write",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_connect_error_after_write(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_connect_error_fault",
+      "command": "/bin/uv_run_tests tcp_connect_error_fault",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_connect_error_fault(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_connect_timeout",
+      "command": "/bin/uv_run_tests tcp_connect_timeout",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_connect_timeout(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_create_early",
+      "command": "/bin/uv_run_tests tcp_create_early",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_create_early(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_create_early_accept",
+      "command": "/bin/uv_run_tests tcp_create_early_accept",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_create_early_accept(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_create_early_bad_bind",
+      "command": "/bin/uv_run_tests tcp_create_early_bad_bind",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_create_early_bad_bind(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_create_early_bad_domain",
+      "command": "/bin/uv_run_tests tcp_create_early_bad_domain",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_create_early_bad_domain(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_flags",
+      "command": "/bin/uv_run_tests tcp_flags",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_flags(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_listen_without_bind",
+      "command": "/bin/uv_run_tests tcp_listen_without_bind",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_listen_without_bind(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_local_connect_timeout",
+      "command": "/bin/uv_run_tests tcp_local_connect_timeout",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_local_connect_timeout(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_oob",
+      "command": "/bin/uv_run_tests tcp_oob",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_oob(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_open",
+      "command": "/bin/uv_run_tests tcp_open",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_open(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_open_bound",
+      "command": "/bin/uv_run_tests tcp_open_bound",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_open_bound(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_open_connected",
+      "command": "/bin/uv_run_tests tcp_open_connected",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_open_connected(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_open_twice",
+      "command": "/bin/uv_run_tests tcp_open_twice",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_open_twice(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_ping_pong",
+      "command": "/bin/uv_run_tests tcp_ping_pong",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_ping_pong(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_ping_pong_vec",
+      "command": "/bin/uv_run_tests tcp_ping_pong_vec",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_ping_pong_vec(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_read_stop",
+      "command": "/bin/uv_run_tests tcp_read_stop",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_read_stop(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_read_stop_start",
+      "command": "/bin/uv_run_tests tcp_read_stop_start",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_read_stop_start(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_ref",
+      "command": "/bin/uv_run_tests tcp_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_ref2",
+      "command": "/bin/uv_run_tests tcp_ref2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_ref2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_ref2b",
+      "command": "/bin/uv_run_tests tcp_ref2b",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_ref2b(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_ref3",
+      "command": "/bin/uv_run_tests tcp_ref3",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_ref3(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_ref4",
+      "command": "/bin/uv_run_tests tcp_ref4",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_ref4(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_rst",
+      "command": "/bin/uv_run_tests tcp_rst",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_rst(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_shutdown_after_write",
+      "command": "/bin/uv_run_tests tcp_shutdown_after_write",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_shutdown_after_write(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_try_write",
+      "command": "/bin/uv_run_tests tcp_try_write",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_try_write(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_try_write_error",
+      "command": "/bin/uv_run_tests tcp_try_write_error",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_try_write_error(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_unexpected_read",
+      "command": "/bin/uv_run_tests tcp_unexpected_read",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_unexpected_read(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_write_after_connect",
+      "command": "/bin/uv_run_tests tcp_write_after_connect",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_write_after_connect(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_write_fail",
+      "command": "/bin/uv_run_tests tcp_write_fail",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_write_fail(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_write_in_a_row",
+      "command": "/bin/uv_run_tests tcp_write_in_a_row",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_write_in_a_row(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_write_queue_order",
+      "command": "/bin/uv_run_tests tcp_write_queue_order",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_write_queue_order(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_write_ready",
+      "command": "/bin/uv_run_tests tcp_write_ready",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_write_ready(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_write_to_half_open_connection",
+      "command": "/bin/uv_run_tests tcp_write_to_half_open_connection",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_write_to_half_open_connection(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tcp_writealot",
+      "command": "/bin/uv_run_tests tcp_writealot",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tcp_writealot(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-test_macros",
+      "command": "/bin/uv_run_tests test_macros",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - test_macros(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_affinity",
+      "command": "/bin/uv_run_tests thread_affinity",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_affinity(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_create",
+      "command": "/bin/uv_run_tests thread_create",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_create(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_equal",
+      "command": "/bin/uv_run_tests thread_equal",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_equal(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_local_storage",
+      "command": "/bin/uv_run_tests thread_local_storage",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_local_storage(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_mutex",
+      "command": "/bin/uv_run_tests thread_mutex",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_mutex(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_mutex_recursive",
+      "command": "/bin/uv_run_tests thread_mutex_recursive",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_mutex_recursive(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_rwlock",
+      "command": "/bin/uv_run_tests thread_rwlock",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_rwlock(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_rwlock_trylock",
+      "command": "/bin/uv_run_tests thread_rwlock_trylock",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_rwlock_trylock(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_stack_size",
+      "command": "/bin/uv_run_tests thread_stack_size",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_stack_size(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-thread_stack_size_explicit",
+      "command": "/bin/uv_run_tests thread_stack_size_explicit",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - thread_stack_size_explicit(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_cancel_fs",
+      "command": "/bin/uv_run_tests threadpool_cancel_fs",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_cancel_fs(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_cancel_getaddrinfo",
+      "command": "/bin/uv_run_tests threadpool_cancel_getaddrinfo",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_cancel_getaddrinfo(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_cancel_getnameinfo",
+      "command": "/bin/uv_run_tests threadpool_cancel_getnameinfo",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_cancel_getnameinfo(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_cancel_random",
+      "command": "/bin/uv_run_tests threadpool_cancel_random",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_cancel_random(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_cancel_single",
+      "command": "/bin/uv_run_tests threadpool_cancel_single",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_cancel_single(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_cancel_when_busy",
+      "command": "/bin/uv_run_tests threadpool_cancel_when_busy",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_cancel_when_busy(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_cancel_work",
+      "command": "/bin/uv_run_tests threadpool_cancel_work",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_cancel_work(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_multiple_event_loops",
+      "command": "/bin/uv_run_tests threadpool_multiple_event_loops",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_multiple_event_loops(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_queue_work_einval",
+      "command": "/bin/uv_run_tests threadpool_queue_work_einval",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_queue_work_einval(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-threadpool_queue_work_simple",
+      "command": "/bin/uv_run_tests threadpool_queue_work_simple",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - threadpool_queue_work_simple(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer",
+      "command": "/bin/uv_run_tests timer",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_again",
+      "command": "/bin/uv_run_tests timer_again",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_again(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_early_check",
+      "command": "/bin/uv_run_tests timer_early_check",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_early_check(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_from_check",
+      "command": "/bin/uv_run_tests timer_from_check",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_from_check(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_huge_repeat",
+      "command": "/bin/uv_run_tests timer_huge_repeat",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_huge_repeat(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_huge_timeout",
+      "command": "/bin/uv_run_tests timer_huge_timeout",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_huge_timeout(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_init",
+      "command": "/bin/uv_run_tests timer_init",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_init(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_is_closing",
+      "command": "/bin/uv_run_tests timer_is_closing",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_is_closing(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_no_double_call_nowait",
+      "command": "/bin/uv_run_tests timer_no_double_call_nowait",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_no_double_call_nowait(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_no_double_call_once",
+      "command": "/bin/uv_run_tests timer_no_double_call_once",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_no_double_call_once(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_no_run_on_unref",
+      "command": "/bin/uv_run_tests timer_no_run_on_unref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_no_run_on_unref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_null_callback",
+      "command": "/bin/uv_run_tests timer_null_callback",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_null_callback(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_order",
+      "command": "/bin/uv_run_tests timer_order",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_order(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_ref",
+      "command": "/bin/uv_run_tests timer_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_ref2",
+      "command": "/bin/uv_run_tests timer_ref2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_ref2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_run_once",
+      "command": "/bin/uv_run_tests timer_run_once",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_run_once(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-timer_start_twice",
+      "command": "/bin/uv_run_tests timer_start_twice",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - timer_start_twice(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tmpdir",
+      "command": "/bin/uv_run_tests tmpdir",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tmpdir(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tty",
+      "command": "/bin/uv_run_tests tty",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tty(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tty_file",
+      "command": "/bin/uv_run_tests tty_file",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tty_file(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-tty_pty",
+      "command": "/bin/uv_run_tests tty_pty",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - tty_pty(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_alloc_cb_fail",
+      "command": "/bin/uv_run_tests udp_alloc_cb_fail",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_alloc_cb_fail(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_bind",
+      "command": "/bin/uv_run_tests udp_bind",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_bind(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_bind_reuseaddr",
+      "command": "/bin/uv_run_tests udp_bind_reuseaddr",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_bind_reuseaddr(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_connect",
+      "command": "/bin/uv_run_tests udp_connect",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_connect(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_connect6",
+      "command": "/bin/uv_run_tests udp_connect6",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_connect6(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_create_early",
+      "command": "/bin/uv_run_tests udp_create_early",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_create_early(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_create_early_bad_bind",
+      "command": "/bin/uv_run_tests udp_create_early_bad_bind",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_create_early_bad_bind(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_create_early_bad_domain",
+      "command": "/bin/uv_run_tests udp_create_early_bad_domain",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_create_early_bad_domain(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_dgram_too_big",
+      "command": "/bin/uv_run_tests udp_dgram_too_big",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_dgram_too_big(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_dual_stack",
+      "command": "/bin/uv_run_tests udp_dual_stack",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_dual_stack(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_ipv6_only",
+      "command": "/bin/uv_run_tests udp_ipv6_only",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_ipv6_only(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_mmsg",
+      "command": "/bin/uv_run_tests udp_mmsg",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_mmsg(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_multicast_interface",
+      "command": "/bin/uv_run_tests udp_multicast_interface",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_multicast_interface(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_multicast_interface6",
+      "command": "/bin/uv_run_tests udp_multicast_interface6",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_multicast_interface6(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_multicast_join",
+      "command": "/bin/uv_run_tests udp_multicast_join",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_multicast_join(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_multicast_join6",
+      "command": "/bin/uv_run_tests udp_multicast_join6",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_multicast_join6(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_multicast_ttl",
+      "command": "/bin/uv_run_tests udp_multicast_ttl",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_multicast_ttl(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_no_autobind",
+      "command": "/bin/uv_run_tests udp_no_autobind",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_no_autobind(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_open",
+      "command": "/bin/uv_run_tests udp_open",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_open(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_open_bound",
+      "command": "/bin/uv_run_tests udp_open_bound",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_open_bound(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_open_connect",
+      "command": "/bin/uv_run_tests udp_open_connect",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_open_connect(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_open_twice",
+      "command": "/bin/uv_run_tests udp_open_twice",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_open_twice(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_options",
+      "command": "/bin/uv_run_tests udp_options",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_options(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_options6",
+      "command": "/bin/uv_run_tests udp_options6",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_options6(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_recv_in_a_row",
+      "command": "/bin/uv_run_tests udp_recv_in_a_row",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_recv_in_a_row(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_ref",
+      "command": "/bin/uv_run_tests udp_ref",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_ref(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_ref2",
+      "command": "/bin/uv_run_tests udp_ref2",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_ref2(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_ref3",
+      "command": "/bin/uv_run_tests udp_ref3",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_ref3(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_send_and_recv",
+      "command": "/bin/uv_run_tests udp_send_and_recv",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_send_and_recv(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_send_hang_loop",
+      "command": "/bin/uv_run_tests udp_send_hang_loop",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_send_hang_loop(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_send_immediate",
+      "command": "/bin/uv_run_tests udp_send_immediate",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_send_immediate(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_send_unix",
+      "command": "/bin/uv_run_tests udp_send_unix",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_send_unix(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_send_unreachable",
+      "command": "/bin/uv_run_tests udp_send_unreachable",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_send_unreachable(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_sendmmsg_error",
+      "command": "/bin/uv_run_tests udp_sendmmsg_error",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_sendmmsg_error(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-udp_try_send",
+      "command": "/bin/uv_run_tests udp_try_send",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - udp_try_send(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-uname",
+      "command": "/bin/uv_run_tests uname",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - uname(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-unref_in_prepare_cb",
+      "command": "/bin/uv_run_tests unref_in_prepare_cb",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - unref_in_prepare_cb(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-utf8_decode1",
+      "command": "/bin/uv_run_tests utf8_decode1",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - utf8_decode1(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-utf8_decode1_overrun",
+      "command": "/bin/uv_run_tests utf8_decode1_overrun",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - utf8_decode1_overrun(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-walk_handles",
+      "command": "/bin/uv_run_tests walk_handles",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - walk_handles(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-watcher_cross_stop",
+      "command": "/bin/uv_run_tests watcher_cross_stop",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - watcher_cross_stop(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-we_get_signal",
+      "command": "/bin/uv_run_tests we_get_signal",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - we_get_signal(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-we_get_signal_one_shot",
+      "command": "/bin/uv_run_tests we_get_signal_one_shot",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - we_get_signal_one_shot(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-we_get_signals",
+      "command": "/bin/uv_run_tests we_get_signals",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - we_get_signals(?:\\s|$)"
+      ]
+    },
+    {
+      "name": "libuv-we_get_signals_mixed",
+      "command": "/bin/uv_run_tests we_get_signals_mixed",
+      "timeout": 90,
+      "reject": [
+        "not ok",
+        "Assertion failed",
+        "EXCEPTION:"
+      ],
+      "skip_exit_status": [
+        7
+      ],
+      "skip_pattern": "(?m)^ok 1 - [^\\r\\n]* # SKIP [^\\r\\n]*",
+      "expect": [
+        "(?m)^ok 1 - we_get_signals_mixed(?:\\s|$)"
+      ]
+    }
+  ],
+  "description": "Run all 416 libuv tests from the configured package in separate guests. Fixtures are unchanged upstream files; their hashes are in the evidence bundle.",
+  "fixtures": [
+    {
+      "source": "system/libuv/libuv/test/fixtures/empty_file",
+      "target": "/tmp/test/fixtures/empty_file"
+    },
+    {
+      "source": "system/libuv/libuv/test/fixtures/load_error.node",
+      "target": "/tmp/test/fixtures/load_error.node"
+    },
+    {
+      "source": "system/libuv/libuv/test/fixtures/lorem_ipsum.txt",
+      "target": "/tmp/test/fixtures/lorem_ipsum.txt"
+    },
+    {
+      "source": "system/libuv/libuv/test/fixtures/one_file/one_file",
+      "target": "/tmp/test/fixtures/one_file/one_file"
+    }
+  ]
+}

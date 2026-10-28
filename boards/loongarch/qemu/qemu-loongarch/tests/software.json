@@ -1,0 +1,721 @@
+{
+  "cases": [
+    {
+      "name": "ramspeed",
+      "command": "ramspeed -a -s 65536 -n 10",
+      "expect": [],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR"
+      ]
+    },
+    {
+      "name": "spinlock",
+      "command": "spinlock_bench",
+      "expect": [],
+      "setup": [],
+      "timeout": 180,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "whetstone",
+      "command": "whetstone 1000",
+      "expect": [
+        "Double Precision Whetstones"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "cyclictest",
+      "command": "cyclictest -l 100 -t 4",
+      "expect": [
+        "C:"
+      ]
+    },
+    {
+      "name": "osperf",
+      "command": "osperf -c 10",
+      "expect": [
+        "OS performance args:"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "stat",
+      "command": "stat /data/input",
+      "expect": [
+        "Test fstatfs"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo loongarch-apps-fixture > /data/input"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "system",
+      "command": "system",
+      "expect": [
+        "system returned: 0"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "unionfs",
+      "command": "unionfs",
+      "expect": [
+        "Mounting ROMFS"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "popen-example",
+      "command": "popen",
+      "expect": [
+        "Calling pclose"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "libtest",
+      "command": "libtest",
+      "expect": [
+        "Hello, Library!!"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "minibasic",
+      "command": "basic",
+      "expect": [
+        "HERE",
+        "34567890"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "hostname",
+      "command": "hostname",
+      "expect": [
+        "la-apps"
+      ],
+      "setup": [
+        "hostname la-apps"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "netdb",
+      "command": "netdb --host 127.0.0.1",
+      "expect": [
+        "IPv4 Addr: 127.0.0.1"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "hexed",
+      "command": "hexed -d 0 10 /data/input",
+      "expect": [
+        "loongarch"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo loongarch-apps-fixture > /data/input"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "setlogmask",
+      "command": "setlogmask i",
+      "expect": [],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "tee",
+      "command": "cat /data/output",
+      "expect": [
+        "loongarch-apps-fixture"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo loongarch-apps-fixture > /data/input",
+        "tee /data/output < /data/input"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "lzf",
+      "command": "cmp /data/input /data/copy",
+      "expect": [],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo loongarch-apps-fixture > /data/input",
+        "cp /data/input /data/copy",
+        "lzf /data/copy",
+        "lzf -d /data/copy.lzf"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "failed"
+      ]
+    },
+    {
+      "name": "usrsocktest",
+      "command": "usrsocktest",
+      "expect": [
+        "FAILED:0"
+      ],
+      "setup": [],
+      "timeout": 300,
+      "reject": [
+        "TEST ASSERT FAILED",
+        "\": [FAILED]"
+      ]
+    },
+    {
+      "name": "coremark",
+      "command": "coremark",
+      "expect": [
+        "Correct operation validated"
+      ],
+      "setup": [],
+      "timeout": 180,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "taclebench",
+      "command": "taclebench",
+      "expect": [
+        "seconds"
+      ],
+      "reject": [
+        "error",
+        "ERROR"
+      ]
+    },
+    {
+      "name": "json",
+      "command": "json",
+      "expect": [
+        "Image",
+        "Width"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "ini-dumper",
+      "command": "ini_dumper /data/test.ini",
+      "expect": [
+        "arch.*loongarch",
+        "ini_parse\\(\\) exited with 0"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo \"[test]\" > /data/test.ini",
+        "echo arch=loongarch >> /data/test.ini"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "mmlparser",
+      "command": "mmlparser",
+      "expect": [
+        "Total Tick"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "Error was occured"
+      ]
+    },
+    {
+      "name": "null",
+      "command": "null",
+      "expect": [],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "tiff",
+      "command": "ls -l /tmp/result.tif",
+      "expect": [
+        "result.tif"
+      ],
+      "setup": [
+        "mkdir /tmp",
+        "mount -t tmpfs /tmp",
+        "tiff"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "userfs",
+      "command": "cat /mnt/ufstest/File1",
+      "expect": [
+        "This is file 1"
+      ],
+      "setup": [
+        "userfs",
+        "sleep 1"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "ustream",
+      "command": "client",
+      "expect": [
+        "client: Terminating"
+      ],
+      "setup": [
+        "server &",
+        "sleep 1"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "udgram",
+      "command": "udgram_client",
+      "expect": [
+        "Sent"
+      ],
+      "setup": [
+        "udgram_server &",
+        "sleep 1"
+      ],
+      "timeout": 180,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "argtable3",
+      "command": "argtable3_test",
+      "expect": [
+        "OK"
+      ],
+      "setup": [],
+      "timeout": 600,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "ping",
+      "command": "ping -c 3 127.0.0.1",
+      "expect": [
+        "0% packet loss"
+      ],
+      "setup": [],
+      "timeout": 180,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "ping6",
+      "command": "ping6 -c 3 ::1",
+      "expect": [
+        "0% packet loss"
+      ],
+      "setup": [],
+      "timeout": 180,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "hex2bin",
+      "command": "cat /data/test.bin",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo :0400000041424344F2 > /data/test.hex",
+        "echo :00000001FF >> /data/test.hex",
+        "hex2bin /data/test.hex /data/test.bin"
+      ],
+      "expect": [
+        "ABCD"
+      ]
+    },
+    {
+      "name": "gzip",
+      "command": "cmp /data/input /data/copy",
+      "expect": [],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo loongarch-apps-fixture > /data/input",
+        "cp /data/input /data/copy",
+        "gzip /data/copy",
+        "gzip -d /data/copy.gz"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "zip-unzip",
+      "command": "cmp /data/input /data/copy",
+      "expect": [],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo loongarch-apps-fixture > /data/input",
+        "cp /data/input /data/copy",
+        "cd /data",
+        "zip /data/archive.zip copy",
+        "rm /data/copy",
+        "unzip /data/archive.zip"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "zlib-infcover",
+      "command": "zlib_infcover_test",
+      "expect": [],
+      "setup": [],
+      "timeout": 120,
+      "reject": [
+        "FAILED",
+        "Assertion"
+      ]
+    },
+    {
+      "name": "lua",
+      "command": "lua -e \"assert(6*7==42); print(6*7)\"",
+      "expect": [
+        "42"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED"
+      ]
+    },
+    {
+      "name": "duktape",
+      "command": "duk -e \"print(6*7)\"",
+      "expect": [
+        "42"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED"
+      ]
+    },
+    {
+      "name": "berry",
+      "command": "berry -e \"print(6*7)\"",
+      "expect": [
+        "42"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED"
+      ]
+    },
+    {
+      "name": "bas",
+      "command": "bas /data/test.bas",
+      "expect": [
+        "42"
+      ],
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo \"10 PRINT 6*7\" > /data/test.bas",
+        "echo \"20 END\" >> /data/test.bas"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED"
+      ]
+    },
+    {
+      "name": "nanopb",
+      "command": "nanopb_example",
+      "expect": [
+        "Your lucky number was 13!"
+      ]
+    },
+    {
+      "name": "netlink-route",
+      "command": "netlink_route",
+      "expect": [],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED"
+      ]
+    },
+    {
+      "name": "uid",
+      "command": "uid -uid 0",
+      "expect": [
+        "root"
+      ],
+      "reject": [
+        "failed",
+        "ERROR"
+      ]
+    },
+    {
+      "name": "ipcfg",
+      "command": "ipcfg",
+      "expect": [
+        "Dump after creating"
+      ],
+      "setup": [],
+      "timeout": 90,
+      "reject": [
+        "ERROR: Failed",
+        "ERROR: ipcfg_write"
+      ]
+    },
+    {
+      "name": "nettest",
+      "command": "nettest",
+      "timeout": 60,
+      "expect": [
+        "client: Terminating",
+        "server: Sent 4096 bytes"
+      ],
+      "reject": [
+        "ERROR",
+        "failed"
+      ]
+    },
+    {
+      "name": "bastest",
+      "command": "ls /mnt/romfs",
+      "expect": [
+        "test"
+      ],
+      "setup": [
+        "bastest"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "mkmbr",
+      "command": "mkmbr /dev/ram1 1 1024",
+      "expect": [],
+      "setup": [
+        "mkrd -m 1 -s 512 4096"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "smf",
+      "command": "hsm_psicc2 terminate",
+      "expect": [],
+      "setup": [
+        "hsm_psicc2 start",
+        "sleep 1",
+        "hsm_psicc2 event A",
+        "hsm_psicc2 event B",
+        "sleep 1"
+      ],
+      "timeout": 90,
+      "reject": [
+        "ERROR",
+        "FAILED",
+        "(?i)\\bfailed\\b"
+      ]
+    },
+    {
+      "name": "stty",
+      "command": "stty",
+      "setup": [
+        "stty -F /dev/console min 1"
+      ],
+      "expect": [
+        "Terminal settings",
+        "min = 1"
+      ],
+      "reject": [
+        "ERROR"
+      ]
+    },
+    {
+      "name": "dd",
+      "command": "cmp /data/input /data/output",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo loongarch-copy-test > /data/input",
+        "dd if=/data/input of=/data/output bs=4"
+      ]
+    },
+    {
+      "name": "netcat",
+      "command": "cat /data/output",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data",
+        "echo loongarch-netcat-test > /data/input",
+        "netcat -l 6001 /data/output &",
+        "sleep 1",
+        "netcat 127.0.0.1 6001 /data/input",
+        "sleep 1"
+      ],
+      "expect": [
+        "loongarch-netcat-test"
+      ]
+    }
+  ]
+}

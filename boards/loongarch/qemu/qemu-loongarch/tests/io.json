@@ -1,0 +1,75 @@
+{
+  "cases": [
+    {
+      "name": "posix-stdio",
+      "command": "posix_stdio",
+      "expect": [
+        "Hello, NuttX users, welcome!!!"
+      ],
+      "reject": [
+        "Failed"
+      ]
+    },
+    {
+      "name": "shm",
+      "command": "shm_test",
+      "expect": [
+        "Producer Wrote to SHM:",
+        "Consumer Read from SHM:"
+      ],
+      "reject": [
+        "ERROR",
+        "failed"
+      ]
+    },
+    {
+      "name": "romfs",
+      "command": "romfs",
+      "expect": [
+        "PASSED"
+      ],
+      "reject": [
+        "ERROR"
+      ]
+    },
+    {
+      "name": "cctype",
+      "command": "cctype",
+      "expect": [
+        "KEY:",
+        "(?m)^255 "
+      ],
+      "reject": [
+        "ERROR"
+      ]
+    },
+    {
+      "name": "helloxx",
+      "command": "helloxx",
+      "expect": [
+        "statically constructed instance"
+      ],
+      "reject": [
+        "CONSTRUCTION FAILED"
+      ]
+    },
+    {
+      "name": "ostest-extended",
+      "command": "ostest",
+      "setup": [
+        "mkdir /data",
+        "mount -t tmpfs /data"
+      ],
+      "timeout": 420,
+      "expect": [
+        "ostest_main: Exiting with status 0",
+        "user_main: AIO test",
+        "user_main: recursive mutex test"
+      ],
+      "reject": [
+        "ERROR",
+        "Assertion failed"
+      ]
+    }
+  ]
+}
