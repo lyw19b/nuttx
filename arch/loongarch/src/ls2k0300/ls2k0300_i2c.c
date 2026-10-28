@@ -131,11 +131,27 @@ static struct ls2k0300_i2c_priv_s g_i2c3_priv =
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: i2c_getreg
+ *
+ * Description:
+ *   Read a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
+
 static inline uint32_t i2c_getreg(struct ls2k0300_i2c_priv_s *priv,
                                   uint32_t offset)
 {
   return getreg32(priv->base + offset);
 }
+
+/****************************************************************************
+ * Name: i2c_putreg
+ *
+ * Description:
+ *   Write a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
 
 static inline void i2c_putreg(struct ls2k0300_i2c_priv_s *priv,
                               uint32_t offset, uint32_t value)
@@ -143,21 +159,50 @@ static inline void i2c_putreg(struct ls2k0300_i2c_priv_s *priv,
   putreg32(value, priv->base + offset);
 }
 
+/****************************************************************************
+ * Name: i2c_set_bits
+ *
+ * Description:
+ *   Set selected controller register bits while preserving the others.
+ *   The caller serializes access to the controller.
+ *
+ ****************************************************************************/
+
 static void i2c_set_bits(struct ls2k0300_i2c_priv_s *priv,
                          uint32_t offset, uint32_t mask)
 {
   uint32_t regval = i2c_getreg(priv, offset);
+
   regval |= mask;
   i2c_putreg(priv, offset, regval);
 }
+
+/****************************************************************************
+ * Name: i2c_clr_bits
+ *
+ * Description:
+ *   Clear selected controller register bits while preserving the others.
+ *   The caller serializes access to the controller.
+ *
+ ****************************************************************************/
 
 static void i2c_clr_bits(struct ls2k0300_i2c_priv_s *priv,
                          uint32_t offset, uint32_t mask)
 {
   uint32_t regval = i2c_getreg(priv, offset);
+
   regval &= ~mask;
   i2c_putreg(priv, offset, regval);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_i2c_hw_config
+ *
+ * Description:
+ *   Program standard or fast-mode timing from the cached bus frequency
+ *   and enable the I2C peripheral.
+ *
+ ****************************************************************************/
 
 static void ls2k0300_i2c_hw_config(struct ls2k0300_i2c_priv_s *priv)
 {
@@ -182,6 +227,16 @@ static void ls2k0300_i2c_hw_config(struct ls2k0300_i2c_priv_s *priv)
 
   i2c_putreg(priv, LS2K0300_I2C_CR1, I2C_CR1_PE);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_i2c_wait_status
+ *
+ * Description:
+ *   Poll SR1 at ten-microsecond intervals until the selected status
+ *   matches the requested state. Return -ETIMEDOUT when the budget
+ *   expires.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_i2c_wait_status(struct ls2k0300_i2c_priv_s *priv,
                                    uint32_t mask, bool set,
@@ -210,6 +265,15 @@ static int ls2k0300_i2c_wait_status(struct ls2k0300_i2c_priv_s *priv,
 
   return -ETIMEDOUT;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_i2c_wait_free_bus
+ *
+ * Description:
+ *   Wait for an idle bus, then attempt peripheral recovery if it remains
+ *   busy. Return -EBUSY if recovery does not release the bus.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_i2c_wait_free_bus(struct ls2k0300_i2c_priv_s *priv)
 {
@@ -258,11 +322,29 @@ static int ls2k0300_i2c_wait_free_bus(struct ls2k0300_i2c_priv_s *priv)
   return -EBUSY;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_i2c_clear_addr
+ *
+ * Description:
+ *   Read SR1 followed by SR2 to acknowledge the address phase according
+ *   to the controller register protocol.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_i2c_clear_addr(struct ls2k0300_i2c_priv_s *priv)
 {
   i2c_getreg(priv, LS2K0300_I2C_SR1);
   i2c_getreg(priv, LS2K0300_I2C_SR2);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_i2c_check_errors
+ *
+ * Description:
+ *   Clear arbitration, acknowledgement or bus-error flags and translate
+ *   them to negative errno values. Return OK when none is present.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_i2c_check_errors(struct ls2k0300_i2c_priv_s *priv,
                                     uint32_t status)
@@ -288,6 +370,16 @@ static int ls2k0300_i2c_check_errors(struct ls2k0300_i2c_priv_s *priv,
 
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_i2c_send_addr
+ *
+ * Description:
+ *   Wait for START completion, transmit the seven-bit address and
+ *   direction, then wait for address acknowledgement. Propagate timeout
+ *   or bus errors.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_i2c_send_addr(struct ls2k0300_i2c_priv_s *priv,
                                  struct i2c_msg_s *msg)
@@ -324,6 +416,16 @@ static int ls2k0300_i2c_send_addr(struct ls2k0300_i2c_priv_s *priv,
 
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_i2c_read
+ *
+ * Description:
+ *   Receive one I2C message, selecting the acknowledgement sequence for
+ *   its length. Generate STOP only for the final message and propagate
+ *   detected errors.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_i2c_read(struct ls2k0300_i2c_priv_s *priv,
                             struct i2c_msg_s *msg, bool is_last)
@@ -441,6 +543,15 @@ static int ls2k0300_i2c_read(struct ls2k0300_i2c_priv_s *priv,
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_i2c_write
+ *
+ * Description:
+ *   Transmit the message bytes and wait for controller completion.
+ *   Generate STOP when this is the final message.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_i2c_write(struct ls2k0300_i2c_priv_s *priv,
                              struct i2c_msg_s *msg, bool is_last)
 {
@@ -491,6 +602,15 @@ static int ls2k0300_i2c_write(struct ls2k0300_i2c_priv_s *priv,
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_i2c_transfer_msg
+ *
+ * Description:
+ *   Execute one message within a serialized transfer, handling START,
+ *   address and direction-specific data phases.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_i2c_transfer_msg(struct ls2k0300_i2c_priv_s *priv,
                                     struct i2c_msg_s *msg, bool is_last)
 {
@@ -531,6 +651,16 @@ static int ls2k0300_i2c_transfer_msg(struct ls2k0300_i2c_priv_s *priv,
 
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_i2c_transfer
+ *
+ * Description:
+ *   Serialize an I2C message sequence with the controller semaphore and
+ *   execute its messages in order. Release the semaphore on success or
+ *   failure.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_i2c_transfer(struct i2c_master_s *dev,
                                 struct i2c_msg_s *msgs, int count)
@@ -585,6 +715,14 @@ static int ls2k0300_i2c_transfer(struct i2c_master_s *dev,
   return count;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_i2c_setup
+ *
+ * Description:
+ *   Configure the I2C controller hardware before the bus is used.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_i2c_setup(struct i2c_master_s *dev)
 {
   struct ls2k0300_i2c_priv_s *priv =
@@ -593,6 +731,14 @@ static int ls2k0300_i2c_setup(struct i2c_master_s *dev)
   ls2k0300_i2c_hw_config(priv);
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_i2c_shutdown
+ *
+ * Description:
+ *   Disable the I2C peripheral when the bus is closed.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_i2c_shutdown(struct i2c_master_s *dev)
 {
@@ -605,6 +751,15 @@ static int ls2k0300_i2c_shutdown(struct i2c_master_s *dev)
 
 /****************************************************************************
  * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: ls2k0300_i2c_initialize
+ *
+ * Description:
+ *   Select and initialize a configured static I2C bus. Return its master
+ *   interface, or NULL when the requested bus is unavailable.
+ *
  ****************************************************************************/
 
 FAR struct i2c_master_s *ls2k0300_i2c_initialize(int port)

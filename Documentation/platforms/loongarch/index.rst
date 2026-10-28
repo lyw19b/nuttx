@@ -16,12 +16,12 @@ NuttX interfaces from this repository's revision.
 Memory management
 =================
 
-``CONFIG_ARCH_USE_MMU`` enables a shared, four-level page table with 4 KiB
-pages and 512 entries per level. Normal kernel RAM and MMIO remain in
-PLV0-only cached and uncached direct mapping windows. Dynamic mappings
-occupy the lower canonical address range. This is a flat NuttX build with
-paged mappings; per-process ``ARCH_ADDRENV``, demand paging, kernel builds,
-and user-mode system calls are not implemented or advertised.
+``CONFIG_ARCH_USE_MMU`` enables four-level page tables with 4 KiB pages
+and 512 entries per level. Flat builds use the boot page directory;
+``CONFIG_ARCH_ADDRENV`` gives each process a private root and owned text,
+data and heap pages. Kernel RAM and MMIO remain in PLV0-only cached and
+uncached direct mapping windows. User mappings occupy the lower canonical
+address range.
 
 ``CONFIG_LOONGARCH_PAGE_POOL_SIZE`` reserves page-aligned physical memory
 at the top of configured RAM. NuttX's ``mm_pgalloc`` and ``mm_pgfree`` own
@@ -53,8 +53,81 @@ zero.
 reports HPTW support. The same page tables work with both refill modes;
 unsupported CPUs fall back to software refill. On SMP, every mapping
 change waits for NuttX SMP callbacks to invalidate all online CPUs' TLBs
-before detached tables can be reused. ASID zero is used for the shared
-address space. Per-process ASID allocation is not provided.
+before detached tables can be reused. All environments currently use ASID
+zero: switching PGDL invalidates the local TLB before resuming the task.
+Per-process ASID allocation is an optional future optimization.
+
+User processes and system calls
+===============================
+
+``CONFIG_BUILD_KERNEL`` enables PLV3 execution with independent address
+environments. ``loongarch_addrenv.c`` implements the NuttX environment
+lifecycle, page lookup, heap page allocation and permission changes.
+NuttX owns environment reference counts, including references held by
+CPUs. Final destruction releases the owned backing pages and private
+page tables; immutable empty tables remain shared.
+
+The supplied kernel configurations reserve these virtual regions:
+
+===================== ======================== ===========================
+Region                Base                     Size
+===================== ======================== ===========================
+Text                  ``0x40000000``           1 MiB
+Reserved header/data  ``0x40200000``           1 MiB including header
+Heap/user stacks      ``0x40400000``           1 MiB
+===================== ======================== ===========================
+
+The first data page contains the NuttX address-environment header, so
+application data starts at ``0x40201000``. ELF loading initially permits
+text writes, then applies RX permissions. Data, heaps and user stacks are
+RW and nonexecutable. The configured regions must be page aligned,
+nonoverlapping and below the lower canonical address limit.
+
+Each user thread also has a separate kernel stack. Exception entry checks
+the saved privilege level and switches from an untrusted user SP through
+CSR SAVE3 before storing registers. Ordinary IRQ handlers use the per-CPU
+interrupt stack. User syscalls execute on the thread kernel stack with
+interrupts enabled, allowing blocking and CPU migration.
+
+``loongarch_syscall.c`` validates the syscall number before accessing
+NuttX's generated stub table. Reserved context-switch and assertion
+operations require PLV0. User signal delivery preserves a kernel
+continuation, builds a user register frame and validates the destination
+signal stack. ``arch_signal.S`` calls the user handler and returns through
+the reserved signal-return operation. Task and pthread entry are provided
+by ``loongarch_user.c``.
+
+``crt0.c`` installs the signal trampoline and calls ``main(argc, argv)``;
+normal return passes through libc ``exit``. The shared linker script,
+``arch/loongarch/src/common/loongarch_user.ld``, describes a statically
+linked LP64D ELF executable at the configured addresses. It merges a
+statically resolved GOT into data because this loader otherwise interprets
+a separate ``.got`` section as a PIC image. Make's ``export`` target exports
+``crt0.o`` and a preprocessed ``scripts/gnu-elf.ld`` for user applications.
+The QEMU regression links the same startup against NuttX libc, libmm and
+the generated syscall proxies.
+
+Current scope and limitations:
+
+* ELF execution is tested with statically linked ``ET_EXEC`` files using
+  the version-one LP64D ABI. Only ``R_LARCH_NONE``, ``R_LARCH_32`` and
+  ``R_LARCH_64`` relocations are implemented; other relocation types fail
+  explicitly. Dynamic linking and arbitrary relocatable modules are not
+  supported by this implementation.
+* A user CPU fault terminates that process through ``_exit(SIGSEGV)`` on
+  its kernel stack. The test checks the resulting exit status; this is not
+  POSIX signal-termination status or recoverable fault-signal delivery.
+* Syscall arguments follow the existing NuttX stub ABI. This port does not
+  add general copy-in/copy-out validation or fault recovery for arbitrary
+  user pointers passed to kernel services. Direct PLV3 memory permissions
+  are tested, but the syscall interface is not a hardened security boundary
+  against malicious pointer arguments.
+* Demand paging, copy-on-write, kernel-build process ``fork``, shared-memory
+  page ownership and CPU hotplug are not implemented. Constructor startup
+  hooks are present; C++ application and compiler TLS support have not been
+  validated in the user-process configuration.
+* QEMU results do not validate noncoherent caches. Additional cache
+  maintenance may be needed for another physical platform.
 
 Interrupts and SMP
 ==================
@@ -84,14 +157,16 @@ with this NuttX revision (NuttX apps 12.9.0 was used for validation).
 
 Available configurations under ``boards/loongarch/qemu/qemu-loongarch``:
 
-============ ==========================================================
-Configuration Purpose
-============ ==========================================================
-``nsh``      Single-core interactive NSH
-``smp``      Four-core interactive NSH
-``mmu``      Single-core MMU and context regression tests
-``smp-mmu``  Four-core MMU, context and TLB shootdown regression tests
-============ ==========================================================
+============== ==========================================================
+Configuration  Purpose
+============== ==========================================================
+``nsh``        Single-core interactive NSH
+``smp``        Four-core interactive NSH
+``mmu``        Single-core MMU and context regression tests
+``smp-mmu``    Four-core MMU, context and TLB shootdown regression tests
+``kernel``     Single-core ELF, syscall and user-permission regression
+``smp-kernel`` Four-core ELF, syscall and process-migration regression
+============== ==========================================================
 
 For example, with apps in ``../apps``::
 
@@ -142,6 +217,49 @@ read-only page) or 2 (read an unmapped page), rebuild, then pass
 are expected in these configurations; they must not be used as normal
 boot configurations.
 
+User-process regression
+=======================
+
+For a four-CPU kernel build::
+
+  cmake -S . -B build-kernel -GNinja \
+    -DBOARD_CONFIG=qemu-loongarch:smp-kernel -DNUTTX_APPS_DIR=../apps
+  cmake --build build-kernel
+  python3 tools/loongarch_qemu_test.py --kernel build-kernel/nuttx \
+    --userspace --cpus 4 --timeout 60
+
+Add ``--ptw`` to verify hardware walking. The ``kernel`` configuration
+uses the same test on one CPU; omit ``--cpus 4`` in that case. Make builds
+embed the same user ELF and can use the same runner.
+
+Use a QEMU containing upstream commit
+`db2325f79481 <https://github.com/qemu/qemu/commit/db2325f79481fab87211e5a287580d753f582cb8>`_
+for execution-permission tests. Older builds can recurse inside the emulator
+when fetching BADI for an NX exception, before NuttX receives the exception.
+Both the locally installed 10.1.2 and 10.2.0 builds reproduced this hang;
+the local 11.1.50 build completed the test in both refill modes. This is
+an emulator requirement, not a reason to disable NX in the page tables.
+
+The supervisor installs the embedded executable in tmpfs and checks:
+
+* Concurrent processes see private BSS at equal virtual addresses.
+* Blocking syscalls preserve integer and floating-point registers. In an
+  SMP build, every process changes affinity, blocks and checks that it
+  resumed on the requested CPU. Blocking is intentional: this scheduler
+  revision may defer migration after an affinity change until rescheduling.
+* Invalid and reserved syscall numbers are rejected; user signals return
+  through the trusted continuation.
+* User libc allocates and frees memory, creates and joins a pthread, and
+  exits through the normal program startup path. A PLV3 ``execve`` replaces
+  the current image and runs the new executable successfully.
+* Direct kernel reads/writes, text writes, data execution and an exception
+  with SP zero terminate the offending process while the supervisor lives.
+* Twenty-four further process lifetimes allocate more total heap storage
+  than fits in the page pool, exercising release and reuse of old roots.
+
+Success is reported as
+``LoongArch userspace isolation/syscall tests: PASS``.
+
 Validation performed
 ====================
 
@@ -158,6 +276,13 @@ QEMU builds were checked. The LS2K0300 NSH configuration also compiled
 and linked with CMake. These results do not establish hardware peripheral
 correctness on an LS2K0300 board.
 
+The user-process regression passed on one and four CPUs with software
+refill and hardware PTW using the local QEMU 11.1.50 build. The Make
+``smp-kernel`` image was also exercised with PTW. Make export produced a
+startup object, libraries and linker script that independently linked the
+user regression executable. The architecture C files and headers, board
+C files and libc C implementations pass ``tools/nxstyle``.
+
 LS2K0300 migration
 ==================
 
@@ -170,10 +295,12 @@ the LS2K0300 and cannot validate those drivers.
 The migration removes the duplicate exception/TLB stubs from chip startup,
 fixes CSR write operand constraints, saves TP in the context, corrects TLS
 byte counts, and gives heap/idle stacks a consistent layout. Architectural
-constant-timer code is shared in ``loongarch_timerisr.c``. Board pin
+constant-timer code is shared in ``loongarch_timer.c``. Board pin
 configuration is named ``ls2k0300_pinmux.c/.h``; assembly context macros
-are in ``loongarch_context.h``. ``loongarch_forkentry.S`` has a distinct
-basename from ``loongarch_fork.c`` to avoid Make object-name collisions.
+are in ``loongarch_context.h``. Syscall handling is named
+``loongarch_syscall.c`` and CPU IRQ dispatch is in ``loongarch_irq.c``.
+``loongarch_forkentry.S`` has a distinct basename from ``loongarch_fork.c``
+to avoid Make object-name collisions.
 
 References
 ==========

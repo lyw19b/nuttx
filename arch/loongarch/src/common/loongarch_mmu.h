@@ -97,10 +97,27 @@ int loongarch_mmu_maproot(uintptr_t root, uintptr_t vaddr,
                           uintptr_t paddr, size_t size, uint64_t flags);
 int loongarch_mmu_unmaproot(uintptr_t root, uintptr_t vaddr, size_t size);
 
+/****************************************************************************
+ * Name: loongarch_physaddr
+ *
+ * Description:
+ *   Strip the direct-mapping window bits from a kernel address to obtain
+ *   its physical address. The caller supplies a direct-mapped address.
+ *
+ ****************************************************************************/
+
 static inline uintptr_t loongarch_physaddr(uintptr_t vaddr)
 {
   return vaddr & LOONGARCH_PADDR_MASK;
 }
+
+/****************************************************************************
+ * Name: loongarch_virtaddr
+ *
+ * Description:
+ *   Return the cached PLV0 direct-mapping address for a physical page.
+ *
+ ****************************************************************************/
 
 static inline void *loongarch_virtaddr(uintptr_t paddr)
 {

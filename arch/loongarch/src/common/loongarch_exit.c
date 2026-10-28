@@ -43,6 +43,16 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_exit
+ *
+ * Description:
+ *   Finish architecture task exit and restore the next ready task. The
+ *   generic exit path has already processed the exit status. This
+ *   function must not return to the terminated stack.
+ *
+ ****************************************************************************/
+
 void up_exit(int status)
 {
   nxtask_exit();

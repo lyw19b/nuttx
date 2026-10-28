@@ -38,6 +38,16 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_release_stack
+ *
+ * Description:
+ *   Release an owned stack using the allocator matching the supplied
+ *   thread type. Caller-supplied stacks are detached without freeing
+ *   them. Clear the TCB stack fields after cleanup.
+ *
+ ****************************************************************************/
+
 void up_release_stack(struct tcb_s *dtcb, uint8_t ttype)
 {
   if (dtcb->stack_alloc_ptr &&

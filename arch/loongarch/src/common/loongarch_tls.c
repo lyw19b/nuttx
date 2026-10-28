@@ -35,11 +35,30 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_tls_size
+ *
+ * Description:
+ *   Return the storage required for the NuttX TLS header and the linked
+ *   TLS data and BSS image.
+ *
+ ****************************************************************************/
+
 int up_tls_size(void)
 {
   return sizeof(struct tls_info_s) +
          (_END_TBSS - _START_TDATA);
 }
+
+/****************************************************************************
+ * Name: up_tls_initialize
+ *
+ * Description:
+ *   Copy the linked TLS initializer and zero TLS BSS immediately after
+ *   the thread TLS header. The caller provides the full allocation
+ *   reported by up_tls_size.
+ *
+ ****************************************************************************/
 
 void up_tls_initialize(struct tls_info_s *info)
 {

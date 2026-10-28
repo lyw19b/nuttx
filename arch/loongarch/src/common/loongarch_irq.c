@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/loongarch/src/common/loongarch_doirq.c
+ * arch/loongarch/src/common/loongarch_irq.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -44,6 +44,17 @@
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: loongarch_doirq_top
+ *
+ * Description:
+ *   Save the interrupted context, dispatch its vector and select the
+ *   context to resume. A kernel restore syscall supplies an existing frame
+ *   and must not overwrite it. Switch address environments and publish the
+ *   selected trusted stack before returning to assembly.
+ *
+ ****************************************************************************/
+
 static uintreg_t *loongarch_doirq_top(int irq, uintreg_t *regs)
 {
   struct tcb_s **running_task = &g_running_tasks[this_cpu()];
@@ -76,6 +87,9 @@ static uintreg_t *loongarch_doirq_top(int irq, uintreg_t *regs)
   UP_DMB();
 
   irq_dispatch(irq, regs);
+
+  /* The handler may have selected another ready task. */
+
   tcb = this_task();
 
   if (*running_task != tcb || restore_context)
@@ -83,6 +97,7 @@ static uintreg_t *loongarch_doirq_top(int irq, uintreg_t *regs)
 #ifdef CONFIG_ARCH_ADDRENV
       addrenv_switch(tcb);
 #endif
+
       nxsched_suspend_scheduler(*running_task);
       nxsched_resume_scheduler(tcb);
       *running_task = tcb;
@@ -96,6 +111,7 @@ static uintreg_t *loongarch_doirq_top(int irq, uintreg_t *regs)
 #ifdef CONFIG_ARCH_KERNEL_STACK
   csr_writeq(tcb->xcp.kstkptr, LOONGARCH_CSR_SAVE3);
 #endif
+
   regs = tcb->xcp.regs;
   (*running_task)->xcp.regs = NULL;
   return regs;
@@ -103,6 +119,16 @@ static uintreg_t *loongarch_doirq_top(int irq, uintreg_t *regs)
 
 /****************************************************************************
  * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: loongarch_doirq
+ *
+ * Description:
+ *   Dispatch a vectored interrupt or reserved syscall with interrupts
+ *   masked. Only the outermost invocation may change the running task and
+ *   return frame; nested dispatch returns its original frame.
+ *
  ****************************************************************************/
 
 uintreg_t *loongarch_doirq(int irq, uintreg_t *regs)

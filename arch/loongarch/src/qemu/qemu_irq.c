@@ -46,6 +46,16 @@
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: qemu_external_interrupt
+ *
+ * Description:
+ *   Acknowledge pending external interrupt bits and dispatch each source
+ *   through the NuttX IRQ table. The CPU vector has already selected the
+ *   external interrupt input.
+ *
+ ****************************************************************************/
+
 static int qemu_external_interrupt(int irq, void *context, void *arg)
 {
   uint64_t pending = iocsr_read64(EIOINTC_REG_ISR);
@@ -64,6 +74,16 @@ static int qemu_external_interrupt(int irq, void *context, void *arg)
 
 /****************************************************************************
  * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_irqinitialize
+ *
+ * Description:
+ *   Install exception vectors and route the QEMU PIC through EIOINTC to
+ *   CPU zero. Mask device sources before routing them, then attach the
+ *   external handler and enable configured local inputs.
+ *
  ****************************************************************************/
 
 void up_irqinitialize(void)
@@ -101,6 +121,15 @@ void up_irqinitialize(void)
 #endif
 }
 
+/****************************************************************************
+ * Name: up_enable_irq
+ *
+ * Description:
+ *   Unmask a local CPU input or QEMU PIC source. Serialize PIC read-
+ *   modify-write operations with a critical section.
+ *
+ ****************************************************************************/
+
 void up_enable_irq(int irq)
 {
   if (irq >= LOONGARCH_IRQ_SIP0 && irq <= LOONGARCH_IRQ_IPI)
@@ -118,6 +147,15 @@ void up_enable_irq(int irq)
     }
 }
 
+/****************************************************************************
+ * Name: up_disable_irq
+ *
+ * Description:
+ *   Mask a local CPU input or QEMU PIC source while preserving the other
+ *   interrupt enables.
+ *
+ ****************************************************************************/
+
 void up_disable_irq(int irq)
 {
   if (irq >= LOONGARCH_IRQ_SIP0 && irq <= LOONGARCH_IRQ_IPI)
@@ -133,6 +171,15 @@ void up_disable_irq(int irq)
       leave_critical_section(flags);
     }
 }
+
+/****************************************************************************
+ * Name: loongarch_ack_irq
+ *
+ * Description:
+ *   Complete the architecture acknowledgement hook. Individual interrupt-
+ *   controller and device handlers perform the required acknowledgements.
+ *
+ ****************************************************************************/
 
 void loongarch_ack_irq(int irq)
 {

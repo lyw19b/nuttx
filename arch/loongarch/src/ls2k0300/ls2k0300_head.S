@@ -85,6 +85,17 @@
   .global __start
   .type  __start, function
 
+/****************************************************************************
+ * Name: __start
+ *
+ * Description:
+ *   Establish direct mappings and the boot idle stack for LS2K0300.
+ *   Firmware boot preserves its hardware setup; the standalone path
+ *   performs low-level initialization. Enter the chip C startup after
+ *   enabling floating-point register access.
+ *
+ ****************************************************************************/
+
 __start:
 
 #ifndef CONFIG_LS2K0300_UBOOT_BOOT
@@ -168,7 +179,25 @@ __start:
   .global _init
   .global _fini
 
+/****************************************************************************
+ * Name: _init
+ *
+ * Description:
+ *   Provide the empty toolchain initialization entry. No architecture-
+ *   specific constructor work is required here; return to the caller.
+ *
+ ****************************************************************************/
+
 _init:
+/****************************************************************************
+ * Name: _fini
+ *
+ * Description:
+ *   Provide the empty toolchain finalization entry and return to the
+ *   caller.
+ *
+ ****************************************************************************/
+
 _fini:
   jirl    $zero, $ra, 0
 
@@ -181,6 +210,16 @@ _fini:
   .section .text.early_print, "ax", @progbits
   .global early_print
   .type  early_print, function
+
+/****************************************************************************
+ * Name: early_print
+ *
+ * Description:
+ *   Write the NUL-terminated string addressed by a0 through the early
+ *   UART. Poll transmitter readiness without touching a stack. Clobber t2
+ *   through t5 and return through ra.
+ *
+ ****************************************************************************/
 
 early_print:
   move    $t4, $a0
@@ -211,6 +250,16 @@ hello_str:
   .section .text.ls2k0300_lowlevel_init, "ax", @progbits
   .global ls2k0300_lowlevel_init
   .type  ls2k0300_lowlevel_init, function
+
+/****************************************************************************
+ * Name: ls2k0300_lowlevel_init
+ *
+ * Description:
+ *   Configure the standalone boot path peripheral routing and invoke
+ *   clock setup. Preserve the return address in a4 because this routine
+ *   runs before a normal C stack is available.
+ *
+ ****************************************************************************/
 
 ls2k0300_lowlevel_init:
 
@@ -270,6 +319,16 @@ ls2k0300_lowlevel_init:
   .section .text.ls2k0300_clk_init, "ax", @progbits
   .global ls2k0300_clk_init
   .type  ls2k0300_clk_init, function
+
+/****************************************************************************
+ * Name: ls2k0300_clk_init
+ *
+ * Description:
+ *   Program the standalone boot PLL divisors and wait for lock before
+ *   selecting the resulting clocks. Firmware boot bypasses this routine
+ *   so it retains the firmware memory and clock configuration.
+ *
+ ****************************************************************************/
 
 ls2k0300_clk_init:
 
@@ -382,6 +441,16 @@ ls2k0300_clk_init:
   .section .text.ls2k0300_lock_scache, "ax", @progbits
   .global ls2k0300_lock_scache
   .type  ls2k0300_lock_scache, function
+
+/****************************************************************************
+ * Name: ls2k0300_lock_scache
+ *
+ * Description:
+ *   Configure the L2 cache lock window as early memory using the board
+ *   cache base and size. This helper uses only temporary registers and
+ *   does not require a stack.
+ *
+ ****************************************************************************/
 
 ls2k0300_lock_scache:
 

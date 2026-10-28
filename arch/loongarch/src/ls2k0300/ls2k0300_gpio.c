@@ -57,6 +57,15 @@ static const struct gpio_operations_s g_gpio_input_ops;
 static const struct gpio_operations_s g_gpio_output_ops;
 static const struct gpio_operations_s g_gpio_int_ops;
 
+/****************************************************************************
+ * Name: gpio_set_reg
+ *
+ * Description:
+ *   Write the byte register for a pin at base plus bank offset plus pin
+ *   index.
+ *
+ ****************************************************************************/
+
 static void gpio_set_reg(uintptr_t base, uint32_t offset, int pin,
                          uint8_t val)
 {
@@ -67,10 +76,27 @@ static void gpio_set_reg(uintptr_t base, uint32_t offset, int pin,
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: gpio_get_reg
+ *
+ * Description:
+ *   Read the byte register for a pin at base plus bank offset plus pin
+ *   index.
+ *
+ ****************************************************************************/
+
 static uint8_t gpio_get_reg(uintptr_t base, uint32_t offset, int pin)
 {
   return getreg8(base + offset + pin);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_gpio_input_read
+ *
+ * Description:
+ *   Return the sampled input level for a GPIO lower-half device.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_gpio_input_read(struct gpio_dev_s *dev, FAR bool *value)
 {
@@ -80,6 +106,14 @@ static int ls2k0300_gpio_input_read(struct gpio_dev_s *dev, FAR bool *value)
   *value = gpio_get_reg(g_gpio_base, LS2K0300_GPIO_IN, priv->pin) & 1;
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_gpio_output_read
+ *
+ * Description:
+ *   Return the output latch value for a GPIO lower-half device.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_gpio_output_read(struct gpio_dev_s *dev,
                                     FAR bool *value)
@@ -91,6 +125,14 @@ static int ls2k0300_gpio_output_read(struct gpio_dev_s *dev,
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_gpio_output_write
+ *
+ * Description:
+ *   Update the output latch for a GPIO lower-half device.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_gpio_output_write(struct gpio_dev_s *dev, bool value)
 {
   FAR struct ls2k0300_gpio_dev_s *priv =
@@ -100,6 +142,14 @@ static int ls2k0300_gpio_output_write(struct gpio_dev_s *dev, bool value)
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_gpio_int_read
+ *
+ * Description:
+ *   Return the input level of a GPIO configured for interrupt delivery.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_gpio_int_read(struct gpio_dev_s *dev, FAR bool *value)
 {
   FAR struct ls2k0300_gpio_dev_s *priv =
@@ -108,6 +158,15 @@ static int ls2k0300_gpio_int_read(struct gpio_dev_s *dev, FAR bool *value)
   *value = gpio_get_reg(g_gpio_base, LS2K0300_GPIO_IN, priv->pin) & 1;
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_gpio_int_attach
+ *
+ * Description:
+ *   Store the upper-half callback for this pin. Interrupt enable is
+ *   controlled separately.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_gpio_int_attach(struct gpio_dev_s *dev,
                                    pin_interrupt_t callback)
@@ -119,6 +178,14 @@ static int ls2k0300_gpio_int_attach(struct gpio_dev_s *dev,
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_gpio_int_enable
+ *
+ * Description:
+ *   Enable or disable interrupt generation for the selected GPIO pin.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_gpio_int_enable(struct gpio_dev_s *dev, bool enable)
 {
   FAR struct ls2k0300_gpio_dev_s *priv =
@@ -127,6 +194,16 @@ static int ls2k0300_gpio_int_enable(struct gpio_dev_s *dev, bool enable)
   gpio_set_reg(g_gpio_base, LS2K0300_GPIO_IRQ, priv->pin, enable ? 1 : 0);
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_gpio_setpintype
+ *
+ * Description:
+ *   Configure pin direction and supported interrupt polarity or edge
+ *   mode, then select the matching lower-half operations. Return -EINVAL
+ *   for unsupported pin types.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_gpio_setpintype(struct gpio_dev_s *dev,
                                    enum gpio_pintype_e pintype)
@@ -281,6 +358,15 @@ static const int g_gpio_irq_group_count[] =
   16, 16, 16, 16, 16, 16, 10
 };
 
+/****************************************************************************
+ * Name: ls2k0300_gpio_irq_handler
+ *
+ * Description:
+ *   Scan the pins in the interrupt group, acknowledge each enabled
+ *   pending pin and invoke its registered callback in interrupt context.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_gpio_irq_handler(int irq, FAR void *context,
                                     FAR void *arg)
 {
@@ -315,6 +401,15 @@ static int ls2k0300_gpio_irq_handler(int irq, FAR void *context,
 }
 
 #endif
+
+/****************************************************************************
+ * Name: ls2k0300_gpio_config_pin
+ *
+ * Description:
+ *   Validate a pin index and apply its requested lower-half type. Return
+ *   a negative errno for an invalid pin or unsupported mode.
+ *
+ ****************************************************************************/
 
 int ls2k0300_gpio_config_pin(int pin, enum gpio_pintype_e pintype)
 {
@@ -352,6 +447,15 @@ int ls2k0300_gpio_config_pin(int pin, enum gpio_pintype_e pintype)
   return ls2k0300_gpio_setpintype(&g_gpio_dev[pin].gpio, pintype);
 }
 
+/****************************************************************************
+ * Name: ls2k0300_gpio_write
+ *
+ * Description:
+ *   Write one pin output latch after validating its index. Pin direction
+ *   and mux must already be configured.
+ *
+ ****************************************************************************/
+
 int ls2k0300_gpio_write(int pin, bool value)
 {
   if (pin < 0 || pin >= LS2K0300_GPIO_NPINS)
@@ -362,6 +466,15 @@ int ls2k0300_gpio_write(int pin, bool value)
   gpio_set_reg(g_gpio_base, LS2K0300_GPIO_OUT, pin, value ? 1 : 0);
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_gpio_read
+ *
+ * Description:
+ *   Sample one pin input after validating its index. The caller supplies
+ *   a valid result pointer.
+ *
+ ****************************************************************************/
 
 int ls2k0300_gpio_read(int pin, FAR bool *value)
 {
@@ -374,6 +487,15 @@ int ls2k0300_gpio_read(int pin, FAR bool *value)
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_gpio_set_direction
+ *
+ * Description:
+ *   Select input or output direction for a valid pin without changing its
+ *   mux or output latch.
+ *
+ ****************************************************************************/
+
 int ls2k0300_gpio_set_direction(int pin, bool input)
 {
   if (pin < 0 || pin >= LS2K0300_GPIO_NPINS)
@@ -384,6 +506,15 @@ int ls2k0300_gpio_set_direction(int pin, bool input)
   gpio_set_reg(g_gpio_base, LS2K0300_GPIO_DIR, pin, input ? 1 : 0);
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_gpio_initialize
+ *
+ * Description:
+ *   Initialize GPIO lower-half state, register the configured pins and
+ *   attach GPIO group interrupt handlers when enabled.
+ *
+ ****************************************************************************/
 
 int ls2k0300_gpio_initialize(void)
 {

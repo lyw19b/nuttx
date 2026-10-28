@@ -142,5 +142,5 @@ void loongarch_exception_attach(void)
         }
     }
 
-  irq_attach(EXCCODE_SYS, loongarch_swint, NULL);
+  irq_attach(EXCCODE_SYS, loongarch_syscall_handler, NULL);
 }

@@ -43,6 +43,16 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_switch_context
+ *
+ * Description:
+ *   Switch from rtcb to the scheduler-selected tcb. In interrupt context,
+ *   select the saved return frame; otherwise trap through the reserved
+ *   context-switch syscall. The scheduler must hold its critical section.
+ *
+ ****************************************************************************/
+
 void up_switch_context(struct tcb_s *tcb, struct tcb_s *rtcb)
 {
   if (up_interrupt_context())

@@ -35,6 +35,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: ls2k0300_boardinitialize
+ *
+ * Description:
+ *   Perform early board initialization before the scheduler starts. Later
+ *   device registration is deferred to board bring-up.
+ *
+ ****************************************************************************/
+
 void ls2k0300_boardinitialize(void)
 {
 #ifdef CONFIG_ARCH_LEDS

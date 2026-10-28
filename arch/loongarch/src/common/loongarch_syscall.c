@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/loongarch/src/common/loongarch_swint.c
+ * arch/loongarch/src/common/loongarch_syscall.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -45,7 +45,18 @@
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_KERNEL_STACK
-static bool writable_user_range(struct tcb_s *tcb, uintptr_t addr, size_t size)
+/****************************************************************************
+ * Name: writable_user_range
+ *
+ * Description:
+ *   Check every page touched by a signal frame before copying it to the
+ *   user stack. Reject wraparound, missing mappings and nonwritable pages.
+ *   The caller holds the current environment through the running task.
+ *
+ ****************************************************************************/
+
+static bool writable_user_range(struct tcb_s *tcb, uintptr_t addr,
+                                size_t size)
 {
   const uint64_t required = LOONGARCH_PTE_USER | LOONGARCH_PTE_VALID |
                             LOONGARCH_PTE_DIRTY;
@@ -60,6 +71,7 @@ static bool writable_user_range(struct tcb_s *tcb, uintptr_t addr, size_t size)
 
   end = addr + size;
   addr &= ~(LOONGARCH_PAGE_SIZE - 1ul);
+
   for (; addr < end; addr += LOONGARCH_PAGE_SIZE)
     {
       pte = loongarch_mmu_pte(tcb->addrenv_own->addrenv.root, addr, false);
@@ -77,7 +89,19 @@ static bool writable_user_range(struct tcb_s *tcb, uintptr_t addr, size_t size)
  * Public Functions
  ****************************************************************************/
 
-#ifdef CONFIG_LIB_SYSCALL
+#ifdef CONFIG_BUILD_KERNEL
+/****************************************************************************
+ * Name: loongarch_syscall_dispatch
+ *
+ * Description:
+ *   Dispatch a PLV3 syscall using the saved a0 number and a1-a6 arguments.
+ *   The vector entry calls this on the thread kernel stack with interrupts
+ *   disabled and outside interrupt context. Enable interrupts around the
+ *   syscall so it can block, then restore the user frame and trusted stack
+ *   pointer before exception return.
+ *
+ ****************************************************************************/
+
 void loongarch_syscall_dispatch(uintreg_t *regs)
 {
   typedef uintptr_t (*stub_t)(unsigned int, uintptr_t, uintptr_t,
@@ -89,6 +113,9 @@ void loongarch_syscall_dispatch(uintreg_t *regs)
   stub_t stub;
 
   regs[REG_EPC] += 4;
+
+  /* Validate the full register width before indexing the generated table. */
+
   if (number < CONFIG_SYS_RESERVED || number >= SYS_maxsyscall)
     {
       regs[REG_R4] = -ENOSYS;
@@ -96,23 +123,43 @@ void loongarch_syscall_dispatch(uintreg_t *regs)
       return;
     }
 
+  /* Keep the original user frame available to signal delivery while the
+   * syscall executes, blocks, or migrates to another CPU.
+   */
+
   tcb->xcp.sregs = regs;
   tcb->flags |= TCB_FLAG_SYSCALL;
   up_irq_enable();
+
   number -= CONFIG_SYS_RESERVED;
   stub = (stub_t)g_stublookup[number];
   result = stub(number, regs[REG_R5], regs[REG_R6], regs[REG_R7],
                 regs[REG_R8], regs[REG_R9], regs[REG_R10]);
+
+  /* Deliver deferred signals before releasing the syscall continuation. */
+
   tcb->flags &= ~TCB_FLAG_SYSCALL;
   nxsig_unmask_pendingsignal();
   up_irq_save();
+
   tcb->xcp.sregs = previous;
   regs[REG_R4] = result;
   csr_writeq(tcb->xcp.kstkptr, LOONGARCH_CSR_SAVE3);
 }
 #endif
 
-int loongarch_swint(int irq, void *context, void *arg)
+/****************************************************************************
+ * Name: loongarch_syscall_handler
+ *
+ * Description:
+ *   Handle reserved architecture syscalls through the IRQ dispatcher. Only
+ *   PLV0 may request context switches, assertions or signal delivery. PLV3
+ *   may return from a signal only through a saved kernel continuation. The
+ *   selected return frame is stored in the current TCB.
+ *
+ ****************************************************************************/
+
+int loongarch_syscall_handler(int irq, void *context, void *arg)
 {
   uintreg_t *regs = context;
   struct tcb_s *tcb = this_task();
@@ -139,6 +186,7 @@ int loongarch_swint(int irq, void *context, void *arg)
           return OK;
         }
 #endif
+
       regs[REG_R4] = -ENOSYS;
       return OK;
     }
@@ -175,6 +223,11 @@ int loongarch_swint(int irq, void *context, void *arg)
               break;
             }
 
+          /* Copy only user register state into the new PLV3 frame. Keep the
+           * kernel continuation above it on the trusted stack so syscalls
+           * issued by the handler cannot overwrite that continuation.
+           */
+
           memcpy((void *)usp, (void *)regs[REG_R7], sizeof(siginfo_t));
           memcpy(userregs, source, XCPTCONTEXT_SIZE);
           userregs[REG_EPC] = (uintptr_t)ARCH_DATA_RESERVE->ar_sigtramp;
@@ -184,6 +237,7 @@ int loongarch_swint(int irq, void *context, void *arg)
           userregs[REG_R5] = regs[REG_R6];
           userregs[REG_R6] = usp;
           userregs[REG_R7] = 0;
+
           tcb->xcp.sigregs = regs;
           tcb->xcp.kstkptr = (uintptr_t)userregs;
           tcb->xcp.regs = userregs;

@@ -27,6 +27,16 @@
   .global setjmp
   .global _setjmp
   .type setjmp, function
+/****************************************************************************
+ * Name: setjmp
+ *
+ * Description:
+ *   Save the LP64D callee-saved integer and floating-point registers in
+ *   the jmp_buf addressed by a0. Return zero. The _setjmp alias uses the
+ *   same implementation; signal masks are not saved here.
+ *
+ ****************************************************************************/
+
 setjmp:
 _setjmp:
   st.d    $ra, $a0, 0
@@ -57,6 +67,17 @@ _setjmp:
   .global longjmp
   .global _longjmp
   .type longjmp, function
+/****************************************************************************
+ * Name: longjmp
+ *
+ * Description:
+ *   Restore the register state from the jmp_buf addressed by a0 and
+ *   return through its saved ra. Use a1 as the resumed setjmp result,
+ *   replacing zero with one. The _longjmp alias uses the same
+ *   implementation.
+ *
+ ****************************************************************************/
+
 longjmp:
 _longjmp:
   ld.d    $ra, $a0, 0

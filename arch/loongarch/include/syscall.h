@@ -70,6 +70,16 @@ extern "C"
 #define EXTERN extern
 #endif
 
+/****************************************************************************
+ * Name: sys_call0
+ *
+ * Description:
+ *   Invoke a syscall with 0 arguments. Pass the number in a0 and
+ *   arguments in subsequent ABI registers; return the raw a0 result. The
+ *   memory clobber prevents compiler reordering across the trap.
+ *
+ ****************************************************************************/
+
 static inline uintptr_t sys_call0(unsigned int nbr)
 {
   register long r0 asm("$a0") = (long)(nbr);
@@ -82,9 +92,18 @@ static inline uintptr_t sys_call0(unsigned int nbr)
      : "memory"
      );
 
-
   return r0;
 }
+
+/****************************************************************************
+ * Name: sys_call1
+ *
+ * Description:
+ *   Invoke a syscall with 1 argument. Pass the number in a0 and arguments
+ *   in subsequent ABI registers; return the raw a0 result. The memory
+ *   clobber prevents compiler reordering across the trap.
+ *
+ ****************************************************************************/
 
 static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
 {
@@ -99,9 +118,18 @@ static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
      : "memory"
      );
 
-
   return r0;
 }
+
+/****************************************************************************
+ * Name: sys_call2
+ *
+ * Description:
+ *   Invoke a syscall with 2 arguments. Pass the number in a0 and
+ *   arguments in subsequent ABI registers; return the raw a0 result. The
+ *   memory clobber prevents compiler reordering across the trap.
+ *
+ ****************************************************************************/
 
 static inline uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2)
@@ -118,9 +146,18 @@ static inline uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1,
      : "memory"
      );
 
-
   return r0;
 }
+
+/****************************************************************************
+ * Name: sys_call3
+ *
+ * Description:
+ *   Invoke a syscall with 3 arguments. Pass the number in a0 and
+ *   arguments in subsequent ABI registers; return the raw a0 result. The
+ *   memory clobber prevents compiler reordering across the trap.
+ *
+ ****************************************************************************/
 
 static inline uintptr_t sys_call3(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3)
@@ -138,9 +175,18 @@ static inline uintptr_t sys_call3(unsigned int nbr, uintptr_t parm1,
      : "memory"
      );
 
-
   return r0;
 }
+
+/****************************************************************************
+ * Name: sys_call4
+ *
+ * Description:
+ *   Invoke a syscall with 4 arguments. Pass the number in a0 and
+ *   arguments in subsequent ABI registers; return the raw a0 result. The
+ *   memory clobber prevents compiler reordering across the trap.
+ *
+ ****************************************************************************/
 
 static inline uintptr_t sys_call4(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3,
@@ -160,9 +206,18 @@ static inline uintptr_t sys_call4(unsigned int nbr, uintptr_t parm1,
      : "memory"
      );
 
-
   return r0;
 }
+
+/****************************************************************************
+ * Name: sys_call5
+ *
+ * Description:
+ *   Invoke a syscall with 5 arguments. Pass the number in a0 and
+ *   arguments in subsequent ABI registers; return the raw a0 result. The
+ *   memory clobber prevents compiler reordering across the trap.
+ *
+ ****************************************************************************/
 
 static inline uintptr_t sys_call5(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3,
@@ -183,9 +238,18 @@ static inline uintptr_t sys_call5(unsigned int nbr, uintptr_t parm1,
      : "memory"
      );
 
-
   return r0;
 }
+
+/****************************************************************************
+ * Name: sys_call6
+ *
+ * Description:
+ *   Invoke a syscall with 6 arguments. Pass the number in a0 and
+ *   arguments in subsequent ABI registers; return the raw a0 result. The
+ *   memory clobber prevents compiler reordering across the trap.
+ *
+ ****************************************************************************/
 
 static inline uintptr_t sys_call6(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3,
@@ -207,7 +271,6 @@ static inline uintptr_t sys_call6(unsigned int nbr, uintptr_t parm1,
      : "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5), "r"(r6)
      : "memory"
      );
-
 
   return r0;
 }

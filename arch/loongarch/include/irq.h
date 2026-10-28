@@ -227,6 +227,15 @@ extern "C"
 /* Logical CPU IDs are the contiguous hardware IDs on supported platforms. */
 
 #ifdef CONFIG_SMP
+/****************************************************************************
+ * Name: up_cpu_index
+ *
+ * Description:
+ *   Return the current hardware CPU index. Supported SMP platforms use
+ *   contiguous CPU IDs starting at zero.
+ *
+ ****************************************************************************/
+
 noinstrument_function static inline_function int up_cpu_index(void)
 {
   return csr_readq(LOONGARCH_CSR_CPUID) & 0x3ff;
@@ -239,26 +248,52 @@ EXTERN volatile bool g_interrupt_context[CONFIG_SMP_NCPUS];
 
 struct xcptcontext
 {
-  uintreg_t *regs;
-  uintreg_t *saved_regs;
+  uintreg_t *regs;        /* Saved frame while suspended or handling an IRQ */
+  uintreg_t *saved_regs;  /* Frame displaced by asynchronous signal delivery */
 #ifdef CONFIG_ARCH_KERNEL_STACK
-  void *kstack;
-  uintptr_t kstkptr;
-  uintptr_t ustkptr;
-  uintreg_t *sregs;
-  uintreg_t *sigregs;
+  void *kstack;           /* Kernel-only stack allocation owned by this thread */
+  uintptr_t kstkptr;      /* Trusted top for the next PLV3 trap (CSR SAVE3) */
+  uintptr_t ustkptr;      /* Initial user SP prepared before PLV3 entry */
+  uintreg_t *sregs;       /* User frame retained while a syscall executes */
+  uintreg_t *sigregs;     /* Kernel continuation for user signal return */
 #endif
 };
+
+/****************************************************************************
+ * Name: up_set_interrupt_context
+ *
+ * Description:
+ *   Set the current CPU interrupt-context flag. Entry and exit code
+ *   update this flag while local interrupts are disabled.
+ *
+ ****************************************************************************/
 
 static inline_function void up_set_interrupt_context(bool flag)
 {
   g_interrupt_context[up_cpu_index()] = flag;
 }
 
+/****************************************************************************
+ * Name: up_interrupt_context
+ *
+ * Description:
+ *   Report whether the current CPU is dispatching an interrupt.
+ *
+ ****************************************************************************/
+
 noinstrument_function static inline_function bool up_interrupt_context(void)
 {
   return g_interrupt_context[up_cpu_index()];
 }
+
+/****************************************************************************
+ * Name: up_irq_save
+ *
+ * Description:
+ *   Disable local interrupts and return the previous interrupt-enable
+ *   state. This does not mask interrupts on other CPUs.
+ *
+ ****************************************************************************/
 
 noinstrument_function static inline_function irqstate_t up_irq_save(void)
 {
@@ -276,6 +311,15 @@ noinstrument_function static inline_function irqstate_t up_irq_save(void)
   return flags & CSR_CRMD_IE;
 }
 
+/****************************************************************************
+ * Name: up_irq_restore
+ *
+ * Description:
+ *   Restore the local interrupt-enable state saved by up_irq_save without
+ *   changing the other CRMD fields.
+ *
+ ****************************************************************************/
+
 noinstrument_function static inline_function void
   up_irq_restore(irqstate_t flags)
 {
@@ -287,6 +331,15 @@ noinstrument_function static inline_function void
       : "memory"
     );
 }
+
+/****************************************************************************
+ * Name: up_irq_enable
+ *
+ * Description:
+ *   Enable local CPU interrupts and return the previous state. Device
+ *   interrupt masks are configured separately.
+ *
+ ****************************************************************************/
 
 noinstrument_function static inline_function irqstate_t up_irq_enable(void)
 {
@@ -310,6 +363,15 @@ noinstrument_function static inline_function irqstate_t up_irq_enable(void)
 
 #define up_getusrsp(regs) \
     (((uintptr_t *)(regs))[REG_SP])
+
+/****************************************************************************
+ * Name: up_getsp
+ *
+ * Description:
+ *   Return the current stack pointer for stack bounds and diagnostic
+ *   checks.
+ *
+ ****************************************************************************/
 
 noinstrument_function static inline_function uintptr_t up_getsp(void)
 {

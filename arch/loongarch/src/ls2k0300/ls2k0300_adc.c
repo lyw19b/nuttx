@@ -58,11 +58,27 @@ struct ls2k0300_adc_dev_s
   bool rxint_enabled;
 };
 
+/****************************************************************************
+ * Name: adc_getreg
+ *
+ * Description:
+ *   Read a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
+
 static uint32_t adc_getreg(FAR struct ls2k0300_adc_dev_s *priv,
                            uint32_t offset)
 {
   return getreg32(priv->base + offset);
 }
+
+/****************************************************************************
+ * Name: adc_putreg
+ *
+ * Description:
+ *   Write a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
 
 static void adc_putreg(FAR struct ls2k0300_adc_dev_s *priv,
                        uint32_t offset, uint32_t value)
@@ -70,15 +86,35 @@ static void adc_putreg(FAR struct ls2k0300_adc_dev_s *priv,
   putreg32(value, priv->base + offset);
 }
 
+/****************************************************************************
+ * Name: adc_modifyreg
+ *
+ * Description:
+ *   Update selected ADC register bits while preserving unrelated fields.
+ *   The caller serializes controller configuration.
+ *
+ ****************************************************************************/
+
 static void adc_modifyreg(FAR struct ls2k0300_adc_dev_s *priv,
                           uint32_t offset, uint32_t clearbits,
                           uint32_t setbits)
 {
   uint32_t regval = getreg32(priv->base + offset);
+
   regval &= ~clearbits;
   regval |= setbits;
   putreg32(regval, priv->base + offset);
 }
+
+/****************************************************************************
+ * Name: adc_regular_channel_config
+ *
+ * Description:
+ *   Program a channel sampling time and its one-based position in the
+ *   regular conversion sequence. Callers supply valid channel and rank
+ *   values.
+ *
+ ****************************************************************************/
 
 static void adc_regular_channel_config(FAR struct ls2k0300_adc_dev_s *priv,
                                        uint8_t channel, uint8_t rank,
@@ -134,6 +170,15 @@ static void adc_regular_channel_config(FAR struct ls2k0300_adc_dev_s *priv,
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: adc_software_start_conv
+ *
+ * Description:
+ *   Clear the previous end-of-conversion flag and trigger a regular
+ *   software conversion.
+ *
+ ****************************************************************************/
+
 static void adc_software_start_conv(FAR struct ls2k0300_adc_dev_s *priv)
 {
   uint32_t sr;
@@ -147,6 +192,15 @@ static void adc_software_start_conv(FAR struct ls2k0300_adc_dev_s *priv)
   cr2 |= ADC_CR2_SWSTART | ADC_CR2_EXTTRIG;
   adc_putreg(priv, LS2K0300_ADC_CR2, cr2);
 }
+
+/****************************************************************************
+ * Name: adc_eoc_check
+ *
+ * Description:
+ *   Poll for conversion completion for up to approximately ten
+ *   milliseconds. Return false if no completion flag arrives.
+ *
+ ****************************************************************************/
 
 static bool adc_eoc_check(FAR struct ls2k0300_adc_dev_s *priv)
 {
@@ -165,6 +219,15 @@ static bool adc_eoc_check(FAR struct ls2k0300_adc_dev_s *priv)
 
   return false;
 }
+
+/****************************************************************************
+ * Name: adc_read_channel
+ *
+ * Description:
+ *   Configure and sample one ADC channel, returning its raw value or -EIO
+ *   if conversion does not complete.
+ *
+ ****************************************************************************/
 
 static int adc_read_channel(FAR struct ls2k0300_adc_dev_s *priv,
                             uint8_t channel)
@@ -189,6 +252,16 @@ static int adc_read_channel(FAR struct ls2k0300_adc_dev_s *priv,
   data = adc_getreg(priv, LS2K0300_ADC_DR) & ADC_DATA_MASK;
   return (int)data;
 }
+
+/****************************************************************************
+ * Name: adc_hw_init
+ *
+ * Description:
+ *   Configure the ADC clock divider and regular sequence, power-cycle the
+ *   converter and perform calibration with bounded polling waits.
+ *   Calibration timeouts are reported through the debug log.
+ *
+ ****************************************************************************/
 
 static void adc_hw_init(FAR struct ls2k0300_adc_dev_s *priv)
 {
@@ -310,6 +383,15 @@ static void adc_hw_init(FAR struct ls2k0300_adc_dev_s *priv)
         (unsigned long)(apb_freq / (clkdiv + 1) / 2));
 }
 
+/****************************************************************************
+ * Name: ls2k0300_adc_bind
+ *
+ * Description:
+ *   Retain the upper-half sample callback for subsequent triggered
+ *   conversions.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_adc_bind(FAR struct adc_dev_s *dev,
                             FAR const struct adc_callback_s *callback)
 {
@@ -322,6 +404,15 @@ static int ls2k0300_adc_bind(FAR struct adc_dev_s *dev,
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_adc_reset
+ *
+ * Description:
+ *   Reinitialize the ADC hardware using the configured lower-half
+ *   channels.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_adc_reset(FAR struct adc_dev_s *dev)
 {
   FAR struct ls2k0300_adc_dev_s *priv =
@@ -329,6 +420,14 @@ static void ls2k0300_adc_reset(FAR struct adc_dev_s *dev)
 
   adc_hw_init(priv);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_adc_setup
+ *
+ * Description:
+ *   Prepare the ADC hardware when the upper half opens the device.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_adc_setup(FAR struct adc_dev_s *dev)
 {
@@ -339,6 +438,14 @@ static int ls2k0300_adc_setup(FAR struct adc_dev_s *dev)
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_adc_shutdown
+ *
+ * Description:
+ *   Disable the ADC hardware when the upper half closes the device.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_adc_shutdown(FAR struct adc_dev_s *dev)
 {
   FAR struct ls2k0300_adc_dev_s *priv =
@@ -347,6 +454,16 @@ static void ls2k0300_adc_shutdown(FAR struct adc_dev_s *dev)
   adc_modifyreg(priv, LS2K0300_ADC_CR2, ADC_CR2_ADON, 0);
 }
 
+/****************************************************************************
+ * Name: ls2k0300_adc_rxint
+ *
+ * Description:
+ *   Record whether triggered samples should be delivered to the upper
+ *   half. Conversion currently uses polling rather than an ADC interrupt
+ *   handler.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_adc_rxint(FAR struct adc_dev_s *dev, bool enable)
 {
   FAR struct ls2k0300_adc_dev_s *priv =
@@ -354,6 +471,16 @@ static void ls2k0300_adc_rxint(FAR struct adc_dev_s *dev, bool enable)
 
   priv->rxint_enabled = enable;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_adc_ioctl
+ *
+ * Description:
+ *   Handle conversion requests by sampling configured channels and
+ *   delivering enabled callbacks. Return -ENOTTY for unsupported
+ *   commands.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_adc_ioctl(FAR struct adc_dev_s *dev, int cmd,
                              unsigned long arg)
@@ -429,6 +556,15 @@ static struct adc_dev_s g_adcdev =
   &g_adcops,
   &g_adcpriv,
 };
+
+/****************************************************************************
+ * Name: ls2k0300_adc_initialize
+ *
+ * Description:
+ *   Initialize the configured ADC lower half and register the analog
+ *   device. Return a negative errno if registration fails.
+ *
+ ****************************************************************************/
 
 FAR struct adc_dev_s *ls2k0300_adc_initialize(void)
 {

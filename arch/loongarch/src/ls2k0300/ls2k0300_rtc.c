@@ -51,17 +51,43 @@ struct ls2k0300_rtc_lowerhalf_s
   bool haveset;
 };
 
+/****************************************************************************
+ * Name: rtc_getreg
+ *
+ * Description:
+ *   Read a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
+
 static uint32_t rtc_getreg(FAR struct ls2k0300_rtc_lowerhalf_s *priv,
                            uint32_t offset)
 {
   return getreg32(priv->base + offset);
 }
 
+/****************************************************************************
+ * Name: rtc_putreg
+ *
+ * Description:
+ *   Write a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
+
 static void rtc_putreg(FAR struct ls2k0300_rtc_lowerhalf_s *priv,
                        uint32_t offset, uint32_t value)
 {
   putreg32(value, priv->base + offset);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_rtc_rdtime
+ *
+ * Description:
+ *   Decode time-of-year registers into the RTC calendar structure.
+ *   Substitute a default date if the hardware fields are outside
+ *   supported ranges.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_rtc_rdtime(FAR struct rtc_lowerhalf_s *lower,
                               FAR struct rtc_time *rtctime)
@@ -112,6 +138,15 @@ static int ls2k0300_rtc_rdtime(FAR struct rtc_lowerhalf_s *lower,
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_rtc_settime
+ *
+ * Description:
+ *   Encode and write the calendar time under a critical section, then
+ *   record that software has set the clock.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_rtc_settime(FAR struct rtc_lowerhalf_s *lower,
                                FAR const struct rtc_time *rtctime)
 {
@@ -142,6 +177,15 @@ static int ls2k0300_rtc_settime(FAR struct rtc_lowerhalf_s *lower,
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: ls2k0300_rtc_havesettime
+ *
+ * Description:
+ *   Report whether this lower half has successfully set the RTC during
+ *   the current boot.
+ *
+ ****************************************************************************/
+
 static bool ls2k0300_rtc_havesettime(FAR struct rtc_lowerhalf_s *lower)
 {
   FAR struct ls2k0300_rtc_lowerhalf_s *priv =
@@ -151,6 +195,16 @@ static bool ls2k0300_rtc_havesettime(FAR struct rtc_lowerhalf_s *lower)
 }
 
 #ifdef CONFIG_RTC_ALARM
+/****************************************************************************
+ * Name: ls2k0300_rtc_setalarm
+ *
+ * Description:
+ *   Program the first time-of-year match register from the supplied alarm
+ *   time. This routine programs the comparator; it does not implement
+ *   callback delivery.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_rtc_setalarm(FAR struct rtc_lowerhalf_s *lower,
                                 FAR const struct lower_setalarm_s *alarminfo)
 {
@@ -174,6 +228,15 @@ static int ls2k0300_rtc_setalarm(FAR struct rtc_lowerhalf_s *lower,
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_rtc_cancelalarm
+ *
+ * Description:
+ *   Clear the first time-of-year match register. This lower half
+ *   currently uses only that comparator.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_rtc_cancelalarm(FAR struct rtc_lowerhalf_s *lower,
                                    int alarmid)
 {
@@ -184,6 +247,15 @@ static int ls2k0300_rtc_cancelalarm(FAR struct rtc_lowerhalf_s *lower,
 
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_rtc_rdalarm
+ *
+ * Description:
+ *   Decode the first time-of-year match register into the caller alarm
+ *   structure.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_rtc_rdalarm(FAR struct rtc_lowerhalf_s *lower,
                                FAR struct lower_rdalarm_s *alarminfo)
@@ -233,6 +305,15 @@ static struct ls2k0300_rtc_lowerhalf_s g_rtc_lowerhalf =
   .haveset = false,
 };
 
+/****************************************************************************
+ * Name: ls2k0300_rtc_hw_init
+ *
+ * Description:
+ *   Initialize trim registers and enable the RTC oscillator and time-of-
+ *   year counter.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_rtc_hw_init(FAR struct ls2k0300_rtc_lowerhalf_s *priv)
 {
   uint32_t ctrl;
@@ -244,6 +325,15 @@ static void ls2k0300_rtc_hw_init(FAR struct ls2k0300_rtc_lowerhalf_s *priv)
   ctrl |= RTC_CTRL_TOY_ENABLE_BIT | RTC_CTRL_OSC_ENABLE_BIT;
   rtc_putreg(priv, LS2K0300_RTC_CTRL_REG, ctrl);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_rtc_initialize
+ *
+ * Description:
+ *   Initialize the static RTC lower half, install it as the system clock
+ *   source and register RTC device zero.
+ *
+ ****************************************************************************/
 
 int ls2k0300_rtc_initialize(void)
 {
@@ -266,6 +356,15 @@ int ls2k0300_rtc_initialize(void)
 }
 
 #ifdef CONFIG_RTC_DATETIME
+/****************************************************************************
+ * Name: up_rtc_getdatetime
+ *
+ * Description:
+ *   Read the RTC lower half and translate its calendar fields into struct
+ *   tm. Propagate a lower-half read error.
+ *
+ ****************************************************************************/
+
 int up_rtc_getdatetime(FAR struct tm *tp)
 {
   FAR struct rtc_lowerhalf_s *lower =
@@ -296,6 +395,14 @@ int up_rtc_getdatetime(FAR struct tm *tp)
 #endif
 
 #ifdef CONFIG_RTC
+/****************************************************************************
+ * Name: up_rtc_initialize
+ *
+ * Description:
+ *   Initialize the board RTC through the LS2K0300 lower half.
+ *
+ ****************************************************************************/
+
 int up_rtc_initialize(void)
 {
   return ls2k0300_rtc_initialize();

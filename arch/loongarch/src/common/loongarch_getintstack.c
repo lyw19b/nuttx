@@ -35,6 +35,15 @@
  ****************************************************************************/
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
+/****************************************************************************
+ * Name: up_get_intstackbase
+ *
+ * Description:
+ *   Return the low address of the selected CPU interrupt stack. Stack
+ *   storage is allocated statically in the vector assembly file.
+ *
+ ****************************************************************************/
+
 uintptr_t up_get_intstackbase(int cpu)
 {
   return (uintptr_t)g_intstacktop - ((cpu + 1) * INT_STACK_SIZE);

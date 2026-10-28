@@ -53,6 +53,16 @@ uintptr_t g_idle_topstack = (uintptr_t)_ebss +
  ****************************************************************************/
 
 #ifdef CONFIG_SMP
+/****************************************************************************
+ * Name: up_cpu_idlestack
+ *
+ * Description:
+ *   Assign a statically reserved stack to a secondary idle thread.
+ *   Validate the CPU index and requested size, and color the stack when
+ *   enabled.
+ *
+ ****************************************************************************/
+
 int up_cpu_idlestack(int cpu, struct tcb_s *tcb, size_t stack_size)
 {
   uintptr_t stack_alloc;

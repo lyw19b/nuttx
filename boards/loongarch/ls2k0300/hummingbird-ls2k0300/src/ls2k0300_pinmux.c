@@ -33,6 +33,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: ls2k0300_pinmux_setup
+ *
+ * Description:
+ *   Apply the board pin assignments required by its enabled peripheral
+ *   configuration.
+ *
+ ****************************************************************************/
+
 int ls2k0300_pinmux_setup(unsigned int pin, unsigned int mode)
 {
   uintptr_t regaddr;

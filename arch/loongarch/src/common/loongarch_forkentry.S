@@ -30,6 +30,16 @@
   .balign 16
   .global up_fork
   .type up_fork, function
+/****************************************************************************
+ * Name: up_fork
+ *
+ * Description:
+ *   Capture the caller register frame on its stack and pass it to the
+ *   flat-build fork helper. Restore the parent return address and stack
+ *   pointer after the helper creates the child.
+ *
+ ****************************************************************************/
+
 up_fork:
   addi.d  $sp, $sp, -XCPTCONTEXT_SIZE
   save_ctx $sp

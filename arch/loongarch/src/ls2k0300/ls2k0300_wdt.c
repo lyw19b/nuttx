@@ -58,17 +58,42 @@ struct ls2k0300_wdt_priv_s
   bool started;
 };
 
+/****************************************************************************
+ * Name: wdt_getreg
+ *
+ * Description:
+ *   Read a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
+
 static uint32_t wdt_getreg(FAR struct ls2k0300_wdt_priv_s *priv,
                            uint32_t offset)
 {
   return getreg32(priv->base + offset);
 }
 
+/****************************************************************************
+ * Name: wdt_putreg
+ *
+ * Description:
+ *   Write a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
+
 static void wdt_putreg(FAR struct ls2k0300_wdt_priv_s *priv,
                        uint32_t offset, uint32_t value)
 {
   putreg32(value, priv->base + offset);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_wdt_start
+ *
+ * Description:
+ *   Enable watchdog reset generation and reload the watchdog counter.
+ *   Record the started state in the lower half.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_wdt_start(FAR struct watchdog_lowerhalf_s *lower)
 {
@@ -82,6 +107,15 @@ static int ls2k0300_wdt_start(FAR struct watchdog_lowerhalf_s *lower)
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_wdt_stop
+ *
+ * Description:
+ *   Disable watchdog reset generation and clear the lower-half started
+ *   state.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_wdt_stop(FAR struct watchdog_lowerhalf_s *lower)
 {
   FAR struct ls2k0300_wdt_priv_s *priv =
@@ -93,6 +127,15 @@ static int ls2k0300_wdt_stop(FAR struct watchdog_lowerhalf_s *lower)
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_wdt_keepalive
+ *
+ * Description:
+ *   Reload the hardware watchdog counter without changing the configured
+ *   timeout.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_wdt_keepalive(FAR struct watchdog_lowerhalf_s *lower)
 {
   FAR struct ls2k0300_wdt_priv_s *priv =
@@ -102,6 +145,15 @@ static int ls2k0300_wdt_keepalive(FAR struct watchdog_lowerhalf_s *lower)
 
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_wdt_getstatus
+ *
+ * Description:
+ *   Report watchdog reset capability, active state and configured timeout
+ *   in milliseconds.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_wdt_getstatus(FAR struct watchdog_lowerhalf_s *lower,
                                  FAR struct watchdog_status_s *status)
@@ -123,6 +175,16 @@ static int ls2k0300_wdt_getstatus(FAR struct watchdog_lowerhalf_s *lower,
 
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_wdt_settimeout
+ *
+ * Description:
+ *   Convert a nonzero timeout in milliseconds to counter ticks, clamping
+ *   to the hardware limit. Return -EINVAL if the count cannot be
+ *   represented.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_wdt_settimeout(FAR struct watchdog_lowerhalf_s *lower,
                                   uint32_t timeout)
@@ -182,6 +244,16 @@ static struct ls2k0300_wdt_priv_s g_wdt_priv =
 
 /****************************************************************************
  * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: ls2k0300_wdt_initialize
+ *
+ * Description:
+ *   Disable the watchdog, program its default timeout and register
+ *   /dev/watchdog0. Return a negative errno if setup or registration
+ *   fails.
+ *
  ****************************************************************************/
 
 int ls2k0300_wdt_initialize(void)

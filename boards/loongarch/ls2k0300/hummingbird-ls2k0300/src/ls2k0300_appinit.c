@@ -35,6 +35,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: board_app_initialize
+ *
+ * Description:
+ *   Perform board application initialization and return OK when the
+ *   enabled board services are ready.
+ *
+ ****************************************************************************/
+
 int board_app_initialize(uintptr_t arg)
 {
 #ifdef CONFIG_BOARD_LATE_INITIALIZE

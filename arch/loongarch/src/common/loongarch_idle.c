@@ -36,6 +36,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_idle
+ *
+ * Description:
+ *   Execute the processor idle instruction until an interrupt makes work
+ *   available. The scheduler calls this from the idle thread.
+ *
+ ****************************************************************************/
+
 void up_idle(void)
 {
 #if defined(CONFIG_SUPPRESS_INTERRUPTS) || defined(CONFIG_SUPPRESS_TIMER_INTS)

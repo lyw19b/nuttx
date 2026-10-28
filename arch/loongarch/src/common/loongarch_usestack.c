@@ -42,6 +42,16 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_use_stack
+ *
+ * Description:
+ *   Attach a caller-owned aligned stack to an unstarted thread, releasing
+ *   any prior stack allocation. The caller retains ownership of this
+ *   buffer.
+ *
+ ****************************************************************************/
+
 int up_use_stack(struct tcb_s *tcb, void *stack, size_t stack_size)
 {
   uintptr_t top_of_stack;

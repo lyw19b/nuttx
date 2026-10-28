@@ -42,6 +42,24 @@
 #include "loongarch_internal.h"
 #include "loongarch_mmu.h"
 
+/* Keep all configured user regions page aligned, ordered and below the
+ * canonical low-address limit. The data region includes its reserved page.
+ */
+
+static_assert((CONFIG_ARCH_TEXT_VBASE & (LOONGARCH_PAGE_SIZE - 1)) == 0 &&
+              (CONFIG_ARCH_DATA_VBASE & (LOONGARCH_PAGE_SIZE - 1)) == 0 &&
+              (CONFIG_ARCH_HEAP_VBASE & (LOONGARCH_PAGE_SIZE - 1)) == 0,
+              "User regions must be page aligned");
+static_assert(CONFIG_ARCH_TEXT_VBASE != 0 &&
+              ARCH_TEXT_SIZE != 0 &&
+              ARCH_DATA_SIZE >= ARCH_DATA_RESERVE_SIZE &&
+              ARCH_HEAP_SIZE != 0,
+              "User regions must provide text, reserved data and heap");
+static_assert(ARCH_TEXT_VEND <= CONFIG_ARCH_DATA_VBASE &&
+              ARCH_DATA_VEND <= CONFIG_ARCH_HEAP_VBASE &&
+              ARCH_HEAP_VEND <= LOONGARCH_MMU_VLIMIT,
+              "User regions must not overlap or exceed the VA limit");
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -54,6 +72,17 @@ static mutex_t g_env_lock = NXMUTEX_INITIALIZER;
 
 /****************************************************************************
  * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: allocate_region
+ *
+ * Description:
+ *   Allocate zeroed backing pages and map them into an owned address
+ *   environment. The caller serializes changes to the environment. On
+ *   failure, unmap and free only the pages allocated by this call;
+ *   existing mappings remain intact.
+ *
  ****************************************************************************/
 
 static int allocate_region(arch_addrenv_t *env, uintptr_t start,
@@ -72,6 +101,8 @@ static int allocate_region(arch_addrenv_t *env, uintptr_t start,
           break;
         }
 
+      /* Clear through the kernel mapping before exposing the page to PLV3. */
+
       memset(loongarch_virtaddr(paddr), 0, LOONGARCH_PAGE_SIZE);
       ret = loongarch_mmu_maproot(env->root, addr, paddr,
                                   LOONGARCH_PAGE_SIZE, flags);
@@ -81,6 +112,8 @@ static int allocate_region(arch_addrenv_t *env, uintptr_t start,
           break;
         }
     }
+
+  /* Undo only this allocation, including its partially populated tables. */
 
   if (ret < 0)
     {
@@ -100,12 +133,24 @@ static int allocate_region(arch_addrenv_t *env, uintptr_t start,
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_addrenv_create
+ *
+ * Description:
+ *   Create a private page-table root and allocate the text, reserved data,
+ *   data and initial heap regions for an ELF process. All backing pages
+ *   belong to this environment. Return a negative errno and release
+ *   partial allocations if any region cannot be created.
+ *
+ ****************************************************************************/
+
 int up_addrenv_create(size_t textsize, size_t datasize, size_t heapsize,
                       arch_addrenv_t *env)
 {
   int ret;
 
   memset(env, 0, sizeof(*env));
+
   if (textsize > ARCH_TEXT_SIZE ||
       datasize > ARCH_DATA_SIZE - ARCH_DATA_RESERVE_SIZE ||
       heapsize > ARCH_HEAP_SIZE)
@@ -117,6 +162,9 @@ int up_addrenv_create(size_t textsize, size_t datasize, size_t heapsize,
   env->datavbase = CONFIG_ARCH_DATA_VBASE + ARCH_DATA_RESERVE_SIZE;
   env->heapvbase = CONFIG_ARCH_HEAP_VBASE;
   env->heapsize = MM_PGALIGNUP(heapsize);
+
+  /* Share empty lower-level tables until the private root needs them. */
+
   env->root = loongarch_mmu_newroot();
   if (env->root == 0)
     {
@@ -151,6 +199,16 @@ int up_addrenv_create(size_t textsize, size_t datasize, size_t heapsize,
   return ret;
 }
 
+/****************************************************************************
+ * Name: up_addrenv_destroy
+ *
+ * Description:
+ *   Release an address environment and clear its descriptor. NuttX must
+ *   have dropped every task and active-CPU reference before this call, so
+ *   no processor can still walk these tables.
+ *
+ ****************************************************************************/
+
 int up_addrenv_destroy(arch_addrenv_t *env)
 {
   if (env->root != 0)
@@ -162,11 +220,28 @@ int up_addrenv_destroy(arch_addrenv_t *env)
   return OK;
 }
 
+/****************************************************************************
+ * Name: up_addrenv_vtext
+ *
+ * Description:
+ *   Return the fixed virtual text address used by the ELF loader.
+ *
+ ****************************************************************************/
+
 int up_addrenv_vtext(arch_addrenv_t *env, void **vtext)
 {
   *vtext = (void *)env->textvbase;
   return OK;
 }
+
+/****************************************************************************
+ * Name: up_addrenv_vdata
+ *
+ * Description:
+ *   Return the data address after the architecture reserved page. The data
+ *   region has a fixed base and does not depend on the text size.
+ *
+ ****************************************************************************/
 
 int up_addrenv_vdata(arch_addrenv_t *env, uintptr_t textsize, void **vdata)
 {
@@ -174,16 +249,42 @@ int up_addrenv_vdata(arch_addrenv_t *env, uintptr_t textsize, void **vdata)
   return OK;
 }
 
+/****************************************************************************
+ * Name: up_addrenv_vheap
+ *
+ * Description:
+ *   Return the virtual base of the process heap.
+ *
+ ****************************************************************************/
+
 int up_addrenv_vheap(const arch_addrenv_t *env, void **vheap)
 {
   *vheap = (void *)env->heapvbase;
   return OK;
 }
 
+/****************************************************************************
+ * Name: up_addrenv_heapsize
+ *
+ * Description:
+ *   Return the initial page-aligned heap allocation in bytes.
+ *
+ ****************************************************************************/
+
 ssize_t up_addrenv_heapsize(const arch_addrenv_t *env)
 {
   return env->heapsize;
 }
+
+/****************************************************************************
+ * Name: up_addrenv_select
+ *
+ * Description:
+ *   Select an address environment on the calling CPU. The scheduler calls
+ *   this with interrupts disabled. Invalidate local translations before
+ *   returning because all environments currently reuse ASID zero.
+ *
+ ****************************************************************************/
 
 int up_addrenv_select(const arch_addrenv_t *env)
 {
@@ -197,11 +298,31 @@ int up_addrenv_select(const arch_addrenv_t *env)
   return OK;
 }
 
+/****************************************************************************
+ * Name: up_addrenv_coherent
+ *
+ * Description:
+ *   Order page contents written by the loader before subsequent
+ *   instruction fetches. This port currently relies on coherent caches;
+ *   noncoherent platforms require additional cache maintenance.
+ *
+ ****************************************************************************/
+
 int up_addrenv_coherent(const arch_addrenv_t *env)
 {
   __asm__ __volatile__("dbar 0\n\tibar 0" : : : "memory");
   return OK;
 }
+
+/****************************************************************************
+ * Name: up_addrenv_clone
+ *
+ * Description:
+ *   Copy the architecture descriptor when NuttX transfers or shares an
+ *   address environment. Generic NuttX code manages its references; this
+ *   operation neither duplicates physical pages nor implements fork.
+ *
+ ****************************************************************************/
 
 int up_addrenv_clone(const arch_addrenv_t *src, arch_addrenv_t *dest)
 {
@@ -213,15 +334,44 @@ int up_addrenv_clone(const arch_addrenv_t *src, arch_addrenv_t *dest)
   return OK;
 }
 
+/****************************************************************************
+ * Name: up_addrenv_attach
+ *
+ * Description:
+ *   Complete attachment of a thread to its group address environment.
+ *   Generic NuttX code owns the references, so no architecture bookkeeping
+ *   is needed.
+ *
+ ****************************************************************************/
+
 int up_addrenv_attach(struct tcb_s *parent, struct tcb_s *child)
 {
   return OK;
 }
 
+/****************************************************************************
+ * Name: up_addrenv_detach
+ *
+ * Description:
+ *   Complete thread detachment. Page ownership is released by the final
+ *   address-environment reference, not by individual threads.
+ *
+ ****************************************************************************/
+
 int up_addrenv_detach(struct tcb_s *tcb)
 {
   return OK;
 }
+
+/****************************************************************************
+ * Name: up_addrenv_find_page
+ *
+ * Description:
+ *   Look up the physical backing page without allocating page tables.
+ *   Return zero for an absent mapping or an address outside the user
+ *   regions. The caller must keep the environment alive during the lookup.
+ *
+ ****************************************************************************/
 
 uintptr_t up_addrenv_find_page(arch_addrenv_t *env, uintptr_t addr)
 {
@@ -236,10 +386,29 @@ uintptr_t up_addrenv_find_page(arch_addrenv_t *env, uintptr_t addr)
   return pte != NULL ? *pte & LOONGARCH_PTE_PADDR_MASK : 0;
 }
 
+/****************************************************************************
+ * Name: up_addrenv_page_vaddr
+ *
+ * Description:
+ *   Translate a physical page into the cached kernel direct-mapping
+ *   window.
+ *
+ ****************************************************************************/
+
 uintptr_t up_addrenv_page_vaddr(uintptr_t page)
 {
   return (uintptr_t)loongarch_virtaddr(page);
 }
+
+/****************************************************************************
+ * Name: up_addrenv_user_vaddr
+ *
+ * Description:
+ *   Check whether an address belongs to a configured user region. This
+ *   checks layout only; it does not establish that a page is mapped or
+ *   accessible.
+ *
+ ****************************************************************************/
 
 bool up_addrenv_user_vaddr(uintptr_t addr)
 {
@@ -248,12 +417,32 @@ bool up_addrenv_user_vaddr(uintptr_t addr)
          (addr >= CONFIG_ARCH_HEAP_VBASE && addr < ARCH_HEAP_VEND);
 }
 
+/****************************************************************************
+ * Name: up_addrenv_page_wipe
+ *
+ * Description:
+ *   Clear one physical page through its cached kernel mapping.
+ *
+ ****************************************************************************/
+
 void up_addrenv_page_wipe(uintptr_t page)
 {
   memset(loongarch_virtaddr(page), 0, LOONGARCH_PAGE_SIZE);
 }
 
-int up_addrenv_mprot(arch_addrenv_t *env, uintptr_t addr, size_t len, int prot)
+/****************************************************************************
+ * Name: up_addrenv_mprot
+ *
+ * Description:
+ *   Change permissions on an existing page-aligned user range. Validate
+ *   every mapping before modifying any entry, then synchronously
+ *   invalidate translations on all online CPUs. Return a negative errno on
+ *   failure.
+ *
+ ****************************************************************************/
+
+int up_addrenv_mprot(arch_addrenv_t *env, uintptr_t addr,
+                     size_t len, int prot)
 {
   uintptr_t end;
   uintptr_t va;
@@ -270,6 +459,7 @@ int up_addrenv_mprot(arch_addrenv_t *env, uintptr_t addr, size_t len, int prot)
     }
 
   end = addr + MM_PGALIGNUP(len);
+
   if (!(prot & PROT_READ))
     {
       flags |= LOONGARCH_PTE_NOREAD;
@@ -291,6 +481,8 @@ int up_addrenv_mprot(arch_addrenv_t *env, uintptr_t addr, size_t len, int prot)
       return ret;
     }
 
+  /* Check the whole range before changing permissions on any page. */
+
   for (va = addr; va < end; va += LOONGARCH_PAGE_SIZE)
     {
       pte = loongarch_mmu_pte(env->root, va, false);
@@ -308,12 +500,25 @@ int up_addrenv_mprot(arch_addrenv_t *env, uintptr_t addr, size_t len, int prot)
                        __ATOMIC_RELEASE);
     }
 
+  /* No CPU may retain permissions that were removed by this update. */
+
   loongarch_tlb_sync();
 
 out:
   nxmutex_unlock(&g_env_lock);
   return ret;
 }
+
+/****************************************************************************
+ * Name: pgalloc
+ *
+ * Description:
+ *   Extend the current process heap with zeroed pages. Serialize
+ *   concurrent extensions and leave existing mappings unchanged on
+ *   failure. Return the mapped virtual base, or zero if the request cannot
+ *   be satisfied.
+ *
+ ****************************************************************************/
 
 uintptr_t pgalloc(uintptr_t brkaddr, unsigned int npages)
 {
@@ -352,6 +557,18 @@ uintptr_t pgalloc(uintptr_t brkaddr, unsigned int npages)
   return ret == OK ? brkaddr : 0;
 }
 
+#ifdef CONFIG_ARCH_KERNEL_STACK
+
+/****************************************************************************
+ * Name: up_addrenv_kstackalloc
+ *
+ * Description:
+ *   Allocate an aligned, kernel-only exception and syscall stack for a
+ *   user thread. Keep this allocation separate from the user-controlled
+ *   stack.
+ *
+ ****************************************************************************/
+
 int up_addrenv_kstackalloc(struct tcb_s *tcb)
 {
   tcb->xcp.kstack = kmm_memalign(STACKFRAME_ALIGN,
@@ -364,8 +581,19 @@ int up_addrenv_kstackalloc(struct tcb_s *tcb)
 #ifdef CONFIG_STACK_COLORATION
   loongarch_stack_color(tcb->xcp.kstack, CONFIG_ARCH_KERNEL_STACKSIZE);
 #endif
+
   return OK;
 }
+
+/****************************************************************************
+ * Name: up_addrenv_kstackfree
+ *
+ * Description:
+ *   Free the kernel stack after the thread can no longer execute or
+ *   receive exceptions. Clear the pointer to make repeated cleanup
+ *   harmless.
+ *
+ ****************************************************************************/
 
 int up_addrenv_kstackfree(struct tcb_s *tcb)
 {
@@ -373,3 +601,5 @@ int up_addrenv_kstackfree(struct tcb_s *tcb)
   tcb->xcp.kstack = NULL;
   return OK;
 }
+
+#endif /* CONFIG_ARCH_KERNEL_STACK */

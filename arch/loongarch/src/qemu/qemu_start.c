@@ -34,6 +34,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: qemu_start
+ *
+ * Description:
+ *   Initialize the QEMU platform after assembly has established direct
+ *   mappings and the boot stack, then enter the NuttX scheduler.
+ *
+ ****************************************************************************/
+
 void qemu_start(void)
 {
   uint64_t *dest;
@@ -50,6 +59,15 @@ void qemu_start(void)
   u16550_earlyserialinit();
   nx_start();
 }
+
+/****************************************************************************
+ * Name: loongarch_serialinit
+ *
+ * Description:
+ *   Register the configured UART devices and console with the NuttX
+ *   serial upper half. The no-driver variant requires no registration.
+ *
+ ****************************************************************************/
 
 void loongarch_serialinit(void)
 {

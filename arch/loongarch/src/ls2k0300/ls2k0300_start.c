@@ -58,6 +58,16 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: __ls2k0300_start
+ *
+ * Description:
+ *   Complete chip initialization after the assembly entry has established
+ *   the boot stack. Prepare clocks, console and board state before
+ *   entering NuttX.
+ *
+ ****************************************************************************/
+
 void __ls2k0300_start(void)
 {
   uint32_t *dest;

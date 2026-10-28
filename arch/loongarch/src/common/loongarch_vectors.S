@@ -42,6 +42,17 @@
   .balign 16384
   .global loongarch_vectors
   .type loongarch_vectors, function
+/****************************************************************************
+ * Name: loongarch_vectors
+ *
+ * Description:
+ *   Provide separate aligned entries for synchronous exceptions and local
+ *   interrupt inputs. Each slot saves t0 in SAVE0 and supplies its own
+ *   IRQ number to the shared context-save code; no pending-bit scan is
+ *   needed.
+ *
+ ****************************************************************************/
+
 loongarch_vectors:
   .altmacro
   .macro VECTOR number
@@ -89,6 +100,9 @@ loongarch_exception_entry:
 .Lkernel_stack:
   csrrd   $t0, LOONGARCH_CSR_SAVE4
 #endif
+
+  /* Save every general register before calling C or enabling interrupts. */
+
   addi.d  $sp, $sp, -XCPTCONTEXT_SIZE
   st.d    $r1, $sp, (REGSIZE * REG_R1_NDX)
   st.d    $r2, $sp, (REGSIZE * REG_R2_NDX)
@@ -132,6 +146,9 @@ loongarch_exception_entry:
   st.d    $t0, $sp, (REGSIZE * REG_EPC_NDX)
   csrrd   $t0, LOONGARCH_CSR_PRMD
   st.d    $t0, $sp, (REGSIZE * REG_INT_CTX_NDX)
+
+  /* LP64D tasks may have live caller-saved FPU state at any trap point. */
+
   fst.d   $f0, $sp, (REGSIZE * (REG_F0_NDX + 0))
   fst.d   $f1, $sp, (REGSIZE * (REG_F0_NDX + 1))
   fst.d   $f2, $sp, (REGSIZE * (REG_F0_NDX + 2))
@@ -182,7 +199,7 @@ loongarch_exception_entry:
   st.b    $t0, $sp, (REGSIZE * REG_FCC_NDX + 6)
   movcf2gr $t0, $fcc7
   st.b    $t0, $sp, (REGSIZE * REG_FCC_NDX + 7)
-#ifdef CONFIG_LIB_SYSCALL
+#ifdef CONFIG_BUILD_KERNEL
   /* Blocking system calls run on this thread's kernel stack, outside
    * interrupt context. Reserved operations go through the IRQ dispatcher.
    */
@@ -201,6 +218,8 @@ loongarch_exception_entry:
   b       loongarch_exception_return
 .Lirq:
 #endif
+  /* Ordinary handlers run on this CPU interrupt stack with IRQs masked. */
+
   move    $a1, $sp
 #if CONFIG_ARCH_INTERRUPTSTACK > 15
   csrrd   $t0, LOONGARCH_CSR_CPUID
@@ -211,6 +230,9 @@ loongarch_exception_entry:
   sub.d   $sp, $sp, $t0
 #endif
   bl      loongarch_doirq
+
+/* Restore the scheduler-selected frame, including its privilege level. */
+
 loongarch_exception_return:
   move    $sp, $a0
 
@@ -236,6 +258,9 @@ loongarch_exception_return:
   movgr2cf $fcc6, $t0
   ld.bu   $t0, $sp, (REGSIZE * REG_FCC_NDX + 7)
   movgr2cf $fcc7, $t0
+
+  /* Restore FPU state before general registers reuse the scratch values. */
+
   fld.d   $f0, $sp, (REGSIZE * (REG_F0_NDX + 0))
   fld.d   $f1, $sp, (REGSIZE * (REG_F0_NDX + 1))
   fld.d   $f2, $sp, (REGSIZE * (REG_F0_NDX + 2))
@@ -268,6 +293,9 @@ loongarch_exception_return:
   fld.d   $f29, $sp, (REGSIZE * (REG_F0_NDX + 29))
   fld.d   $f30, $sp, (REGSIZE * (REG_F0_NDX + 30))
   fld.d   $f31, $sp, (REGSIZE * (REG_F0_NDX + 31))
+
+  /* Restore SP last: all preceding loads address the trusted save frame. */
+
   ld.d    $r1, $sp, (REGSIZE * REG_R1_NDX)
   ld.d    $r2, $sp, (REGSIZE * REG_R2_NDX)
   ld.d    $r4, $sp, (REGSIZE * REG_R4_NDX)

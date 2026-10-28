@@ -35,6 +35,18 @@
   .balign 4
   .global up_signal_handler
   .type up_signal_handler, function
+/****************************************************************************
+ * Name: up_signal_handler
+ *
+ * Description:
+ *   Run at PLV3 with the handler in a0 and its arguments in a1-a3.
+ *   Preserve stack alignment, call the handler, then invoke the reserved
+ *   signal-return syscall. The trusted kernel continuation is never
+ *   stored on this user stack. Trap if signal return unexpectedly comes
+ *   back.
+ *
+ ****************************************************************************/
+
 up_signal_handler:
   addi.d  $sp, $sp, -16
   move    $t0, $a0

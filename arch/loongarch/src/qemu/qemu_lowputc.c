@@ -40,6 +40,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: loongarch_lowputc
+ *
+ * Description:
+ *   Poll the console transmitter and emit one byte without using
+ *   interrupt-driven serial buffers.
+ *
+ ****************************************************************************/
+
 void loongarch_lowputc(char ch)
 {
   while ((getreg8(QEMU_UART_BASE + UART_LSR) & UART_LSR_THRE) == 0)
@@ -48,6 +57,16 @@ void loongarch_lowputc(char ch)
 
   putreg8(ch, QEMU_UART_BASE);
 }
+
+/****************************************************************************
+ * Name: up_putc
+ *
+ * Description:
+ *   Emit one character through the configured low-level console. This
+ *   diagnostic path is available before normal serial device
+ *   registration.
+ *
+ ****************************************************************************/
 
 void up_putc(int ch)
 {

@@ -39,6 +39,17 @@
   .balign 16
   .global loongarch_secondary_entry
   .type loongarch_secondary_entry, function
+/****************************************************************************
+ * Name: loongarch_secondary_entry
+ *
+ * Description:
+ *   Enter from the firmware mailbox at PLV0. Establish kernel direct
+ *   windows, validate the hardware CPU ID and choose its private idle
+ *   stack. Unsupported CPUs remain parked. Transfer control to
+ *   loongarch_secondary_start without returning.
+ *
+ ****************************************************************************/
+
 loongarch_secondary_entry:
   li.d    $t0, 0x8000000000000001
   csrwr   $t0, LOONGARCH_CSR_DMWIN0

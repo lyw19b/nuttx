@@ -126,6 +126,9 @@ $(COBJS): %$(OBJEXT): %.c
 $(UAOBJS): %$(UOBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
+crt0$(OBJEXT): common/crt0.c $(TOPDIR)/include/nuttx/config.h
+	$(call COMPILE, $<, $@, -U__KERNEL__)
+
 $(UCOBJS): %$(UOBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
@@ -194,6 +197,10 @@ endif
 	$(Q) $(call DELFILE, $(addsuffix .tmp,$(ARCHSCRIPT)))
 
 export_startup: $(STARTUP_OBJS)
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+	$(Q) $(CC) -I$(TOPDIR)/include -E -P -x c \
+	  common/loongarch_user.ld -o "$(EXPORT_DIR)/scripts/gnu-elf.ld"
+endif
 ifneq ($(STARTUP_OBJS),)
 	$(Q) if [ -d "$(EXPORT_DIR)/startup" ]; then \
 		cp -f $(STARTUP_OBJS) "$(EXPORT_DIR)/startup/."; \

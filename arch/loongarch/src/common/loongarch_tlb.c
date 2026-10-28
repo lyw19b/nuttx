@@ -38,6 +38,15 @@
  ****************************************************************************/
 
 #ifdef CONFIG_SMP
+/****************************************************************************
+ * Name: loongarch_tlb_remote
+ *
+ * Description:
+ *   Invalidate translations on the CPU executing this synchronous SMP
+ *   callback. The callback must not acquire the page-table mutex.
+ *
+ ****************************************************************************/
+
 static int loongarch_tlb_remote(void *arg)
 {
   loongarch_tlb_invalidate();
@@ -54,6 +63,17 @@ static int loongarch_tlb_remote(void *arg)
  * detached table or backing page may be reused. Include the calling CPU
  * in the mask: the waiting thread may migrate while callbacks complete.
  */
+
+/****************************************************************************
+ * Name: loongarch_tlb_sync
+ *
+ * Description:
+ *   Publish page-table updates and wait for invalidation on every online
+ *   CPU, including the caller because the waiting task may migrate.
+ *   Callers may hold a sleepable mutex but must not hold an IRQ spinlock.
+ *   Return only when detached tables or backing pages can be reused.
+ *
+ ****************************************************************************/
 
 void loongarch_tlb_sync(void)
 {

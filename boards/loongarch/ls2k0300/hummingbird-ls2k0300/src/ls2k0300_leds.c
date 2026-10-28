@@ -32,13 +32,40 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: board_autoled_initialize
+ *
+ * Description:
+ *   Initialize architecture status LED support. This board implementation
+ *   does not configure a status LED.
+ *
+ ****************************************************************************/
+
 void board_autoled_initialize(void)
 {
 }
 
+/****************************************************************************
+ * Name: board_autoled_on
+ *
+ * Description:
+ *   Handle a NuttX status LED event. This board implementation leaves the
+ *   hardware unchanged.
+ *
+ ****************************************************************************/
+
 void board_autoled_on(int led)
 {
 }
+
+/****************************************************************************
+ * Name: board_autoled_off
+ *
+ * Description:
+ *   Handle the end of a NuttX status LED event. This board implementation
+ *   leaves the hardware unchanged.
+ *
+ ****************************************************************************/
 
 void board_autoled_off(int led)
 {

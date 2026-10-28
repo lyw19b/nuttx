@@ -68,14 +68,35 @@
 
 #ifndef __ASSEMBLY__
 
+/****************************************************************************
+ * Name: getreg8
+ *
+ * Description:
+ *   Read a volatile 8-bit memory-mapped register. The caller supplies a
+ *   valid, suitably aligned kernel address and any required ordering
+ *   barriers.
+ *
+ ****************************************************************************/
+
 static inline uint8_t getreg8(const volatile uintreg_t a)
 {
   uint8_t v;
+
   __asm__ __volatile__("ld.b %0, %1"
                        : "=r"(v)
                        : "m"(*(volatile uint8_t *)a));
   return v;
 }
+
+/****************************************************************************
+ * Name: putreg8
+ *
+ * Description:
+ *   Write a volatile 8-bit memory-mapped register. The caller supplies a
+ *   valid, suitably aligned kernel address and any required ordering
+ *   barriers.
+ *
+ ****************************************************************************/
 
 static inline void putreg8(uint8_t v, const volatile uintreg_t a)
 {
@@ -83,14 +104,35 @@ static inline void putreg8(uint8_t v, const volatile uintreg_t a)
                        : : "r"(v), "m"(*(volatile uint8_t *)a));
 }
 
+/****************************************************************************
+ * Name: getreg16
+ *
+ * Description:
+ *   Read a volatile 16-bit memory-mapped register. The caller supplies a
+ *   valid, suitably aligned kernel address and any required ordering
+ *   barriers.
+ *
+ ****************************************************************************/
+
 static inline uint16_t getreg16(const volatile uintreg_t a)
 {
   uint16_t v;
+
   __asm__ __volatile__("ld.h %0, %1"
                        : "=r"(v)
                        : "m"(*(volatile uint16_t *)a));
   return v;
 }
+
+/****************************************************************************
+ * Name: putreg16
+ *
+ * Description:
+ *   Write a volatile 16-bit memory-mapped register. The caller supplies a
+ *   valid, suitably aligned kernel address and any required ordering
+ *   barriers.
+ *
+ ****************************************************************************/
 
 static inline void putreg16(uint16_t v, const volatile uintreg_t a)
 {
@@ -98,14 +140,35 @@ static inline void putreg16(uint16_t v, const volatile uintreg_t a)
                        : : "r"(v), "m"(*(volatile uint16_t *)a));
 }
 
+/****************************************************************************
+ * Name: getreg32
+ *
+ * Description:
+ *   Read a volatile 32-bit memory-mapped register. The caller supplies a
+ *   valid, suitably aligned kernel address and any required ordering
+ *   barriers.
+ *
+ ****************************************************************************/
+
 static inline uint32_t getreg32(const volatile uintreg_t a)
 {
   uint32_t v;
+
   __asm__ __volatile__("ld.w %0, %1"
                        : "=r"(v)
                        : "m"(*(volatile uint32_t *)a));
   return v;
 }
+
+/****************************************************************************
+ * Name: putreg32
+ *
+ * Description:
+ *   Write a volatile 32-bit memory-mapped register. The caller supplies a
+ *   valid, suitably aligned kernel address and any required ordering
+ *   barriers.
+ *
+ ****************************************************************************/
 
 static inline void putreg32(uint32_t v, const volatile uintreg_t a)
 {
@@ -113,14 +176,35 @@ static inline void putreg32(uint32_t v, const volatile uintreg_t a)
                        : : "r"(v), "m"(*(volatile uint32_t *)a));
 }
 
+/****************************************************************************
+ * Name: getreg64
+ *
+ * Description:
+ *   Read a volatile 64-bit memory-mapped register. The caller supplies a
+ *   valid, suitably aligned kernel address and any required ordering
+ *   barriers.
+ *
+ ****************************************************************************/
+
 static inline uint64_t getreg64(const volatile uintreg_t a)
 {
   uint64_t v;
+
   __asm__ __volatile__("ld.d %0, %1"
                        : "=r"(v)
                        : "m"(*(volatile uint64_t *)a));
   return v;
 }
+
+/****************************************************************************
+ * Name: putreg64
+ *
+ * Description:
+ *   Write a volatile 64-bit memory-mapped register. The caller supplies a
+ *   valid, suitably aligned kernel address and any required ordering
+ *   barriers.
+ *
+ ****************************************************************************/
 
 static inline void putreg64(uint64_t v, const volatile uintreg_t a)
 {
@@ -160,7 +244,7 @@ void loongarch_addregion(void);
 void loongarch_ack_irq(int irq);
 
 void loongarch_sigdeliver(void);
-int loongarch_swint(int irq, void *context, void *arg);
+int loongarch_syscall_handler(int irq, void *context, void *arg);
 uintptr_t loongarch_get_newintctx(void);
 void loongarch_set_idleintctx(void);
 void loongarch_exception_attach(void);
@@ -168,16 +252,31 @@ void loongarch_vector_initialize(void);
 
 void loongarch_allocateheap(void);
 
+/****************************************************************************
+ * Name: loongarch_savecontext
+ *
+ * Description:
+ *   Complete the interrupt-context save hook. No additional work is
+ *   needed: loongarch_doirq_top already recorded the frame in the TCB.
+ *
+ ****************************************************************************/
+
 static inline void loongarch_savecontext(struct tcb_s *tcb)
 {
 }
 
+/****************************************************************************
+ * Name: loongarch_restorecontext
+ *
+ * Description:
+ *   Complete the interrupt-context restore hook. The IRQ epilogue reads
+ *   the scheduler-selected TCB directly, so this hook needs no work.
+ *
+ ****************************************************************************/
+
 static inline void loongarch_restorecontext(struct tcb_s *tcb)
 {
 }
-
-void loongarch_jump_to_user(uintptr_t entry, uintptr_t arg1, uintptr_t arg2,
-                            uintptr_t arg3, uintptr_t sp, uintreg_t *regs);
 
 #ifdef CONFIG_PM
 void loongarch_pminitialize(void);

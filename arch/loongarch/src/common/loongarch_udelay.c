@@ -40,6 +40,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_udelay
+ *
+ * Description:
+ *   Busy-wait using the board-calibrated loop count. The delay accuracy
+ *   depends on CONFIG_BOARD_LOOPSPERMSEC and the current CPU clock.
+ *
+ ****************************************************************************/
+
 void up_udelay(useconds_t microseconds)
 {
   volatile int i;

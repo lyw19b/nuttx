@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/loongarch/qemu/qemu-loongarch/tests/user.ld
+ * arch/loongarch/src/common/loongarch_user.ld
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -22,18 +22,63 @@
 
 #include <nuttx/config.h>
 
+OUTPUT_ARCH(loongarch)
 ENTRY(__start)
+
 PHDRS
 {
   text PT_LOAD FLAGS(5);
   data PT_LOAD FLAGS(6);
 }
+
 SECTIONS
 {
   . = CONFIG_ARCH_TEXT_VBASE;
-  .text : { *(.text .text.*) *(.rodata .rodata.*) } :text
+  .text :
+  {
+    *(.text .text.*)
+    *(.rodata .rodata.*)
+    . = ALIGN(8);
+    _sctors = .;
+    KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*)))
+    KEEP(*(.init_array))
+    _ectors = .;
+    _sdtors = .;
+    KEEP(*(SORT_BY_INIT_PRIORITY(.fini_array.*)))
+    KEEP(*(.fini_array))
+    _edtors = .;
+  } :text
+
+  ASSERT(. <= CONFIG_ARCH_TEXT_VBASE +
+         CONFIG_ARCH_TEXT_NPAGES * CONFIG_MM_PGSIZE, "User text is too large")
+
+  /* Leave the first data page for the NuttX address-environment header.
+   * Merge the statically resolved GOT into data: a separate .got section
+   * would make this loader treat the fixed-address executable as PIC.
+   */
+
   . = CONFIG_ARCH_DATA_VBASE + CONFIG_MM_PGSIZE;
-  .data : { *(.data .data.*) *(.sdata .sdata.*) *(.got .got.*) } :data
-  .bss : { *(.bss .bss.*) *(.sbss .sbss.*) *(COMMON) } :data
-  /DISCARD/ : { *(.eh_frame*) *(.note*) *(.comment*) }
+  .data :
+  {
+    *(.data .data.*)
+    *(.sdata .sdata.*)
+    *(.got .got.*)
+  } :data
+
+  .bss :
+  {
+    *(.bss .bss.*)
+    *(.sbss .sbss.*)
+    *(COMMON)
+  } :data
+
+  ASSERT(. <= CONFIG_ARCH_DATA_VBASE +
+         CONFIG_ARCH_DATA_NPAGES * CONFIG_MM_PGSIZE, "User data is too large")
+
+  /DISCARD/ :
+  {
+    *(.eh_frame*)
+    *(.note*)
+    *(.comment*)
+  }
 }

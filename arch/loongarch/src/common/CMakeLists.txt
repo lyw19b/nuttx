@@ -25,7 +25,7 @@ set(SRCS)
 list(APPEND SRCS loongarch_vectors.S)
 list(APPEND SRCS loongarch_saveusercontext.S)
 list(APPEND SRCS loongarch_allocateheap.c loongarch_cpuidlestack.c)
-list(APPEND SRCS loongarch_createstack.c loongarch_doirq.c
+list(APPEND SRCS loongarch_createstack.c loongarch_irq.c
      loongarch_exception.c)
 list(APPEND SRCS loongarch_exit.c loongarch_getintstack.c
      loongarch_getnewintctx.c)
@@ -34,7 +34,7 @@ list(APPEND SRCS loongarch_vector.c loongarch_initialize.c loongarch_initialstat
 list(APPEND SRCS loongarch_nputs.c loongarch_registerdump.c)
 list(APPEND SRCS loongarch_releasestack.c loongarch_schedulesigaction.c
      loongarch_sigdeliver.c)
-list(APPEND SRCS loongarch_stackframe.c loongarch_tcbinfo.c loongarch_swint.c)
+list(APPEND SRCS loongarch_stackframe.c loongarch_tcbinfo.c loongarch_syscall.c)
 list(APPEND SRCS loongarch_switchcontext.c loongarch_usestack.c)
 
 if(NOT CONFIG_ARCH_IDLE_CUSTOM)
@@ -67,7 +67,7 @@ if(CONFIG_SMP)
   target_sources(arch PRIVATE loongarch_smp.c loongarch_secondary.S)
 endif()
 
-target_sources(arch PRIVATE loongarch_timerisr.c)
+target_sources(arch PRIVATE loongarch_timer.c)
 
 if(CONFIG_LOONGARCH_MMU_TEST)
   target_sources(arch PRIVATE loongarch_mmutest.c)
@@ -78,5 +78,9 @@ if(CONFIG_ARCH_HAVE_FORK)
 endif()
 
 if(CONFIG_ARCH_ADDRENV)
-  target_sources(arch PRIVATE loongarch_addrenv.c loongarch_user.c)
+  target_sources(arch PRIVATE loongarch_addrenv.c)
+endif()
+
+if(CONFIG_BUILD_KERNEL)
+  target_sources(arch PRIVATE loongarch_user.c)
 endif()

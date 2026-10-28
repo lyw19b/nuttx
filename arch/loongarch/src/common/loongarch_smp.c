@@ -51,11 +51,30 @@ static cpu_set_t g_online;
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: loongarch_ipi_send
+ *
+ * Description:
+ *   Publish queued requests before sending a blocking IOCSR IPI to the
+ *   target hardware CPU.
+ *
+ ****************************************************************************/
+
 static void loongarch_ipi_send(int cpu)
 {
   UP_DMB();
   iocsr_write32((1u << 31) | (cpu << 16), LOONGARCH_IOCSR_IPI_SEND);
 }
+
+/****************************************************************************
+ * Name: loongarch_ipi_interrupt
+ *
+ * Description:
+ *   Acknowledge the local IPI before processing remote calls and scheduler
+ *   deliveries. New requests may then raise another IPI without losing a
+ *   notification.
+ *
+ ****************************************************************************/
 
 static int loongarch_ipi_interrupt(int irq, void *context, void *arg)
 {
@@ -67,6 +86,9 @@ static int loongarch_ipi_interrupt(int irq, void *context, void *arg)
 
   iocsr_write32(pending, LOONGARCH_IOCSR_IPI_CLEAR);
   UP_DMB();
+
+  /* Remote calls include TLB shootdowns; drain them before rescheduling. */
+
   nxsched_smp_call_handler(irq, context, arg);
   nxsched_process_delivered(this_cpu());
   return OK;
@@ -76,10 +98,28 @@ static int loongarch_ipi_interrupt(int irq, void *context, void *arg)
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: loongarch_cpu_online
+ *
+ * Description:
+ *   Return the published mask of CPUs whose interrupt and MMU state can
+ *   service synchronous remote calls.
+ *
+ ****************************************************************************/
+
 cpu_set_t loongarch_cpu_online(void)
 {
   return __atomic_load_n(&g_online, __ATOMIC_ACQUIRE);
 }
+
+/****************************************************************************
+ * Name: loongarch_smp_initialize
+ *
+ * Description:
+ *   Install the shared IPI handler, enable the boot CPU IPI input and
+ *   publish CPU zero as online before starting other CPUs.
+ *
+ ****************************************************************************/
 
 void loongarch_smp_initialize(void)
 {
@@ -90,12 +130,29 @@ void loongarch_smp_initialize(void)
   __atomic_store_n(&g_online, 1, __ATOMIC_RELEASE);
 }
 
+/****************************************************************************
+ * Name: up_send_smp_sched
+ *
+ * Description:
+ *   Notify a CPU that the scheduler has delivered work to it. The caller
+ *   must publish the work before this notification.
+ *
+ ****************************************************************************/
+
 int up_send_smp_sched(int cpu)
 {
   DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS);
   loongarch_ipi_send(cpu);
   return OK;
 }
+
+/****************************************************************************
+ * Name: up_send_smp_call
+ *
+ * Description:
+ *   Send an IPI to each CPU selected by the NuttX remote-call mask.
+ *
+ ****************************************************************************/
 
 void up_send_smp_call(cpu_set_t cpuset)
 {
@@ -109,6 +166,16 @@ void up_send_smp_call(cpu_set_t cpuset)
         }
     }
 }
+
+/****************************************************************************
+ * Name: up_cpu_start
+ *
+ * Description:
+ *   Publish the secondary entry address through IOCSR mailbox zero and
+ *   send its startup IPI. Return -EINVAL for an unsupported CPU index.
+ *   Firmware is responsible for releasing the target into this entry.
+ *
+ ****************************************************************************/
 
 int up_cpu_start(int cpu)
 {
@@ -138,6 +205,16 @@ int up_cpu_start(int cpu)
   return OK;
 }
 
+/****************************************************************************
+ * Name: loongarch_secondary_start
+ *
+ * Description:
+ *   Finish secondary CPU setup after assembly has established a private
+ *   idle stack. Configure vectors, paging and IPIs before publishing the
+ *   CPU online, then enable interrupts and enter the idle scheduler.
+ *
+ ****************************************************************************/
+
 void loongarch_secondary_start(void)
 {
   int cpu = this_cpu();
@@ -146,13 +223,18 @@ void loongarch_secondary_start(void)
 #ifdef CONFIG_ARCH_USE_MMU
   loongarch_mmu_cpu_initialize();
 #endif
+
   iocsr_write32(UINT32_MAX, LOONGARCH_IOCSR_IPI_CLEAR);
   iocsr_write32(1, LOONGARCH_IOCSR_IPI_EN);
   up_enable_irq(LOONGARCH_IRQ_IPI);
+
+  /* Publish only after this CPU can service an invalidation IPI. */
+
   __atomic_fetch_or(&g_online, (cpu_set_t)1 << cpu, __ATOMIC_RELEASE);
 #ifdef CONFIG_SCHED_INSTRUMENTATION
   sched_note_cpu_started(this_task());
 #endif
+
   up_irq_enable();
   nx_idle_trampoline();
 }

@@ -44,11 +44,29 @@
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: usertest
+ *
+ * Description:
+ *   Spawn concurrent ELF processes, verify their exit statuses and run
+ *   permission-fault cases. Start a fresh process afterwards to verify
+ *   that a user fault has not stopped the kernel.
+ *
+ ****************************************************************************/
+
 static int usertest(int argc, char **argv)
 {
-  char *normal[] = {"user", "n", NULL};
+  char *normal[] =
+  {
+    "user", "n", NULL
+  };
+
   char mode[] = "r";
-  char *fault[] = {"user", mode, NULL};
+  char *fault[] =
+  {
+    "user", mode, NULL
+  };
+
   const char modes[] = "rwtxs";
   pid_t children[2];
   unsigned int i;
@@ -65,35 +83,71 @@ static int usertest(int argc, char **argv)
 
   for (i = 0; i < 2; i++)
     {
-      children[i] = exec_spawn("/test/user", normal, NULL, NULL, 0, NULL, NULL);
+      children[i] = exec_spawn("/test/user", normal, NULL, NULL,
+                               0, NULL, NULL);
       ASSERT(children[i] > 0);
     }
 
   for (i = 0; i < 2; i++)
     {
       ASSERT(waitpid(children[i], &status, 0) == children[i]);
+      if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        {
+          printf("User process %d failed: status=%#x\n",
+                 children[i], status);
+        }
+
       ASSERT(WIFEXITED(status) && WEXITSTATUS(status) == 0);
     }
+
+  /* Exercise loader entry from PLV3 while the old user mapping is active. */
+
+  mode[0] = 'e';
+  children[0] = exec_spawn("/test/user", fault, NULL, NULL, 0, NULL, NULL);
+  ASSERT(children[0] > 0);
+  ASSERT(waitpid(children[0], &status, 0) == children[0]);
+  ASSERT(WIFEXITED(status) && WEXITSTATUS(status) == 0);
 
   for (i = 0; i < sizeof(modes) - 1; i++)
     {
       mode[0] = modes[i];
-      children[0] = exec_spawn("/test/user", fault, NULL, NULL, 0, NULL, NULL);
+      children[0] = exec_spawn("/test/user", fault, NULL, NULL,
+                               0, NULL, NULL);
       ASSERT(children[0] > 0);
       ASSERT(waitpid(children[0], &status, 0) == children[0]);
       ASSERT(WIFEXITED(status) && WEXITSTATUS(status) == SIGSEGV);
     }
 
-  children[0] = exec_spawn("/test/user", normal, NULL, NULL, 0, NULL, NULL);
-  ASSERT(children[0] > 0);
-  ASSERT(waitpid(children[0], &status, 0) == children[0]);
-  ASSERT(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+  /* Allocate more process heaps than the page pool can hold at once.
+   * Repeated exits must release old roots after their CPU references drop.
+   */
+
+  mode[0] = 'q';
+  for (i = 0; i < 24; i++)
+    {
+      children[0] = exec_spawn("/test/user", fault, NULL, NULL,
+                               0, NULL, NULL);
+      ASSERT(children[0] > 0);
+      ASSERT(waitpid(children[0], &status, 0) == children[0]);
+      ASSERT(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+    }
+
   puts("LoongArch userspace isolation/syscall tests: PASS");
   return OK;
 }
 
 /****************************************************************************
  * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: board_late_initialize
+ *
+ * Description:
+ *   Mount a temporary filesystem and install the embedded regression ELF
+ *   before the configured init process starts. Launch a kernel thread to
+ *   supervise the userspace tests.
+ *
  ****************************************************************************/
 
 void board_late_initialize(void)
@@ -108,7 +162,6 @@ void board_late_initialize(void)
   ASSERT(fd >= 0);
   ASSERT(write(fd, g_loongarch_user_elf, size) == size);
   ASSERT(close(fd) == OK);
-
 
   ASSERT(kthread_create("usertest", 100, 8192, usertest, NULL) > 0);
 }

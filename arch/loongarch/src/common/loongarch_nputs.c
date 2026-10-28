@@ -31,6 +31,16 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_nputs
+ *
+ * Description:
+ *   Write at most len characters through the low-level console, stopping
+ *   at the first NUL byte. This path does not depend on the serial driver
+ *   buffers.
+ *
+ ****************************************************************************/
+
 void up_nputs(const char *str, size_t len)
 {
   while (len-- > 0 && *str)

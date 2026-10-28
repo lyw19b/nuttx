@@ -42,6 +42,17 @@
  * subject to the restrictions documented by the NuttX fork interface.
  */
 
+/****************************************************************************
+ * Name: loongarch_fork
+ *
+ * Description:
+ *   Create a flat-build child by copying the active stack and saved
+ *   registers. Adjust the stack and frame pointers and arrange a zero
+ *   return in the child. This does not create an independent process
+ *   address space.
+ *
+ ****************************************************************************/
+
 pid_t loongarch_fork(const uintreg_t *context)
 {
   struct tcb_s *parent = this_task();

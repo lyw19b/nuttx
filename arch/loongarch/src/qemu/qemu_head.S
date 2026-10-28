@@ -27,6 +27,17 @@
   .section .text.__start, "ax", @progbits
   .global __start
   .type __start, function
+/****************************************************************************
+ * Name: __start
+ *
+ * Description:
+ *   Enter the QEMU kernel at PLV0, establish uncached and cached direct
+ *   windows, and branch to the linked cached address. Enable the FPU and
+ *   select the boot idle stack before calling qemu_start. No stack or
+ *   initialized globals are required on entry.
+ *
+ ****************************************************************************/
+
 __start:
   li.d    $t0, 0x8000000000000001
   csrwr   $t0, LOONGARCH_CSR_DMWIN0

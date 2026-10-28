@@ -231,15 +231,41 @@ static uart_dev_t g_uart2port =
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_serialin
+ *
+ * Description:
+ *   Read a byte-wide 16550 register at the UART-relative offset.
+ *
+ ****************************************************************************/
+
 static uint32_t up_serialin(struct up_dev_s *priv, int offset)
 {
   return getreg8(priv->uartbase + offset);
 }
 
+/****************************************************************************
+ * Name: up_serialout
+ *
+ * Description:
+ *   Write the low byte of value to a 16550 register at the UART-relative
+ *   offset.
+ *
+ ****************************************************************************/
+
 static void up_serialout(struct up_dev_s *priv, int offset, uint32_t value)
 {
   putreg8((uint8_t)value, priv->uartbase + offset);
 }
+
+/****************************************************************************
+ * Name: up_restoreuartint
+ *
+ * Description:
+ *   Restore the cached UART interrupt mask under the device spinlock and
+ *   write it to the interrupt-enable register.
+ *
+ ****************************************************************************/
 
 static void up_restoreuartint(struct up_dev_s *priv, uint8_t im)
 {
@@ -250,6 +276,15 @@ static void up_restoreuartint(struct up_dev_s *priv, uint8_t im)
 
   spin_unlock_irqrestore(&priv->lock, flags);
 }
+
+/****************************************************************************
+ * Name: up_disableuartint
+ *
+ * Description:
+ *   Save the UART interrupt mask when requested and disable all UART
+ *   interrupts under the device spinlock.
+ *
+ ****************************************************************************/
 
 static void up_disableuartint(struct up_dev_s *priv, uint8_t *im)
 {
@@ -264,6 +299,15 @@ static void up_disableuartint(struct up_dev_s *priv, uint8_t *im)
   up_serialout(priv, UART_IER_OFFSET, 0);
   spin_unlock_irqrestore(&priv->lock, flags);
 }
+
+/****************************************************************************
+ * Name: up_setup
+ *
+ * Description:
+ *   Program the baud divider, eight-bit character format and FIFO state
+ *   for the selected UART.
+ *
+ ****************************************************************************/
 
 static int up_setup(struct uart_dev_s *dev)
 {
@@ -282,11 +326,29 @@ static int up_setup(struct uart_dev_s *dev)
   return OK;
 }
 
+/****************************************************************************
+ * Name: up_shutdown
+ *
+ * Description:
+ *   Disable UART interrupt sources when the serial upper half shuts down
+ *   the device.
+ *
+ ****************************************************************************/
+
 static void up_shutdown(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
   up_disableuartint(priv, NULL);
 }
+
+/****************************************************************************
+ * Name: up_attach
+ *
+ * Description:
+ *   Attach the UART handler and enable its controller IRQ on success.
+ *   Return the IRQ attachment result.
+ *
+ ****************************************************************************/
 
 static int up_attach(struct uart_dev_s *dev)
 {
@@ -305,12 +367,30 @@ static int up_attach(struct uart_dev_s *dev)
   return ret;
 }
 
+/****************************************************************************
+ * Name: up_detach
+ *
+ * Description:
+ *   Mask the controller IRQ before detaching the UART handler.
+ *
+ ****************************************************************************/
+
 static void up_detach(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
   up_disable_irq(priv->irq);
   irq_detach(priv->irq);
 }
+
+/****************************************************************************
+ * Name: up_interrupt
+ *
+ * Description:
+ *   Drain receive and transmit interrupt causes through the serial upper
+ *   half. Bound the dispatch loop to prevent a stuck UART from
+ *   monopolizing interrupt context.
+ *
+ ****************************************************************************/
 
 static int up_interrupt(int irq, void *context, void *arg)
 {
@@ -343,10 +423,28 @@ static int up_interrupt(int irq, void *context, void *arg)
   return OK;
 }
 
+/****************************************************************************
+ * Name: up_ioctl
+ *
+ * Description:
+ *   Return -ENOTTY because this UART lower half implements no device-
+ *   specific ioctl commands.
+ *
+ ****************************************************************************/
+
 static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
   return -ENOTTY;
 }
+
+/****************************************************************************
+ * Name: up_receive
+ *
+ * Description:
+ *   Read one received byte. The current lower half reports zero status
+ *   rather than decoding line-error flags.
+ *
+ ****************************************************************************/
 
 static int up_receive(struct uart_dev_s *dev, uint32_t *status)
 {
@@ -359,6 +457,15 @@ static int up_receive(struct uart_dev_s *dev, uint32_t *status)
 
   return up_serialin(priv, UART_RBR_OFFSET) & 0xff;
 }
+
+/****************************************************************************
+ * Name: up_rxint
+ *
+ * Description:
+ *   Update the receive-data interrupt enable while preserving the other
+ *   cached UART interrupt bits.
+ *
+ ****************************************************************************/
 
 static void up_rxint(struct uart_dev_s *dev, bool enable)
 {
@@ -380,17 +487,46 @@ static void up_rxint(struct uart_dev_s *dev, bool enable)
   leave_critical_section(flags);
 }
 
+/****************************************************************************
+ * Name: up_rxavailable
+ *
+ * Description:
+ *   Report whether the UART receive data register contains a byte.
+ *
+ ****************************************************************************/
+
 static bool up_rxavailable(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+
   return !!(up_serialin(priv, UART_LSR_OFFSET) & UART_LSR_DR);
 }
+
+/****************************************************************************
+ * Name: up_send
+ *
+ * Description:
+ *   Write one byte to the UART transmit holding register. The upper half
+ *   checks transmitter readiness before calling.
+ *
+ ****************************************************************************/
 
 static void up_send(struct uart_dev_s *dev, int ch)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+
   up_serialout(priv, UART_THR_OFFSET, (uint32_t)ch);
 }
+
+/****************************************************************************
+ * Name: up_txint
+ *
+ * Description:
+ *   Enable or disable transmit interrupts. When enabling, immediately
+ *   feed queued bytes to avoid waiting for an interrupt edge that may
+ *   already have occurred.
+ *
+ ****************************************************************************/
 
 static void up_txint(struct uart_dev_s *dev, bool enable)
 {
@@ -415,15 +551,34 @@ static void up_txint(struct uart_dev_s *dev, bool enable)
   leave_critical_section(flags);
 }
 
+/****************************************************************************
+ * Name: up_txready
+ *
+ * Description:
+ *   Report whether the transmit holding register can accept another byte.
+ *
+ ****************************************************************************/
+
 static bool up_txready(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+
   return !!(up_serialin(priv, UART_LSR_OFFSET) & UART_LSR_THRE);
 }
+
+/****************************************************************************
+ * Name: up_txempty
+ *
+ * Description:
+ *   Report whether both the transmit holding register and shift register
+ *   are empty.
+ *
+ ****************************************************************************/
 
 static bool up_txempty(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+
   return !!(up_serialin(priv, UART_LSR_OFFSET) & UART_LSR_TEMT);
 }
 
@@ -432,6 +587,15 @@ static bool up_txempty(struct uart_dev_s *dev)
  ****************************************************************************/
 
 #ifdef USE_EARLYSERIALINIT
+
+/****************************************************************************
+ * Name: loongarch_earlyserialinit
+ *
+ * Description:
+ *   Disable UART interrupts and initialize the selected console before
+ *   normal driver registration. The no-driver variant needs no setup.
+ *
+ ****************************************************************************/
 
 void loongarch_earlyserialinit(void)
 {
@@ -446,6 +610,15 @@ void loongarch_earlyserialinit(void)
 }
 
 #endif
+
+/****************************************************************************
+ * Name: loongarch_serialinit
+ *
+ * Description:
+ *   Register the configured UART devices and console with the NuttX
+ *   serial upper half. The no-driver variant requires no registration.
+ *
+ ****************************************************************************/
 
 void loongarch_serialinit(void)
 {
@@ -462,6 +635,16 @@ void loongarch_serialinit(void)
 #endif
 }
 
+/****************************************************************************
+ * Name: up_putc
+ *
+ * Description:
+ *   Emit one character through the configured low-level console. This
+ *   diagnostic path is available before normal serial device
+ *   registration.
+ *
+ ****************************************************************************/
+
 void up_putc(int ch)
 {
 #ifdef HAVE_SERIAL_CONSOLE
@@ -476,13 +659,41 @@ void up_putc(int ch)
 
 #else /* HAVE_UART_DEVICE */
 
+/****************************************************************************
+ * Name: loongarch_earlyserialinit
+ *
+ * Description:
+ *   Disable UART interrupts and initialize the selected console before
+ *   normal driver registration. The no-driver variant needs no setup.
+ *
+ ****************************************************************************/
+
 void loongarch_earlyserialinit(void)
 {
 }
 
+/****************************************************************************
+ * Name: loongarch_serialinit
+ *
+ * Description:
+ *   Register the configured UART devices and console with the NuttX
+ *   serial upper half. The no-driver variant requires no registration.
+ *
+ ****************************************************************************/
+
 void loongarch_serialinit(void)
 {
 }
+
+/****************************************************************************
+ * Name: up_putc
+ *
+ * Description:
+ *   Emit one character through the configured low-level console. This
+ *   diagnostic path is available before normal serial device
+ *   registration.
+ *
+ ****************************************************************************/
 
 void up_putc(int ch)
 {
@@ -490,6 +701,16 @@ void up_putc(int ch)
 
 #endif /* HAVE_UART_DEVICE */
 #else /* USE_SERIALDRIVER */
+
+/****************************************************************************
+ * Name: up_putc
+ *
+ * Description:
+ *   Emit one character through the configured low-level console. This
+ *   diagnostic path is available before normal serial device
+ *   registration.
+ *
+ ****************************************************************************/
 
 void up_putc(int ch)
 {
@@ -499,41 +720,3 @@ void up_putc(int ch)
 }
 
 #endif /* USE_SERIALDRIVER */
-
-#if 0
-
-/****************************************************************************
- * Included Files
- ****************************************************************************/
-
-#include <stdio.h>
-#include <stdarg.h>
-
-static char log_buffer[512];
-
-void uart_printf(const char *format, ...)
-{
-  va_list args;
-  char *str;
-  int len;
-
-  va_start(args, format);
-  vsnprintf(log_buffer, sizeof(log_buffer), format, args);
-  va_end(args);
-
-  /* up_puts(log_buffer); */
-
-  str = (char *)log_buffer;
-  len = strlen(str);
-
-  while (len-- > 0 && *str)
-    {
-      if (*str == '\n')
-        {
-          loongarch_lowputc('\r');
-        }
-
-      loongarch_lowputc(*str++);
-    }
-}
-#endif

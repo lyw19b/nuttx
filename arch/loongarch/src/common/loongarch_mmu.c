@@ -69,15 +69,41 @@ static mutex_t g_mmu_lock = NXMUTEX_INITIALIZER;
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: table_paddr
+ *
+ * Description:
+ *   Return the physical address of a table stored in the kernel direct-
+ *   mapping window.
+ *
+ ****************************************************************************/
+
 static uintptr_t table_paddr(const uint64_t *table)
 {
   return loongarch_physaddr((uintptr_t)table);
 }
 
+/****************************************************************************
+ * Name: table_vaddr
+ *
+ * Description:
+ *   Convert a directory entry into a cached kernel table pointer, removing
+ *   any entry attribute bits.
+ *
+ ****************************************************************************/
+
 static uint64_t *table_vaddr(uint64_t entry)
 {
   return loongarch_virtaddr(entry & LOONGARCH_PTE_PADDR_MASK);
 }
+
+/****************************************************************************
+ * Name: table_initialize
+ *
+ * Description:
+ *   Fill a page table with the empty entry appropriate to its level.
+ *
+ ****************************************************************************/
 
 static void table_initialize(uint64_t *table, uint64_t entry)
 {
@@ -88,6 +114,15 @@ static void table_initialize(uint64_t *table, uint64_t entry)
       table[i] = entry;
     }
 }
+
+/****************************************************************************
+ * Name: table_allocate
+ *
+ * Description:
+ *   Allocate and initialize a table before publishing it to other CPUs or
+ *   a hardware walker. Return NULL if the physical page pool is exhausted.
+ *
+ ****************************************************************************/
 
 static uint64_t *table_allocate(uint64_t entry)
 {
@@ -104,6 +139,18 @@ static uint64_t *table_allocate(uint64_t entry)
   UP_DMB();
   return table;
 }
+
+/****************************************************************************
+ * Name: loongarch_mmu_pte
+ *
+ * Description:
+ *   Walk the supplied physical root and return the leaf entry for a
+ *   virtual address. If create is true, replace shared empty directories
+ *   with private tables as needed. The caller must serialize mutations and
+ *   keep the root alive. Return NULL for an absent path or allocation
+ *   failure.
+ *
+ ****************************************************************************/
 
 uint64_t *loongarch_mmu_pte(uintptr_t root, uintptr_t vaddr, bool create)
 {
@@ -132,6 +179,8 @@ uint64_t *loongarch_mmu_pte(uintptr_t root, uintptr_t vaddr, bool create)
               return NULL;
             }
 
+          /* Publish each child only after initializing all its entries. */
+
           __atomic_store_n(&table[index], table_paddr(next),
                            __ATOMIC_RELEASE);
         }
@@ -141,6 +190,14 @@ uint64_t *loongarch_mmu_pte(uintptr_t root, uintptr_t vaddr, bool create)
 
   return &table[(vaddr >> LOONGARCH_PAGE_SHIFT) & 511];
 }
+
+/****************************************************************************
+ * Name: table_empty
+ *
+ * Description:
+ *   Test whether every entry has the empty value for this table level.
+ *
+ ****************************************************************************/
 
 static bool table_empty(const uint64_t *table, uint64_t empty)
 {
@@ -160,6 +217,16 @@ static bool table_empty(const uint64_t *table, uint64_t empty)
 /* Reclaim only after all CPUs have stopped using a detached table. The
  * MMU mutex is sleepable; remote invalidation never takes this mutex.
  */
+
+/****************************************************************************
+ * Name: table_reclaim
+ *
+ * Description:
+ *   Detach empty directories from the bottom of a page-table path upward.
+ *   The caller holds the MMU mutex. Wait for remote TLB invalidations
+ *   before freeing each detached table so no CPU can walk reused memory.
+ *
+ ****************************************************************************/
 
 static void table_reclaim(uintptr_t root, uintptr_t vaddr)
 {
@@ -200,6 +267,15 @@ static void table_reclaim(uintptr_t root, uintptr_t vaddr)
     }
 }
 
+/****************************************************************************
+ * Name: valid_range
+ *
+ * Description:
+ *   Check page alignment, nonzero length and overflow against the
+ *   supported low canonical virtual-address limit.
+ *
+ ****************************************************************************/
+
 static bool valid_range(uintptr_t vaddr, size_t size)
 {
   return size != 0 && ((vaddr | size) & (LOONGARCH_PAGE_SIZE - 1)) == 0 &&
@@ -211,11 +287,32 @@ static bool valid_range(uintptr_t vaddr, size_t size)
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: loongarch_tlb_invalidate
+ *
+ * Description:
+ *   Order page-table stores, invalidate all local TLB entries and
+ *   synchronize instruction fetches. This operation does not affect other
+ *   CPUs.
+ *
+ ****************************************************************************/
+
 void loongarch_tlb_invalidate(void)
 {
   __asm__ __volatile__("dbar 0\n\tinvtlb 0, $zero, $zero\n\tibar 0"
                        : : : "memory");
 }
+
+/****************************************************************************
+ * Name: loongarch_mmu_cpu_initialize
+ *
+ * Description:
+ *   Configure the four-level page-table walker, refill vector and initial
+ *   roots on the calling CPU. Enable hardware walking only when both the
+ *   configuration and CPU capability permit it. Interrupts remain disabled
+ *   until CPU startup completes.
+ *
+ ****************************************************************************/
 
 void loongarch_mmu_cpu_initialize(void)
 {
@@ -248,6 +345,15 @@ void loongarch_mmu_cpu_initialize(void)
             LOONGARCH_CSR_CRMD);
 }
 
+/****************************************************************************
+ * Name: loongarch_mmu_initialize
+ *
+ * Description:
+ *   Initialize immutable empty tables and the boot root once, before
+ *   secondary CPUs start, then enable paging on the boot CPU.
+ *
+ ****************************************************************************/
+
 void loongarch_mmu_initialize(void)
 {
   table_initialize(g_empty_middle, table_paddr(g_empty_leaf));
@@ -257,6 +363,17 @@ void loongarch_mmu_initialize(void)
   UP_DMB();
   loongarch_mmu_cpu_initialize();
 }
+
+/****************************************************************************
+ * Name: loongarch_mmu_maproot
+ *
+ * Description:
+ *   Map a page-aligned physical range into the supplied root without
+ *   replacing existing leaves. Serialize mutations with a sleepable mutex
+ *   and roll back partial mappings on allocation failure. Call from task
+ *   context; return OK or a negative errno.
+ *
+ ****************************************************************************/
 
 int loongarch_mmu_maproot(uintptr_t root, uintptr_t vaddr,
                           uintptr_t paddr, size_t size, uint64_t flags)
@@ -312,6 +429,9 @@ int loongarch_mmu_maproot(uintptr_t root, uintptr_t vaddr,
   goto out;
 
 rollback:
+
+  /* Drop new leaves before reclaiming their now-unreachable directories. */
+
   while (addr > vaddr)
     {
       addr -= LOONGARCH_PAGE_SIZE;
@@ -320,6 +440,7 @@ rollback:
     }
 
   loongarch_tlb_sync();
+
   for (addr = vaddr; addr < vaddr + size; addr += LOONGARCH_PAGE_SIZE)
     {
       table_reclaim(root, addr);
@@ -329,6 +450,16 @@ out:
   nxmutex_unlock(&g_mmu_lock);
   return ret;
 }
+
+/****************************************************************************
+ * Name: loongarch_mmu_unmaproot
+ *
+ * Description:
+ *   Remove mappings and reclaim empty intermediate tables from a root.
+ *   Synchronize all online CPUs before returning. The caller retains
+ *   ownership of the unmapped backing pages. Call from task context.
+ *
+ ****************************************************************************/
 
 int loongarch_mmu_unmaproot(uintptr_t root, uintptr_t vaddr, size_t size)
 {
@@ -358,6 +489,7 @@ int loongarch_mmu_unmaproot(uintptr_t root, uintptr_t vaddr, size_t size)
     }
 
   loongarch_tlb_sync();
+
   for (addr = vaddr; addr < vaddr + size; addr += LOONGARCH_PAGE_SIZE)
     {
       table_reclaim(root, addr);
@@ -366,6 +498,16 @@ int loongarch_mmu_unmaproot(uintptr_t root, uintptr_t vaddr, size_t size)
   nxmutex_unlock(&g_mmu_lock);
   return OK;
 }
+
+/****************************************************************************
+ * Name: loongarch_mmu_translate
+ *
+ * Description:
+ *   Translate a virtual address through the boot root, preserving its page
+ *   offset. Return -ENOENT for an absent leaf or -EINVAL for an invalid
+ *   argument.
+ *
+ ****************************************************************************/
 
 int loongarch_mmu_translate(uintptr_t vaddr, uintptr_t *paddr)
 {
@@ -402,6 +544,15 @@ int loongarch_mmu_translate(uintptr_t vaddr, uintptr_t *paddr)
  * supply their own root to the same mapping and rollback implementation.
  */
 
+/****************************************************************************
+ * Name: loongarch_mmu_map
+ *
+ * Description:
+ *   Map pages through the boot root used by flat builds. Address
+ *   environments use loongarch_mmu_maproot with their private roots.
+ *
+ ****************************************************************************/
+
 int loongarch_mmu_map(uintptr_t vaddr, uintptr_t paddr, size_t size,
                       uint64_t flags)
 {
@@ -409,10 +560,27 @@ int loongarch_mmu_map(uintptr_t vaddr, uintptr_t paddr, size_t size,
                                size, flags);
 }
 
+/****************************************************************************
+ * Name: loongarch_mmu_unmap
+ *
+ * Description:
+ *   Remove pages from the boot root without freeing their backing storage.
+ *
+ ****************************************************************************/
+
 int loongarch_mmu_unmap(uintptr_t vaddr, size_t size)
 {
   return loongarch_mmu_unmaproot(table_paddr(g_kernel_pgt), vaddr, size);
 }
+
+/****************************************************************************
+ * Name: loongarch_mmu_newroot
+ *
+ * Description:
+ *   Allocate a private root initially pointing to immutable empty tables.
+ *   Return its physical address, or zero when allocation fails.
+ *
+ ****************************************************************************/
 
 uintptr_t loongarch_mmu_newroot(void)
 {
@@ -425,6 +593,17 @@ uintptr_t loongarch_mmu_newroot(void)
  * NuttX releases its last active-CPU reference before destroying the root.
  * Shared mappings require separate ownership accounting and are not enabled.
  */
+
+/****************************************************************************
+ * Name: loongarch_mmu_freetable
+ *
+ * Description:
+ *   Recursively release an inactive process table and its owned backing
+ *   pages. Level zero denotes the root and level three a leaf table. The
+ *   caller must hold the final environment reference and exclude all
+ *   walkers. Shared backing pages require separate ownership accounting.
+ *
+ ****************************************************************************/
 
 void loongarch_mmu_freetable(uintptr_t root, unsigned int level)
 {

@@ -67,6 +67,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: loongarch_lowputc
+ *
+ * Description:
+ *   Poll the console transmitter and emit one byte without using
+ *   interrupt-driven serial buffers.
+ *
+ ****************************************************************************/
+
 void loongarch_lowputc(char ch)
 {
 #ifdef HAVE_UART
@@ -78,6 +87,15 @@ void loongarch_lowputc(char ch)
   putreg8(ch, LS2K0300_CONSOLE_BASE + UART_THR_OFFSET);
 #endif
 }
+
+/****************************************************************************
+ * Name: ls2k0300_lowsetup
+ *
+ * Description:
+ *   Configure the early UART console for polled output before the full
+ *   serial driver is registered.
+ *
+ ****************************************************************************/
 
 void ls2k0300_lowsetup(void)
 {

@@ -39,6 +39,16 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_stack_frame
+ *
+ * Description:
+ *   Reserve a zeroed, aligned frame at the low end of an unstarted thread
+ *   stack. Update the usable stack bounds, returning NULL if the
+ *   reservation would consume the entire stack.
+ *
+ ****************************************************************************/
+
 void *up_stack_frame(struct tcb_s *tcb, size_t frame_size)
 {
   void *ret;

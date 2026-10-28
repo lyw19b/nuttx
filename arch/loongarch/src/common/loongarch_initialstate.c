@@ -41,6 +41,17 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_initial_state
+ *
+ * Description:
+ *   Initialize the idle task or construct a zeroed initial register frame
+ *   for a new thread. Preserve any allocated kernel stack before clearing
+ *   the exception context; user threads first run their startup code at
+ *   PLV0.
+ *
+ ****************************************************************************/
+
 void up_initial_state(struct tcb_s *tcb)
 {
   struct xcptcontext *xcp = &tcb->xcp;
@@ -93,5 +104,4 @@ void up_initial_state(struct tcb_s *tcb)
 
   regval = loongarch_get_newintctx();
   xcp->regs[REG_INT_CTX] = regval;
-
 }

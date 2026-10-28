@@ -31,6 +31,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_mdelay
+ *
+ * Description:
+ *   Busy-wait for the requested number of milliseconds using the board
+ *   calibration loop. This does not yield to another task.
+ *
+ ****************************************************************************/
+
 void up_mdelay(unsigned int milliseconds)
 {
   volatile unsigned int i;

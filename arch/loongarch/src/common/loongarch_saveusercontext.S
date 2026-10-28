@@ -40,6 +40,16 @@
   .global up_saveusercontext
   .align  8
 
+/****************************************************************************
+ * Name: up_saveusercontext
+ *
+ * Description:
+ *   Save the caller context in the buffer addressed by a0. Return zero
+ *   now, and arrange a return value of one if this context is later
+ *   restored at the saved return address.
+ *
+ ****************************************************************************/
+
 up_saveusercontext:
 
   save_ctx   $a0

@@ -62,11 +62,29 @@ struct ls2k0300_spiio_priv_s
   bool initialized;
 };
 
+/****************************************************************************
+ * Name: spiio_read_reg
+ *
+ * Description:
+ *   Read an 32-bit controller register at the given instance-relative
+ *   offset.
+ *
+ ****************************************************************************/
+
 static uint32_t spiio_read_reg(FAR struct ls2k0300_spiio_priv_s *priv,
                                uint32_t offset)
 {
   return getreg32(priv->base + offset);
 }
+
+/****************************************************************************
+ * Name: spiio_write_reg
+ *
+ * Description:
+ *   Write an 32-bit controller register at the given instance-relative
+ *   offset.
+ *
+ ****************************************************************************/
 
 static void spiio_write_reg(FAR struct ls2k0300_spiio_priv_s *priv,
                             uint32_t offset, uint32_t value)
@@ -74,11 +92,29 @@ static void spiio_write_reg(FAR struct ls2k0300_spiio_priv_s *priv,
   putreg32(value, priv->base + offset);
 }
 
+/****************************************************************************
+ * Name: spiio_read_reg_byte
+ *
+ * Description:
+ *   Read one byte from an SPIIO register, including the byte-wide FIFO
+ *   data port.
+ *
+ ****************************************************************************/
+
 static uint8_t spiio_read_reg_byte(FAR struct ls2k0300_spiio_priv_s *priv,
                                    uint32_t offset)
 {
   return getreg8(priv->base + offset);
 }
+
+/****************************************************************************
+ * Name: spiio_write_reg_byte
+ *
+ * Description:
+ *   Write one byte to an SPIIO register without accessing adjacent FIFO
+ *   bytes.
+ *
+ ****************************************************************************/
 
 static void spiio_write_reg_byte(FAR struct ls2k0300_spiio_priv_s *priv,
                                  uint32_t offset, uint8_t value)
@@ -87,7 +123,13 @@ static void spiio_write_reg_byte(FAR struct ls2k0300_spiio_priv_s *priv,
 }
 
 /****************************************************************************
- * Name: ls2k0300_spiio_SPI bus abort (de-init) — matches spi2_abort()
+ * Name: spiio_abort
+ *
+ * Description:
+ *   Stop the current SPIIO transaction, clear completion flags and drain
+ *   up to four receive FIFO entries. Used to recover after transfer
+ *   timeouts.
+ *
  ****************************************************************************/
 
 static void spiio_abort(FAR struct ls2k0300_spiio_priv_s *priv)
@@ -115,7 +157,12 @@ static void spiio_abort(FAR struct ls2k0300_spiio_priv_s *priv)
 }
 
 /****************************************************************************
- * Name: ls2k0300_spiio_Lock / Unlock
+ * Name: ls2k0300_spiio_lock
+ *
+ * Description:
+ *   Provide the current no-op bus-lock hook. Callers must serialize
+ *   access externally until controller locking is implemented.
+ *
  ****************************************************************************/
 
 static int ls2k0300_spiio_lock(FAR struct spi_dev_s *dev, bool lock)
@@ -123,9 +170,14 @@ static int ls2k0300_spiio_lock(FAR struct spi_dev_s *dev, bool lock)
   return OK;
 }
 
-/* ===== CS =====
- * GPIO85, active-low.  Pinmux set in hardware_init by blind-write.
- */
+/****************************************************************************
+ * Name: ls2k0300_spiio_select
+ *
+ * Description:
+ *   Drive the board SPIIO chip select on GPIO85, active low. Board pinmux
+ *   and GPIO direction must already be configured.
+ *
+ ****************************************************************************/
 
 static void ls2k0300_spiio_select(FAR struct spi_dev_s *dev,
                                  uint32_t devid, bool selected)
@@ -144,6 +196,12 @@ static void ls2k0300_spiio_select(FAR struct spi_dev_s *dev,
 
 /****************************************************************************
  * Name: ls2k0300_spiio_setfrequency
+ *
+ * Description:
+ *   Program a bounded SPIIO clock divider from the requested frequency.
+ *   The current interface returns the cached request rather than a
+ *   measured clock.
+ *
  ****************************************************************************/
 
 static uint32_t ls2k0300_spiio_setfrequency(FAR struct spi_dev_s *dev,
@@ -154,13 +212,20 @@ static uint32_t ls2k0300_spiio_setfrequency(FAR struct spi_dev_s *dev,
   uint32_t brint;
 
   if (frequency == 0)
-    frequency = priv->clock_freq / 2;
+    {
+      frequency = priv->clock_freq / 2;
+    }
 
   brint = priv->clock_freq / frequency;
   if (brint < 2)
-    brint = 2;
+    {
+      brint = 2;
+    }
+
   if (brint > 255)
-    brint = 255;
+    {
+      brint = 255;
+    }
 
   spiio_write_reg(priv, LS2K0300_SPIIO_CFG2,
                   brint << CFG2_BRINT_SHIFT);
@@ -171,6 +236,11 @@ static uint32_t ls2k0300_spiio_setfrequency(FAR struct spi_dev_s *dev,
 
 /****************************************************************************
  * Name: ls2k0300_spiio_setmode
+ *
+ * Description:
+ *   Update SPIIO clock polarity and phase for one of the four supported
+ *   SPI modes, preserving other configuration bits.
+ *
  ****************************************************************************/
 
 static void ls2k0300_spiio_setmode(FAR struct spi_dev_s *dev,
@@ -206,6 +276,11 @@ static void ls2k0300_spiio_setmode(FAR struct spi_dev_s *dev,
 
 /****************************************************************************
  * Name: ls2k0300_spiio_setbits
+ *
+ * Description:
+ *   Program a frame width from 4 to 32 bits. The current polled transfer
+ *   routines use byte accesses, so callers must select 8-bit transfers.
+ *
  ****************************************************************************/
 
 static void ls2k0300_spiio_setbits(FAR struct spi_dev_s *dev, int nbits)
@@ -215,7 +290,9 @@ static void ls2k0300_spiio_setbits(FAR struct spi_dev_s *dev, int nbits)
   uint32_t cfg1;
 
   if (nbits < 4 || nbits > 32)
-    return;
+    {
+      return;
+    }
 
   cfg1 = spiio_read_reg(priv, LS2K0300_SPIIO_CFG1);
   cfg1 &= ~CFG1_DSIZE_MASK;
@@ -225,11 +302,15 @@ static void ls2k0300_spiio_setbits(FAR struct spi_dev_s *dev, int nbits)
   priv->nbits = nbits;
 }
 
-/* ===== send (single byte) — EXACT MATCH of spi2_xfer_byte() =====
+/****************************************************************************
+ * Name: ls2k0300_spiio_send
  *
- * CS asserted BEFORE this function by select(true).
- * CS deasserted AFTER by select(false).
- */
+ * Description:
+ *   Exchange one byte while chip select is already asserted. Poll
+ *   transmit, completion and receive flags with bounded waits; abort and
+ *   return zero on timeout.
+ *
+ ****************************************************************************/
 
 static uint32_t ls2k0300_spiio_send(FAR struct spi_dev_s *dev, uint32_t wd)
 {
@@ -265,7 +346,9 @@ static uint32_t ls2k0300_spiio_send(FAR struct spi_dev_s *dev, uint32_t wd)
     {
       sr1 = spiio_read_reg(priv, LS2K0300_SPIIO_SR1);
       if (sr1 & SR1_TXA)
-        break;
+        {
+          break;
+        }
 
       up_udelay(1);
     }
@@ -292,7 +375,9 @@ static uint32_t ls2k0300_spiio_send(FAR struct spi_dev_s *dev, uint32_t wd)
     {
       sr1 = spiio_read_reg(priv, LS2K0300_SPIIO_SR1);
       if (sr1 & SR1_EOT)
-        break;
+        {
+          break;
+        }
 
       up_udelay(1);
     }
@@ -313,7 +398,9 @@ static uint32_t ls2k0300_spiio_send(FAR struct spi_dev_s *dev, uint32_t wd)
     {
       sr1 = spiio_read_reg(priv, LS2K0300_SPIIO_SR1);
       if (sr1 & SR1_RXA)
-        break;
+        {
+          break;
+        }
 
       up_udelay(1);
     }
@@ -329,11 +416,17 @@ static uint32_t ls2k0300_spiio_send(FAR struct spi_dev_s *dev, uint32_t wd)
   return (uint32_t)spiio_read_reg_byte(priv, LS2K0300_SPIIO_DR);
 }
 
+#ifdef CONFIG_SPI_EXCHANGE
 /****************************************************************************
- * Name: ls2k0300_spiio_exchange (multi-byte)
+ * Name: ls2k0300_spiio_exchange
+ *
+ * Description:
+ *   Exchange a byte buffer using polled FIFO transactions. Transmit
+ *   dummy bytes when no transmit buffer is supplied and discard input
+ *   when no receive buffer is supplied.
+ *
  ****************************************************************************/
 
-#ifdef CONFIG_SPI_EXCHANGE
 static void ls2k0300_spiio_exchange(FAR struct spi_dev_s *dev,
                                    FAR const void *txbuffer,
                                    FAR void *rxbuffer,
@@ -376,12 +469,17 @@ static void ls2k0300_spiio_exchange(FAR struct spi_dev_s *dev,
         {
           sr1 = spiio_read_reg(priv, LS2K0300_SPIIO_SR1);
           if (sr1 & SR1_TXA)
-            break;
+            {
+              break;
+            }
 
           up_udelay(1);
         }
 
-      if (j >= SPIIO_TIMEOUT) break;
+      if (j >= SPIIO_TIMEOUT)
+        {
+          break;
+        }
 
       /* 6. Write byte */
 
@@ -400,12 +498,17 @@ static void ls2k0300_spiio_exchange(FAR struct spi_dev_s *dev,
         {
           sr1 = spiio_read_reg(priv, LS2K0300_SPIIO_SR1);
           if (sr1 & SR1_EOT)
-            break;
+            {
+              break;
+            }
 
           up_udelay(1);
         }
 
-      if (j >= SPIIO_TIMEOUT) break;
+      if (j >= SPIIO_TIMEOUT)
+        {
+          break;
+        }
 
       /* 9. Clear EOT */
 
@@ -417,25 +520,39 @@ static void ls2k0300_spiio_exchange(FAR struct spi_dev_s *dev,
         {
           sr1 = spiio_read_reg(priv, LS2K0300_SPIIO_SR1);
           if (sr1 & SR1_RXA)
-            break;
+            {
+              break;
+            }
 
           up_udelay(1);
         }
 
-      if (j >= SPIIO_TIMEOUT) break;
+      if (j >= SPIIO_TIMEOUT)
+        {
+          break;
+        }
 
       /* 11. Read */
 
       if (rxptr)
-        *rxptr++ = spiio_read_reg_byte(priv, LS2K0300_SPIIO_DR);
+        {
+          *rxptr++ = spiio_read_reg_byte(priv, LS2K0300_SPIIO_DR);
+        }
       else
-        (void)spiio_read_reg_byte(priv, LS2K0300_SPIIO_DR);
+        {
+          (void)spiio_read_reg_byte(priv, LS2K0300_SPIIO_DR);
+        }
     }
 }
 #endif
 
 /****************************************************************************
  * Name: ls2k0300_spiio_status
+ *
+ * Description:
+ *   Report the statically attached SPIIO device as present; no removable-
+ *   device detection is implemented.
+ *
  ****************************************************************************/
 
 static uint8_t ls2k0300_spiio_status(FAR struct spi_dev_s *dev,
@@ -444,9 +561,7 @@ static uint8_t ls2k0300_spiio_status(FAR struct spi_dev_s *dev,
   return SPI_STATUS_PRESENT;
 }
 
-/****************************************************************************
- * Name: ls2k0300_spiio_ops table
- ****************************************************************************/
+/* SPIIO lower-half operations. */
 
 static const struct spi_ops_s g_spiio_ops =
 {
@@ -507,11 +622,16 @@ static struct ls2k0300_spiio_priv_s g_spiio_priv[2] =
 };
 
 /****************************************************************************
- * Name: ls2k0300_spiio_initialize — matches spi2_init()
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Functions
+ * Name: ls2k0300_spiio_initialize
+ *
+ * Description:
+ *   Initialize the selected static SPIIO controller and return its SPI
+ *   interface. Return NULL for an unsupported port.
+ *
  ****************************************************************************/
 
 FAR struct spi_dev_s *ls2k0300_spiio_initialize(int port)
@@ -545,9 +665,14 @@ FAR struct spi_dev_s *ls2k0300_spiio_initialize(int port)
       brint = priv->clock_freq / (CONFIG_GD25_SPIFREQUENCY ?
                   CONFIG_GD25_SPIFREQUENCY : 10000000);
       if (brint < 2)
-        brint = 2;
+        {
+          brint = 2;
+        }
+
       if (brint > 255)
-        brint = 255;
+        {
+          brint = 255;
+        }
 
       spiio_write_reg(priv, LS2K0300_SPIIO_CFG2,
                       brint << CFG2_BRINT_SHIFT);

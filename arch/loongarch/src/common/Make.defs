@@ -22,9 +22,9 @@
 
 CMN_ASRCS += loongarch_vectors.S loongarch_saveusercontext.S
 
-CMN_CSRCS += loongarch_vector.c loongarch_initialize.c loongarch_swint.c
+CMN_CSRCS += loongarch_vector.c loongarch_initialize.c loongarch_syscall.c
 CMN_CSRCS += loongarch_allocateheap.c loongarch_createstack.c
-CMN_CSRCS += loongarch_cpuidlestack.c loongarch_doirq.c loongarch_exit.c loongarch_exception.c
+CMN_CSRCS += loongarch_cpuidlestack.c loongarch_irq.c loongarch_exit.c loongarch_exception.c
 CMN_CSRCS += loongarch_getnewintctx.c loongarch_getintstack.c loongarch_initialstate.c
 CMN_CSRCS += loongarch_modifyreg32.c loongarch_nputs.c loongarch_releasestack.c
 CMN_CSRCS += loongarch_registerdump.c loongarch_stackframe.c loongarch_schedulesigaction.c
@@ -60,7 +60,7 @@ CMN_CSRCS += loongarch_smp.c
 CMN_ASRCS += loongarch_secondary.S
 endif
 
-CMN_CSRCS += loongarch_timerisr.c
+CMN_CSRCS += loongarch_timer.c
 
 ifeq ($(CONFIG_LOONGARCH_MMU_TEST),y)
 CMN_CSRCS += loongarch_mmutest.c
@@ -72,5 +72,10 @@ CMN_ASRCS += loongarch_forkentry.S
 endif
 
 ifeq ($(CONFIG_ARCH_ADDRENV),y)
-CMN_CSRCS += loongarch_addrenv.c loongarch_user.c
+CMN_CSRCS += loongarch_addrenv.c
+endif
+
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+CMN_CSRCS += loongarch_user.c
+STARTUP_OBJS = crt0$(OBJEXT)
 endif

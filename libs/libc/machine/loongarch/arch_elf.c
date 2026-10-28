@@ -34,6 +34,15 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_checkarch
+ *
+ * Description:
+ *   Accept little-endian ELF64 LoongArch objects using the version-one
+ *   LP64D ABI and an instruction-aligned entry address.
+ *
+ ****************************************************************************/
+
 bool up_checkarch(const Elf_Ehdr *ehdr)
 {
   return ehdr->e_machine == EM_LOONGARCH &&
@@ -44,6 +53,15 @@ bool up_checkarch(const Elf_Ehdr *ehdr)
          (EF_LARCH_OBJABI_V1 | EF_LARCH_ABI_DOUBLE_FLOAT);
 }
 
+/****************************************************************************
+ * Name: up_relocate
+ *
+ * Description:
+ *   Reject implicit-addend relocations with -ENOSYS. LoongArch ELF uses
+ *   explicit-addend RELA records.
+ *
+ ****************************************************************************/
+
 int up_relocate(const Elf_Rel *rel, const Elf_Sym *sym, uintptr_t addr,
                 void *arch_data)
 {
@@ -51,6 +69,16 @@ int up_relocate(const Elf_Rel *rel, const Elf_Sym *sym, uintptr_t addr,
 
   return -ENOSYS;
 }
+
+/****************************************************************************
+ * Name: up_relocateadd
+ *
+ * Description:
+ *   Apply supported absolute 32-bit or 64-bit RELA relocations. Reject
+ *   missing symbols, 32-bit overflow and unsupported relocation types
+ *   instead of silently generating incorrect code.
+ *
+ ****************************************************************************/
 
 int up_relocateadd(const Elf_Rela *rel, const Elf_Sym *sym, uintptr_t addr,
                    void *arch_data)
@@ -81,6 +109,7 @@ int up_relocateadd(const Elf_Rela *rel, const Elf_Sym *sym, uintptr_t addr,
 
           memcpy((void *)addr, &value32, sizeof(value32));
         }
+
         return OK;
 
       case R_LARCH_64:

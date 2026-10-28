@@ -59,11 +59,29 @@ struct ls2k0300_spi_priv_s
   bool initialized;
 };
 
+/****************************************************************************
+ * Name: spi_read_reg
+ *
+ * Description:
+ *   Read an 8-bit controller register at the given instance-relative
+ *   offset.
+ *
+ ****************************************************************************/
+
 static uint8_t spi_read_reg(FAR struct ls2k0300_spi_priv_s *priv,
                             uint32_t offset)
 {
   return getreg8(priv->base + offset);
 }
+
+/****************************************************************************
+ * Name: spi_write_reg
+ *
+ * Description:
+ *   Write an 8-bit controller register at the given instance-relative
+ *   offset.
+ *
+ ****************************************************************************/
 
 static void spi_write_reg(FAR struct ls2k0300_spi_priv_s *priv,
                           uint32_t offset, uint8_t value)
@@ -71,15 +89,42 @@ static void spi_write_reg(FAR struct ls2k0300_spi_priv_s *priv,
   putreg8(value, priv->base + offset);
 }
 
+/****************************************************************************
+ * Name: ls2k0300_spi_lock
+ *
+ * Description:
+ *   Provide the current no-op SPI bus-lock hook. Concurrent users must
+ *   serialize access externally.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_spi_lock(FAR struct spi_dev_s *dev, bool lock)
 {
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_spi_select
+ *
+ * Description:
+ *   Provide the placeholder chip-select hook. This controller currently
+ *   requires board-managed chip selection.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_spi_select(FAR struct spi_dev_s *dev,
                                uint32_t devid, bool selected)
 {
 }
+
+/****************************************************************************
+ * Name: ls2k0300_spi_setfrequency
+ *
+ * Description:
+ *   Select a bounded SPI divider and return the resulting clock frequency
+ *   in Hz. A zero request selects the fastest supported divider.
+ *
+ ****************************************************************************/
 
 static uint32_t ls2k0300_spi_setfrequency(FAR struct spi_dev_s *dev,
                                          uint32_t frequency)
@@ -127,6 +172,15 @@ static uint32_t ls2k0300_spi_setfrequency(FAR struct spi_dev_s *dev,
   return priv->frequency;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_spi_setmode
+ *
+ * Description:
+ *   Update SPI clock polarity and phase for modes zero through three,
+ *   preserving unrelated control bits.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_spi_setmode(FAR struct spi_dev_s *dev,
                                 enum spi_mode_e mode)
 {
@@ -158,6 +212,15 @@ static void ls2k0300_spi_setmode(FAR struct spi_dev_s *dev,
   priv->mode = mode;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_spi_setbits
+ *
+ * Description:
+ *   Accept the controller eight-bit transfer width. Other widths leave
+ *   the configuration unchanged.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_spi_setbits(FAR struct spi_dev_s *dev, int nbits)
 {
   FAR struct ls2k0300_spi_priv_s *priv =
@@ -170,6 +233,15 @@ static void ls2k0300_spi_setbits(FAR struct spi_dev_s *dev, int nbits)
 
   priv->nbits = nbits;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_spi_send
+ *
+ * Description:
+ *   Transmit one byte and poll completion before returning the received
+ *   byte. This legacy transfer path has no timeout.
+ *
+ ****************************************************************************/
 
 static uint32_t ls2k0300_spi_send(FAR struct spi_dev_s *dev, uint32_t wd)
 {
@@ -191,6 +263,16 @@ static uint32_t ls2k0300_spi_send(FAR struct spi_dev_s *dev, uint32_t wd)
 }
 
 #ifdef CONFIG_SPI_EXCHANGE
+/****************************************************************************
+ * Name: ls2k0300_spi_exchange
+ *
+ * Description:
+ *   Exchange a byte buffer through the controller FIFO. Send 0xff when no
+ *   transmit buffer is supplied and discard data when no receive buffer
+ *   is supplied.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_spi_exchange(FAR struct spi_dev_s *dev,
                                  FAR const void *txbuffer,
                                  FAR void *rxbuffer,
@@ -235,6 +317,15 @@ static void ls2k0300_spi_exchange(FAR struct spi_dev_s *dev,
     }
 }
 #endif
+
+/****************************************************************************
+ * Name: ls2k0300_spi_status
+ *
+ * Description:
+ *   Report a statically attached SPI device as present without removable-
+ *   device detection.
+ *
+ ****************************************************************************/
 
 static uint8_t ls2k0300_spi_status(FAR struct spi_dev_s *dev,
                                   uint32_t devid)
@@ -298,6 +389,15 @@ static struct ls2k0300_spi_priv_s g_spi_priv[2] =
 
 /****************************************************************************
  * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: ls2k0300_spiflash_initialize
+ *
+ * Description:
+ *   Initialize one of the two static SPI controllers and return its bus
+ *   interface. Return NULL for an invalid port.
+ *
  ****************************************************************************/
 
 FAR struct spi_dev_s *ls2k0300_spiflash_initialize(int port)

@@ -16,7 +16,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-"""Run a qemu-loongarch:mmu or smp-mmu image and check serial test results."""
+"""Run LoongArch QEMU MMU or userspace regression images."""
 
 import argparse
 import os
@@ -92,6 +92,8 @@ def main():
     parser.add_argument("--timeout", type=float, default=30)
     parser.add_argument("--log", type=Path)
     args = parser.parse_args()
+    if args.userspace and args.fault != "none":
+        parser.error("--fault applies to the flat MMU tests only")
     try:
         run(args)
     except (OSError, RuntimeError) as error:

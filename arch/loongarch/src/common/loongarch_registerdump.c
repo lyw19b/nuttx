@@ -39,6 +39,16 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_dump_register
+ *
+ * Description:
+ *   Print the saved general-purpose register frame for exception
+ *   diagnostics. Use the current task frame when the caller supplies no
+ *   frame.
+ *
+ ****************************************************************************/
+
 void up_dump_register(void *dumpregs)
 {
   volatile uintreg_t *regs = dumpregs ? dumpregs : running_regs();

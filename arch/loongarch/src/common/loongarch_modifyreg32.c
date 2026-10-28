@@ -43,6 +43,16 @@ static spinlock_t g_modifyreg_lock = SP_UNLOCKED;
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: modifyreg32
+ *
+ * Description:
+ *   Update a 32-bit memory-mapped register under the architecture
+ *   register spinlock. Clear clearbits, set setbits, and preserve all
+ *   remaining bits.
+ *
+ ****************************************************************************/
+
 void modifyreg32(uintreg_t addr, uint32_t clearbits, uint32_t setbits)
 {
   irqstate_t flags;

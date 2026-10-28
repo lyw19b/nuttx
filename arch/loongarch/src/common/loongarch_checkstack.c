@@ -45,6 +45,15 @@
  ****************************************************************************/
 
 #if defined(CONFIG_ARCH_INTERRUPTSTACK) && CONFIG_ARCH_INTERRUPTSTACK > 15
+/****************************************************************************
+ * Name: loongarch_color_intstack
+ *
+ * Description:
+ *   Color every CPU interrupt stack before interrupts can use it. The
+ *   boot CPU performs this once during interrupt initialization.
+ *
+ ****************************************************************************/
+
 void loongarch_color_intstack(void)
 {
   uint32_t *ptr = (uint32_t *)g_intstackalloc;
@@ -58,6 +67,15 @@ void loongarch_color_intstack(void)
     }
 }
 #endif
+
+/****************************************************************************
+ * Name: loongarch_stack_check
+ *
+ * Description:
+ *   Scan an aligned, colored stack from its low address and return the
+ *   number of bytes used at its high end. Return zero for an empty stack.
+ *
+ ****************************************************************************/
 
 size_t loongarch_stack_check(uintptr_t alloc, size_t size)
 {
@@ -82,6 +100,16 @@ size_t loongarch_stack_check(uintptr_t alloc, size_t size)
 
   return mark << 2;
 }
+
+/****************************************************************************
+ * Name: up_check_tcbstack
+ *
+ * Description:
+ *   Measure the task stack high-water mark. Temporarily select its
+ *   address environment when the stack belongs to a user process, then
+ *   restore the caller environment.
+ *
+ ****************************************************************************/
 
 size_t up_check_tcbstack(struct tcb_s *tcb)
 {
@@ -110,6 +138,14 @@ size_t up_check_tcbstack(struct tcb_s *tcb)
 }
 
 #if CONFIG_ARCH_INTERRUPTSTACK > 15
+/****************************************************************************
+ * Name: up_check_intstack
+ *
+ * Description:
+ *   Return the measured interrupt-stack usage for the selected CPU.
+ *
+ ****************************************************************************/
+
 size_t up_check_intstack(int cpu)
 {
   return loongarch_stack_check(up_get_intstackbase(cpu), INT_STACK_SIZE);

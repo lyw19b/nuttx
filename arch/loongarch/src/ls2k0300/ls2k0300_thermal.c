@@ -57,6 +57,14 @@ struct ls2k0300_thermal_dev_s
   bool opened;
 };
 
+/****************************************************************************
+ * Name: thermal_getreg
+ *
+ * Description:
+ *   Read a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
+
 static uint32_t thermal_getreg(FAR struct ls2k0300_thermal_dev_s *priv,
                                uint32_t offset)
 {
@@ -68,6 +76,16 @@ static uint32_t thermal_getreg(FAR struct ls2k0300_thermal_dev_s *priv,
  * low : temperature in degree
  * high: temperature in degree
  */
+
+/****************************************************************************
+ * Name: ls2k_tsensor_set
+ *
+ * Description:
+ *   Program low and high temperature thresholds in degrees Celsius and
+ *   their enable bits. Reject an inverted interval and clamp the
+ *   supported endpoints.
+ *
+ ****************************************************************************/
 
 static int ls2k_tsensor_set(struct ls2k0300_thermal_dev_s *priv,
                             int low, int high, bool enable)
@@ -108,6 +126,15 @@ static int ls2k_tsensor_set(struct ls2k0300_thermal_dev_s *priv,
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: ls2k0300_thermal_open
+ *
+ * Description:
+ *   Mark the thermal device open, returning -EBUSY if it is already in
+ *   use.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_thermal_open(FAR struct file *filep)
 {
   FAR struct inode *inode = filep->f_inode;
@@ -122,6 +149,14 @@ static int ls2k0300_thermal_open(FAR struct file *filep)
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_thermal_close
+ *
+ * Description:
+ *   Release the thermal device open state.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_thermal_close(FAR struct file *filep)
 {
   FAR struct inode *inode = filep->f_inode;
@@ -130,6 +165,15 @@ static int ls2k0300_thermal_close(FAR struct file *filep)
   priv->opened = false;
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_thermal_read
+ *
+ * Description:
+ *   Return one signed 32-bit temperature sample in millidegrees Celsius.
+ *   Reject buffers shorter than the binary sample size.
+ *
+ ****************************************************************************/
 
 static ssize_t ls2k0300_thermal_read(FAR struct file *filep,
                                     FAR char *buffer, size_t buflen)
@@ -150,6 +194,15 @@ static ssize_t ls2k0300_thermal_read(FAR struct file *filep,
   memcpy(buffer, &temp, sizeof(int32_t));
   return sizeof(int32_t);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_thermal_ioctl
+ *
+ * Description:
+ *   Read a temperature sample through the legacy temperature command.
+ *   Return -ENOTTY for an unsupported command.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_thermal_ioctl(FAR struct file *filep, int cmd,
                                  unsigned long arg)
@@ -188,6 +241,15 @@ static const struct file_operations g_thermal_fops =
   ls2k0300_thermal_ioctl,
   NULL
 };
+
+/****************************************************************************
+ * Name: ls2k0300_thermal_initialize
+ *
+ * Description:
+ *   Allocate sensor state, initialize thresholds and register
+ *   /dev/thermal0. Free the state if driver registration fails.
+ *
+ ****************************************************************************/
 
 int ls2k0300_thermal_initialize(void)
 {

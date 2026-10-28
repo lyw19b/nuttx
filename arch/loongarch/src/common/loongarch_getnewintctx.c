@@ -42,10 +42,28 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: loongarch_get_newintctx
+ *
+ * Description:
+ *   Return the initial PLV0 exception-return state with interrupts
+ *   enabled. User startup later installs a separate PLV3 frame.
+ *
+ ****************************************************************************/
+
 uintptr_t loongarch_get_newintctx(void)
 {
   return CSR_PRMD_PIE;
 }
+
+/****************************************************************************
+ * Name: loongarch_set_idleintctx
+ *
+ * Description:
+ *   Complete idle interrupt-state setup. No additional per-task state is
+ *   required because startup configures the CPU CSRs directly.
+ *
+ ****************************************************************************/
 
 void loongarch_set_idleintctx(void)
 {

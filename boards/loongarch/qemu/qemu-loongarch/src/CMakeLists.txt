@@ -29,21 +29,24 @@ if(CONFIG_LOONGARCH_USER_TEST)
   set(user_dir ${CMAKE_CURRENT_BINARY_DIR}/user)
   file(MAKE_DIRECTORY ${user_dir})
   set(user_src ${CMAKE_CURRENT_LIST_DIR}/../tests)
+  set(user_arch ${NUTTX_DIR}/arch/loongarch/src/common)
   set(user_includes -I${CMAKE_BINARY_DIR}/include -I${NUTTX_DIR}/include)
   add_custom_command(
     OUTPUT ${user_dir}/user.elf
+    BYPRODUCTS ${user_dir}/user.ld
     COMMAND ${CMAKE_C_COMPILER} ${user_includes} -E -P -x c
-            ${user_src}/user.ld -o ${user_dir}/user.ld
-    COMMAND ${CMAKE_C_COMPILER} ${user_includes} -D__ASSEMBLY__ -c
-            ${NUTTX_DIR}/libs/libc/machine/loongarch/arch_signal.S
-            -o ${user_dir}/signal.o
+            ${user_arch}/loongarch_user.ld -o ${user_dir}/user.ld
     COMMAND ${CMAKE_C_COMPILER} ${user_includes} -march=loongarch64
             -mabi=lp64d -mstrict-align -O2 -ffreestanding -fno-stack-protector
             -fno-pic -fno-pie -no-pie
             -nostdlib -static -Wl,--build-id=none -Wl,-T,${user_dir}/user.ld
-            ${user_src}/user.c ${user_dir}/signal.o
+            -U__KERNEL__ ${user_arch}/crt0.c ${user_src}/user.c
+            -Wl,--start-group $<TARGET_FILE:c> $<TARGET_FILE:mm>
+            $<TARGET_FILE:proxies> -lgcc -Wl,--end-group
             -o ${user_dir}/user.elf
-    DEPENDS ${user_src}/user.c ${user_src}/user.ld
+    VERBATIM
+    DEPENDS ${user_src}/user.c ${user_arch}/loongarch_user.ld
+            ${user_arch}/crt0.c c mm proxies
             ${CMAKE_BINARY_DIR}/include/nuttx/config.h
             ${NUTTX_DIR}/libs/libc/machine/loongarch/arch_signal.S
             ${NUTTX_DIR}/arch/loongarch/include/syscall.h)

@@ -60,17 +60,42 @@ struct ls2k0300_pwm_priv_s
   bool initialized;
 };
 
+/****************************************************************************
+ * Name: pwm_getreg
+ *
+ * Description:
+ *   Read a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
+
 static uint32_t pwm_getreg(FAR struct ls2k0300_pwm_priv_s *priv,
                            uint32_t offset)
 {
   return getreg32(priv->base + offset);
 }
 
+/****************************************************************************
+ * Name: pwm_putreg
+ *
+ * Description:
+ *   Write a 32-bit register at an offset from this device instance base.
+ *
+ ****************************************************************************/
+
 static void pwm_putreg(FAR struct ls2k0300_pwm_priv_s *priv,
                        uint32_t offset, uint32_t value)
 {
   putreg32(value, priv->base + offset);
 }
+
+/****************************************************************************
+ * Name: ls2k0300_pwm_setup
+ *
+ * Description:
+ *   Disable and reset the selected PWM counter before marking the lower
+ *   half initialized.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_pwm_setup(FAR struct pwm_lowerhalf_s *dev)
 {
@@ -91,6 +116,15 @@ static int ls2k0300_pwm_setup(FAR struct pwm_lowerhalf_s *dev)
   priv->initialized = true;
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_pwm_shutdown
+ *
+ * Description:
+ *   Reset the PWM counter, clear its enable controls and mark the lower
+ *   half uninitialized.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
 {
@@ -117,6 +151,15 @@ static int ls2k0300_pwm_shutdown(FAR struct pwm_lowerhalf_s *dev)
   priv->initialized = false;
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_pwm_start
+ *
+ * Description:
+ *   Program the period and duty buffers and enable the selected PWM
+ *   output. The upper half supplies the waveform request.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_pwm_start(FAR struct pwm_lowerhalf_s *dev,
                              FAR const struct pwm_info_s *info)
@@ -159,6 +202,15 @@ static int ls2k0300_pwm_start(FAR struct pwm_lowerhalf_s *dev,
   return OK;
 }
 
+/****************************************************************************
+ * Name: ls2k0300_pwm_stop
+ *
+ * Description:
+ *   Reset and disable the running PWM counter while retaining the cached
+ *   waveform parameters.
+ *
+ ****************************************************************************/
+
 static int ls2k0300_pwm_stop(FAR struct pwm_lowerhalf_s *dev)
 {
   FAR struct ls2k0300_pwm_priv_s *priv =
@@ -183,6 +235,15 @@ static int ls2k0300_pwm_stop(FAR struct pwm_lowerhalf_s *dev)
 
   return OK;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_pwm_ioctl
+ *
+ * Description:
+ *   Handle start, stop and the legacy polarity commands. Return -ENOTTY
+ *   for commands not recognized by this lower half.
+ *
+ ****************************************************************************/
 
 static int ls2k0300_pwm_ioctl(FAR struct pwm_lowerhalf_s *dev,
                              int cmd, unsigned long arg)
@@ -276,6 +337,15 @@ static struct ls2k0300_pwm_priv_s g_pwm_priv[4] =
 
 /****************************************************************************
  * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: ls2k0300_pwm_initialize
+ *
+ * Description:
+ *   Register one of the four static PWM lower halves as /dev/pwmN. Return
+ *   -EINVAL for an invalid port or the registration error.
+ *
  ****************************************************************************/
 
 int ls2k0300_pwm_initialize(int port)

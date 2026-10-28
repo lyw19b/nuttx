@@ -44,6 +44,16 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_create_stack
+ *
+ * Description:
+ *   Allocate or reuse an aligned thread stack from the heap selected by
+ *   the thread type. Record its usable bounds and ownership in the TCB.
+ *   Return OK on success or ERROR when allocation fails.
+ *
+ ****************************************************************************/
+
 int up_create_stack(struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 {
 #ifdef CONFIG_TLS_ALIGNED
@@ -111,6 +121,16 @@ int up_create_stack(struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 }
 
 #ifdef CONFIG_STACK_COLORATION
+/****************************************************************************
+ * Name: loongarch_stack_color
+ *
+ * Description:
+ *   Fill the unused stack with STACK_COLOR for high-water checks. A zero
+ *   length colors only below the current stack pointer, allowing the
+ *   running idle stack to be initialized without overwriting live frames.
+ *
+ ****************************************************************************/
+
 void loongarch_stack_color(void *stackbase, size_t nbytes)
 {
   uint32_t *stkptr;

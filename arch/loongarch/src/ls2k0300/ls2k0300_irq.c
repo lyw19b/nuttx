@@ -55,6 +55,15 @@
 #define EIOINTC_ENABLE_VEC(vector) \
   (EIOINTC_REG_ENABLE + ((vector >> 5) << 2))
 
+/****************************************************************************
+ * Name: eiointc_init
+ *
+ * Description:
+ *   Initialize extended I/O interrupt routing with all device inputs
+ *   masked. Peripheral drivers enable their sources after attachment.
+ *
+ ****************************************************************************/
+
 static void eiointc_init(void)
 {
   uint32_t data;
@@ -89,6 +98,15 @@ static void eiointc_init(void)
       iocsr_write32(0x0, EIOINTC_REG_ENABLE + i * 4);
     }
 }
+
+/****************************************************************************
+ * Name: eiointc_dispatch
+ *
+ * Description:
+ *   Read and acknowledge extended I/O pending bits, then dispatch each
+ *   enabled source through the NuttX IRQ table.
+ *
+ ****************************************************************************/
 
 static int eiointc_dispatch(int irq, void *context, void *arg)
 {
@@ -137,6 +155,15 @@ static int eiointc_dispatch(int irq, void *context, void *arg)
 #define ICU_IRQ_ROUTE_REG(base, i) ((base) + 0x00 + (((i) > 31) ? 0x40 : 0) + ((i) % 32))
 #define ICU_COREISR_REG(isr, i)   ((isr) + (i) * 8)
 
+/****************************************************************************
+ * Name: icu_init
+ *
+ * Description:
+ *   Initialize the on-chip interrupt-controller routing and masks before
+ *   peripheral drivers enable their sources.
+ *
+ ****************************************************************************/
+
 static void icu_init(void)
 {
   uintptr_t base = LS2K0300_ICU_REG_BASE;
@@ -156,6 +183,15 @@ static void icu_init(void)
   putreg32(0x0, ICU_INTAUTO_REG(base, 0));
   putreg32(0x0, ICU_INTAUTO_REG(base, 32));
 }
+
+/****************************************************************************
+ * Name: icu_dispatch
+ *
+ * Description:
+ *   Dispatch pending on-chip interrupt-controller sources using the
+ *   controller status and routing information.
+ *
+ ****************************************************************************/
 
 static int icu_dispatch(int irq, void *context, void *arg)
 {
@@ -204,6 +240,15 @@ static int icu_dispatch(int irq, void *context, void *arg)
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_irqinitialize
+ *
+ * Description:
+ *   Initialize CPU exception vectors and the LS2K0300 interrupt-
+ *   controller cascade before enabling normal interrupt delivery.
+ *
+ ****************************************************************************/
+
 void up_irqinitialize(void)
 {
   up_irq_save();
@@ -225,6 +270,15 @@ void up_irqinitialize(void)
   up_irq_enable();
 #endif
 }
+
+/****************************************************************************
+ * Name: up_disable_irq
+ *
+ * Description:
+ *   Mask the selected local or external interrupt at its corresponding
+ *   controller.
+ *
+ ****************************************************************************/
 
 void up_disable_irq(int irq)
 {
@@ -254,6 +308,15 @@ void up_disable_irq(int irq)
     }
 }
 
+/****************************************************************************
+ * Name: up_enable_irq
+ *
+ * Description:
+ *   Unmask the selected local or external interrupt at its corresponding
+ *   controller.
+ *
+ ****************************************************************************/
+
 void up_enable_irq(int irq)
 {
   unsigned long ecfg;
@@ -281,6 +344,15 @@ void up_enable_irq(int irq)
       iocsr_write32(data, reg);
     }
 }
+
+/****************************************************************************
+ * Name: loongarch_ack_irq
+ *
+ * Description:
+ *   Complete the architecture acknowledgement hook. Individual interrupt-
+ *   controller and device handlers perform the required acknowledgements.
+ *
+ ****************************************************************************/
 
 void loongarch_ack_irq(int irq)
 {

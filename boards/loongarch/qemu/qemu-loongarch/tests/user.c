@@ -28,14 +28,15 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <sched.h>
+#include <pthread.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <syscall.h>
 #include <time.h>
+#include <unistd.h>
 #include <nuttx/addrenv.h>
 #include <nuttx/arch.h>
-
-void up_signal_handler(_sa_sigaction_t handler, int signo,
-                       siginfo_t *info, void *context);
 
 /****************************************************************************
  * Private Data
@@ -48,11 +49,28 @@ static volatile unsigned int g_signals;
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: finish
+ *
+ * Description:
+ *   Exit the regression process with a status returned to the kernel
+ *   test. Remain in place if the exit syscall unexpectedly returns.
+ *
+ ****************************************************************************/
+
 static void finish(int status)
 {
   sys_call1(SYS__exit, status);
   for (; ; );
 }
+
+/****************************************************************************
+ * Name: handler
+ *
+ * Description:
+ *   Record a user signal delivery in process-private data.
+ *
+ ****************************************************************************/
 
 static void handler(int signo)
 {
@@ -60,14 +78,63 @@ static void handler(int signo)
 }
 
 /****************************************************************************
+ * Name: user_thread
+ *
+ * Description:
+ *   Verify that a pthread shares its process data and can block in a user
+ *   syscall before returning through the libc pthread trampoline.
+ *
+ ****************************************************************************/
+
+static void *user_thread(void *arg)
+{
+  struct timespec delay =
+  {
+    .tv_sec = 0,
+    .tv_nsec = 1000000
+  };
+
+  if (getpid() != g_value || nanosleep(&delay, NULL) != 0)
+    {
+      return NULL;
+    }
+
+  return arg;
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void __start(int argc, char **argv)
+/****************************************************************************
+ * Name: main
+ *
+ * Description:
+ *   Run the user regression at PLV3. Verify private data,
+ *   blocking syscalls and signal return, then execute the requested
+ *   permission-fault case or exit successfully.
+ *
+ ****************************************************************************/
+
+int main(int argc, char **argv)
 {
-  struct timespec delay = {0, 1000000};
-  struct sigaction action = {0};
+  struct timespec delay =
+  {
+    .tv_sec = 0,
+    .tv_nsec = 1000000
+  };
+
+  struct sigaction action =
+  {
+    0
+  };
+
   uintptr_t pid = sys_call0(SYS_getpid);
+  register uintptr_t saved asm("$s8") = 0x12345678;
+  register double fp asm("$fs0") = 1.25;
+  pthread_t thread;
+  void *result;
+  void *allocation;
   unsigned int i;
   char mode = argc > 1 ? argv[1][0] : 'n';
   static const char message[] = "LoongArch user process: PASS\n";
@@ -78,6 +145,9 @@ void __start(int argc, char **argv)
     }
 
   g_value = pid;
+
+  /* Reserved kernel operations and out-of-range numbers must be rejected. */
+
   if ((intptr_t)sys_call0(SYS_maxsyscall) != -ENOSYS ||
       (intptr_t)sys_call0(UINT32_MAX) != -ENOSYS ||
       (intptr_t)sys_call0(SYS_restore_context) != -ENOSYS ||
@@ -89,14 +159,46 @@ void __start(int argc, char **argv)
 
   for (i = 0; i < 40; i++)
     {
+#ifdef CONFIG_SMP
+      cpu_set_t cpuset;
+      unsigned int cpu = (i + pid) % CONFIG_SMP_NCPUS;
+
+      /* Force each process through every CPU while its syscall is blocked.
+       * Equal virtual addresses must keep resolving to that process pages.
+       */
+
+      CPU_ZERO(&cpuset);
+      CPU_SET(cpu, &cpuset);
+      if (sys_call3(SYS_sched_setaffinity, 0, sizeof(cpuset),
+                    (uintptr_t)&cpuset) != 0)
+        {
+          finish(6);
+        }
+#endif
+
+      __asm__ __volatile__("" : "+r"(saved), "+f"(fp));
       sys_call2(SYS_nanosleep, (uintptr_t)&delay, 0);
+      __asm__ __volatile__("" : "+r"(saved), "+f"(fp));
+#ifdef CONFIG_SMP
+      /* Blocking makes the scheduler enqueue this task using its new mask. */
+
+      if (sys_call0(SYS_sched_getcpu) != cpu)
+        {
+          finish(8);
+        }
+#endif
+
+      if (saved != 0x12345678 || fp != 1.25)
+        {
+          finish(7);
+        }
+
       if (g_value != pid || sys_call0(SYS_getpid) != pid)
         {
           finish(3);
         }
     }
 
-  ARCH_DATA_RESERVE->ar_sigtramp = up_signal_handler;
   action.sa_handler = handler;
   if (sys_call3(SYS_sigaction, SIGUSR1, (uintptr_t)&action, 0) != 0 ||
       sys_call2(SYS_kill, pid, SIGUSR1) != 0 || g_signals != 1)
@@ -104,8 +206,34 @@ void __start(int argc, char **argv)
       finish(4);
     }
 
+  /* Exercise libc heap allocation and the user pthread startup/exit path. */
+
+  allocation = malloc(64);
+  if (allocation == NULL ||
+      pthread_create(&thread, NULL, user_thread, allocation) != 0 ||
+      pthread_join(thread, &result) != 0 || result != allocation)
+    {
+      finish(9);
+    }
+
+  free(allocation);
+
   switch (mode)
     {
+      case 'e':
+        {
+          char *next[] =
+          {
+            "user", "q", NULL
+          };
+
+          /* Replacing this process must not rely on its old user stack. */
+
+          execve("/test/user", next, NULL);
+          finish(10);
+        }
+        break;
+
       case 'r':
         g_value = *(volatile uintptr_t *)0x9000000000200000ul;
         break;
@@ -115,7 +243,7 @@ void __start(int argc, char **argv)
         break;
 
       case 't':
-        *(volatile uint32_t *)(uintptr_t)__start = 0;
+        *(volatile uint32_t *)(uintptr_t)main = 0;
         break;
 
       case 'x':
@@ -127,8 +255,12 @@ void __start(int argc, char **argv)
         break;
 
       default:
-        sys_call3(SYS_write, 1, (uintptr_t)message, sizeof(message) - 1);
-        finish(0);
+        if (mode != 'q')
+          {
+            sys_call3(SYS_write, 1, (uintptr_t)message, sizeof(message) - 1);
+          }
+
+        return 0;
     }
 
   finish(5);

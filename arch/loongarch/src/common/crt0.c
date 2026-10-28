@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/loongarch/src/common/loongarch_timerisr.c
+ * arch/loongarch/src/common/crt0.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -26,80 +26,84 @@
 
 #include <nuttx/config.h>
 
-#include <stdint.h>
-#include <time.h>
-#include <debug.h>
-
+#include <stdlib.h>
+#include <nuttx/addrenv.h>
 #include <nuttx/arch.h>
-#include <nuttx/irq.h>
-
-#include <arch/csr.h>
-
-#include "loongarch_internal.h"
-#include <assert.h>
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Public Function Prototypes
  ****************************************************************************/
 
-static uint64_t loongarch_const_freq(void)
-{
-  uint32_t base_freq;
-  uint32_t cfg5;
-  uint32_t cfm;
-  uint32_t cfd;
-
-  base_freq = read_cpucfg(LOONGARCH_CPUCFG4);
-  cfg5 = read_cpucfg(LOONGARCH_CPUCFG5);
-  cfm = cfg5 & 0xffff;
-  cfd = (cfg5 >> 16) & 0xffff;
-
-  if (!base_freq || !cfm || !cfd)
-    {
-      PANIC();
-      return 0;
-    }
-
-  return (uint64_t)base_freq * cfm / cfd;
-}
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
+int main(int argc, char *argv[]);
+void up_signal_handler(_sa_sigaction_t handler, int signo,
+                       siginfo_t *info, void *context);
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-static int loongarch_timer_interrupt(int irq, void *context, void *arg)
+#ifdef CONFIG_HAVE_CXX
+extern initializer_t _sctors[];
+extern initializer_t _ectors[];
+extern initializer_t _sdtors[];
+extern initializer_t _edtors[];
+
+/****************************************************************************
+ * Name: user_destructors
+ *
+ * Description:
+ *   Run finalizers in reverse registration order when exit processes the
+ *   user program cleanup handlers. The linker script bounds this array.
+ *
+ ****************************************************************************/
+
+static void user_destructors(void)
 {
-  /* Clear timer intr status */
+  initializer_t *entry;
 
-  csr_writeq(CSR_TINTCLR_TI, LOONGARCH_CSR_TINTCLR);
-
-  nxsched_process_timer();
-
-  return OK;
+  for (entry = _edtors; entry != _sdtors; )
+    {
+      (*--entry)();
+    }
 }
+#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void up_timer_initialize(void)
+/****************************************************************************
+ * Name: __start
+ *
+ * Description:
+ *   Enter a statically linked user ELF at PLV3 with argc and argv prepared
+ *   by the loader. Install its signal trampoline in the reserved user data
+ *   page, run optional constructors and call main. Normal return from main
+ *   passes through libc exit so thread-local and registered cleanup runs.
+ *   This function does not return to the kernel startup frame.
+ *
+ ****************************************************************************/
+
+void __start(int argc, char *argv[])
 {
-  uint64_t tcfg;
-  uint64_t tval;
-  uint64_t timer_freq;
+#ifdef CONFIG_HAVE_CXX
+  initializer_t *entry;
+#endif
+  int status;
 
-  timer_freq = loongarch_const_freq();
-  tval = timer_freq / TICK_PER_SEC;
+  ARCH_DATA_RESERVE->ar_sigtramp = up_signal_handler;
 
-  tcfg  = (tval + 3) & ~3ul;
-  tcfg |= CSR_TCFG_PERIOD | CSR_TCFG_EN;
+#ifdef CONFIG_HAVE_CXX
+  /* Register finalizers before invoking constructors that may call exit. */
 
-  csr_writeq(tcfg, LOONGARCH_CSR_TCFG);
+  atexit(user_destructors);
 
-  irq_attach(LOONGARCH_IRQ_TIMER, loongarch_timer_interrupt, NULL);
-  up_enable_irq(LOONGARCH_IRQ_TIMER);
+  for (entry = _sctors; entry != _ectors; entry++)
+    {
+      (*entry)();
+    }
+#endif
+
+  status = main(argc, argv);
+  exit(status);
 }

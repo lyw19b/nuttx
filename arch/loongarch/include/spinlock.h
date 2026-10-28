@@ -40,6 +40,15 @@ typedef uint32_t spinlock_t;
 
 /* AMswap with the DB suffix provides acquire and release ordering. */
 
+/****************************************************************************
+ * Name: up_testset
+ *
+ * Description:
+ *   Atomically acquire a spinlock and return its previous value. The
+ *   caller retries when the lock was already held.
+ *
+ ****************************************************************************/
+
 static inline spinlock_t up_testset(volatile spinlock_t *lock)
 {
   spinlock_t value;

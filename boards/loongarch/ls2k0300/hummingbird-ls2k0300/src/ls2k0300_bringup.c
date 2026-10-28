@@ -92,6 +92,15 @@ extern int ls2k0300_pinctrl_initialize(void);
 extern int ls2k0300_ethernet_initialize(void);
 #endif
 
+/****************************************************************************
+ * Name: ls2k0300_hardware_init
+ *
+ * Description:
+ *   Program board-level pinmux and peripheral routing before registering
+ *   the enabled device drivers.
+ *
+ ****************************************************************************/
+
 void ls2k0300_hardware_init(void)
 {
   /* Configure GPIO50/51 for I2C1 function (MAIN_FUNC = 0x3) */
@@ -157,6 +166,15 @@ void ls2k0300_hardware_init(void)
 
 /****************************************************************************
  * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: ls2k0300_bringup
+ *
+ * Description:
+ *   Initialize and register the enabled board devices, reporting setup
+ *   failures through the system log.
+ *
  ****************************************************************************/
 
 int ls2k0300_bringup(void)

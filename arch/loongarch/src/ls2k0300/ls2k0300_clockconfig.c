@@ -67,6 +67,15 @@ static uint32_t g_apb_freq;
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: ls2k0300_get_clocks
+ *
+ * Description:
+ *   Decode the firmware-programmed PLL divisors and cache CPU and APB
+ *   frequencies in Hz. Firmware must have installed nonzero divisors.
+ *
+ ****************************************************************************/
+
 static void ls2k0300_get_clocks(void)
 {
   uint32_t refclk = REF_FREQ * 1000;
@@ -102,15 +111,41 @@ static void ls2k0300_get_clocks(void)
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: ls2k0300_clockconfig
+ *
+ * Description:
+ *   Read and cache the firmware clock configuration without reprogramming
+ *   the PLLs.
+ *
+ ****************************************************************************/
+
 void ls2k0300_clockconfig(void)
 {
   ls2k0300_get_clocks();
 }
 
+/****************************************************************************
+ * Name: ls2k0300_get_cpuclk
+ *
+ * Description:
+ *   Return the cached CPU frequency in Hz after clock initialization.
+ *
+ ****************************************************************************/
+
 uint32_t ls2k0300_get_cpuclk(void)
 {
   return g_cpu_freq;
 }
+
+/****************************************************************************
+ * Name: ls2k0300_get_apbclk
+ *
+ * Description:
+ *   Return the cached APB peripheral frequency in Hz after clock
+ *   initialization.
+ *
+ ****************************************************************************/
 
 uint32_t ls2k0300_get_apbclk(void)
 {

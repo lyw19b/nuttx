@@ -59,6 +59,15 @@ static unsigned int g_signals;
  * Private Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: check_signal
+ *
+ * Description:
+ *   Record delivery of the regression-test signal so the test can verify
+ *   asynchronous signal handling.
+ *
+ ****************************************************************************/
+
 static void check_signal(int signo)
 {
   __atomic_fetch_add(&g_signals, 1, __ATOMIC_RELAXED);
@@ -67,6 +76,15 @@ static void check_signal(int signo)
 /* Keep callee-saved integer and floating-point values live across blocking
  * calls. Every worker is pinned to a different CPU in an SMP build.
  */
+
+/****************************************************************************
+ * Name: check_context
+ *
+ * Description:
+ *   Exercise context switching and verify the regression thread register
+ *   state across scheduling points.
+ *
+ ****************************************************************************/
 
 static void *check_context(void *arg)
 {
@@ -89,6 +107,16 @@ static void *check_context(void *arg)
 }
 
 #ifdef CONFIG_SMP
+/****************************************************************************
+ * Name: check_remote
+ *
+ * Description:
+ *   Check a test mapping on the CPU executing the synchronous remote
+ *   callback. Return an error if the expected translation is not
+ *   observed.
+ *
+ ****************************************************************************/
+
 static int check_remote(void *arg)
 {
   uint64_t expected = *(uint64_t *)arg;
@@ -99,6 +127,16 @@ static int check_remote(void *arg)
 
 /****************************************************************************
  * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: loongarch_mmutest_main
+ *
+ * Description:
+ *   Exercise page allocation, mapping, unmapping and remote TLB
+ *   invalidation. Optional fault modes deliberately trigger an exception
+ *   after the positive checks.
+ *
  ****************************************************************************/
 
 int loongarch_mmutest_main(int argc, char **argv)

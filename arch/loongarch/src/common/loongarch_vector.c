@@ -35,6 +35,16 @@
 
 /* Set up each CPU before enabling any interrupt sources. */
 
+/****************************************************************************
+ * Name: loongarch_vector_initialize
+ *
+ * Description:
+ *   Install the aligned vector table and select 128-byte vector spacing on
+ *   the calling CPU. Enable the FPU before any entry can save floating-
+ *   point context. Call during startup with interrupts disabled.
+ *
+ ****************************************************************************/
+
 void loongarch_vector_initialize(void)
 {
   extern const char loongarch_vectors[];

@@ -271,6 +271,16 @@
 
 #ifndef __ASSEMBLY__
 
+/****************************************************************************
+ * Name: csr_readq
+ *
+ * Description:
+ *   Read a 64-bit control and status register. The CSR number must be a
+ *   compile-time immediate; callers provide any required ordering
+ *   barriers.
+ *
+ ****************************************************************************/
+
 static inline_function unsigned long csr_readq(unsigned int reg)
 {
   unsigned long val;
@@ -284,6 +294,15 @@ static inline_function unsigned long csr_readq(unsigned int reg)
   return val;
 }
 
+/****************************************************************************
+ * Name: csr_writeq
+ *
+ * Description:
+ *   Write a 64-bit control and status register. The CSR number must be a
+ *   compile-time immediate; this accessor does not add memory barriers.
+ *
+ ****************************************************************************/
+
 static inline_function void csr_writeq(unsigned long val, unsigned int reg)
 {
   __asm__ __volatile__ (
@@ -293,6 +312,16 @@ static inline_function void csr_writeq(unsigned long val, unsigned int reg)
     : "memory"
   );
 }
+
+/****************************************************************************
+ * Name: csr_xchgq
+ *
+ * Description:
+ *   Replace the selected CSR bits and return the previous register value.
+ *   The mask chooses the bits updated from val; the CSR number is an
+ *   immediate.
+ *
+ ****************************************************************************/
 
 static inline_function unsigned long csr_xchgq(unsigned long val,
                                        unsigned long mask,
@@ -332,11 +361,28 @@ static inline_function unsigned long csr_xchgq(unsigned long val,
 #define read_csr_asid()        csr_readq(LOONGARCH_CSR_ASID)
 #define write_csr_asid(val)    csr_writeq(val, LOONGARCH_CSR_ASID)
 
+/****************************************************************************
+ * Name: read_csr_excode
+ *
+ * Description:
+ *   Extract the synchronous exception code from the current CPU ESTAT
+ *   register.
+ *
+ ****************************************************************************/
+
 static inline_function unsigned int read_csr_excode(void)
 {
   return (csr_readq(LOONGARCH_CSR_ESTAT) & CSR_ESTAT_EXC) >>
          CSR_ESTAT_EXC_SHIFT;
 }
+
+/****************************************************************************
+ * Name: drdtime
+ *
+ * Description:
+ *   Read the invariant 64-bit time counter using RDTIME.D.
+ *
+ ****************************************************************************/
 
 static inline_function uint64_t drdtime(void)
 {
@@ -352,6 +398,15 @@ static inline_function uint64_t drdtime(void)
   return val;
 }
 
+/****************************************************************************
+ * Name: iocsr_read32
+ *
+ * Description:
+ *   Read a 32-bit IOCSR register using the architecture I/O CSR
+ *   instruction.
+ *
+ ****************************************************************************/
+
 static inline_function uint32_t iocsr_read32(uint32_t reg)
 {
   uint32_t val;
@@ -364,6 +419,14 @@ static inline_function uint32_t iocsr_read32(uint32_t reg)
 
   return val;
 }
+
+/****************************************************************************
+ * Name: read_cpucfg
+ *
+ * Description:
+ *   Read a CPU configuration word selected by its numeric index.
+ *
+ ****************************************************************************/
 
 static inline_function uint32_t read_cpucfg(uint32_t reg)
 {
@@ -378,6 +441,15 @@ static inline_function uint32_t read_cpucfg(uint32_t reg)
   return val;
 }
 
+/****************************************************************************
+ * Name: iocsr_write32
+ *
+ * Description:
+ *   Write a 32-bit IOCSR register. Callers provide barriers when
+ *   publishing shared memory before an interrupt or device notification.
+ *
+ ****************************************************************************/
+
 static inline_function void iocsr_write32(uint32_t val, uint32_t reg)
 {
   __asm__ __volatile__ (
@@ -387,6 +459,15 @@ static inline_function void iocsr_write32(uint32_t val, uint32_t reg)
     : "memory"
   );
 }
+
+/****************************************************************************
+ * Name: iocsr_read64
+ *
+ * Description:
+ *   Read a 64-bit IOCSR register using the architecture I/O CSR
+ *   instruction.
+ *
+ ****************************************************************************/
 
 static inline_function uint64_t iocsr_read64(uint32_t reg)
 {
@@ -400,6 +481,15 @@ static inline_function uint64_t iocsr_read64(uint32_t reg)
 
   return val;
 }
+
+/****************************************************************************
+ * Name: iocsr_write64
+ *
+ * Description:
+ *   Write a 64-bit IOCSR register. Ordering with ordinary memory must be
+ *   supplied by the caller where required.
+ *
+ ****************************************************************************/
 
 static inline_function void iocsr_write64(uint64_t val, uint32_t reg)
 {

@@ -41,6 +41,17 @@
  * Public Functions
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: up_allocate_heap / up_allocate_kheap
+ *
+ * Description:
+ *   Return the RAM interval between the reserved idle stacks and page pool.
+ *   Flat builds use it as their ordinary heap; kernel builds use it for the
+ *   kernel allocator. User process heaps are allocated by their address
+ *   environments. Assert that these boot-time reservations do not overlap.
+ *
+ ****************************************************************************/
+
 #ifdef CONFIG_BUILD_KERNEL
 void up_allocate_kheap(void **heap_start, size_t *heap_size)
 #else
@@ -61,6 +72,16 @@ void weak_function up_allocate_heap(void **heap_start, size_t *heap_size)
 }
 
 #ifdef CONFIG_MM_PGALLOC
+/****************************************************************************
+ * Name: up_allocate_pgheap
+ *
+ * Description:
+ *   Reserve the configured page pool at the top of RAM and return its
+ *   physical base to the page allocator. Keep this pool disjoint from the
+ *   kernel heap and idle stacks.
+ *
+ ****************************************************************************/
+
 void up_allocate_pgheap(void **heap_start, size_t *heap_size)
 {
   uintptr_t base = (CONFIG_RAM_END & ~(LOONGARCH_PAGE_SIZE - 1ul)) -
