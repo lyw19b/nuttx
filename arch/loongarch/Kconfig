@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2024 Loongson Technology Corporation Limited
+
+if ARCH_LOONGARCH
+
+choice
+	prompt "LoongArch chip"
+	default ARCH_CHIP_LS2K0300
+
+config ARCH_CHIP_LS2K0300
+	bool "Loongson LS2K0300"
+
+config ARCH_CHIP_QEMU_LOONGARCH
+	bool "QEMU virt (LA64)"
+	select ARCH_HAVE_MULTICPU
+	select SERIAL_UART_ARCH_MMIO
+
+endchoice
+
+config ARCH_CHIP
+	string
+	default "ls2k0300" if ARCH_CHIP_LS2K0300
+	default "qemu" if ARCH_CHIP_QEMU_LOONGARCH
+
+config ARCH_LOONGARCH64
+	bool
+	default y
+	select ARCH_HAVE_FORK if BUILD_FLAT
+	select ARCH_HAVE_STACKCHECK
+	select ARCH_HAVE_SETJMP
+	select ARCH_SETJMP_H
+	select ARCH_HAVE_MMU
+	select ARCH_HAVE_FPU
+	select ARCH_HAVE_DPFPU
+	select ARCH_HAVE_TESTSET
+
+config ARCH_USE_MMU
+	default y
+	select MM_PGALLOC
+
+config LOONGARCH_MMU_PTW
+	bool "Use hardware page walking when available"
+	default y
+	depends on ARCH_USE_MMU
+	---help---
+		Enable PWCH.HPTW only when CPUCFG2 advertises hardware page
+		walking. Other CPUs use the software refill handler. Disable
+		this option to test software refill on a PTW-capable CPU.
+
+config LOONGARCH_PAGE_POOL_SIZE
+	hex "Physical page pool size"
+	default 0x200000
+	depends on MM_PGALLOC
+	---help---
+		Reserve this many bytes at the end of RAM for the NuttX page
+		allocator. The size must be a multiple of 4096 and must leave
+		enough memory for the kernel, idle stacks, and normal heap.
+
+config LOONGARCH_MMU_TEST
+	bool "Build the MMU and SMP bring-up test"
+	depends on ARCH_USE_MMU && DEBUG_ASSERTIONS
+	---help---
+		Provide loongarch_mmutest_main as an optional init entry point.
+		Test page mapping, even/odd TLB refill, cross-CPU remapping,
+		page-table reclamation and allocation failure rollback.
+
+config LOONGARCH_MMU_TEST_FAULT
+	int "Expected page fault after the MMU test (0=none, 1=write, 2=read)"
+	default 0
+	range 0 2
+	depends on LOONGARCH_MMU_TEST
+	---help---
+		After the normal tests, deliberately write to a read-only page
+		or read an unmapped page. These negative tests must terminate
+		in the exception handler. Do not enable for normal operation.
+
+source "arch/loongarch/src/ls2k0300/Kconfig"
+
+endif # ARCH_LOONGARCH

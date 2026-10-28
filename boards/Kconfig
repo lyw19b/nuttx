@@ -3224,6 +3224,15 @@ config ARCH_BOARD_HPM6750EVK2
 		This is the board configuration for the port of NuttX to the Hpmicro hpm6750evk2
 		board.  This board features the RISC-V hpm6750.
 
+config ARCH_BOARD_QEMU_LOONGARCH
+	bool "QEMU LoongArch virt"
+	depends on ARCH_CHIP_QEMU_LOONGARCH
+
+config ARCH_BOARD_HUMMINGBIRD_LS2K0300
+	bool "Hummingbird LS2K0300"
+	depends on ARCH_CHIP_LS2K0300
+	select ARCH_HAVE_LEDS
+
 config ARCH_BOARD_SIM
 	bool "User mode simulation"
 	select ARCH_HAVE_BUTTONS
@@ -3318,6 +3327,8 @@ endif #ARCH_BOARD_CUSTOM
 
 config ARCH_BOARD
 	string
+	default "qemu-loongarch" if ARCH_BOARD_QEMU_LOONGARCH
+	default "hummingbird-ls2k0300" if ARCH_BOARD_HUMMINGBIRD_LS2K0300
 	default "amber"                     if ARCH_BOARD_AMBER
 	default "arduino-mega2560"          if ARCH_BOARD_ARDUINO_MEGA2560
 	default "arduino-due"               if ARCH_BOARD_ARDUINO_DUE
@@ -5060,3 +5071,7 @@ config BOARD_MEMORY_RANGE
 		end: end address of memory range
 		flags: Executable 0x1, Writable 0x2, Readable 0x4
 		example:{0x1000,0x2000,0x4},{0x2000,0x3000,0x6},{0x3000,0x4000,0x7} ... {0x0,0x0,0x0}
+
+if ARCH_BOARD_HUMMINGBIRD_LS2K0300
+source "boards/loongarch/ls2k0300/hummingbird-ls2k0300/Kconfig"
+endif
