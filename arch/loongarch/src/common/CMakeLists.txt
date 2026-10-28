@@ -78,7 +78,11 @@ if(CONFIG_ARCH_HAVE_FORK)
 endif()
 
 if(CONFIG_ARCH_ADDRENV)
-  target_sources(arch PRIVATE loongarch_addrenv.c)
+  target_sources(arch PRIVATE loongarch_addrenv.c loongarch_asid.c)
+endif()
+
+if(CONFIG_LOONGARCH_ASID_TEST)
+  target_sources(arch PRIVATE loongarch_asidtest.c)
 endif()
 
 if(CONFIG_BUILD_KERNEL)

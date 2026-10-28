@@ -163,11 +163,23 @@ int up_addrenv_create(size_t textsize, size_t datasize, size_t heapsize,
   env->heapvbase = CONFIG_ARCH_HEAP_VBASE;
   env->heapsize = MM_PGALIGNUP(heapsize);
 
+  /* Keep mutable ASID contexts separate from the const descriptor passed
+   * to up_addrenv_select. Descriptor clones must share this storage, just
+   * as they share the page-table root and its backing pages.
+   */
+
+  env->asid = kmm_zalloc(CONFIG_SMP_NCPUS * sizeof(*env->asid));
+  if (env->asid == NULL)
+    {
+      return -ENOMEM;
+    }
+
   /* Share empty lower-level tables until the private root needs them. */
 
   env->root = loongarch_mmu_newroot();
   if (env->root == 0)
     {
+      up_addrenv_destroy(env);
       return -ENOMEM;
     }
 
@@ -205,7 +217,9 @@ int up_addrenv_create(size_t textsize, size_t datasize, size_t heapsize,
  * Description:
  *   Release an address environment and clear its descriptor. NuttX must
  *   have dropped every task and active-CPU reference before this call, so
- *   no processor can still walk these tables.
+ *   no processor can still walk these tables. Cached translations may
+ *   remain under retired ASIDs, which cannot be reassigned until the local
+ *   allocator flushes them on rollover.
  *
  ****************************************************************************/
 
@@ -216,6 +230,7 @@ int up_addrenv_destroy(arch_addrenv_t *env)
       loongarch_mmu_freetable(env->root, 0);
     }
 
+  kmm_free(env->asid);
   memset(env, 0, sizeof(*env));
   return OK;
 }
@@ -281,20 +296,14 @@ ssize_t up_addrenv_heapsize(const arch_addrenv_t *env)
  *
  * Description:
  *   Select an address environment on the calling CPU. The scheduler calls
- *   this with interrupts disabled. Invalidate local translations before
- *   returning because all environments currently reuse ASID zero.
+ *   this with interrupts disabled. Reuse the environment's local ASID
+ *   while its generation remains valid; otherwise allocate a fresh one.
  *
  ****************************************************************************/
 
 int up_addrenv_select(const arch_addrenv_t *env)
 {
-  /* ASID zero is reused only after a local invalidation. Each CPU selects
-   * its own PGDL; process roots never contain the kernel's DMW mappings.
-   */
-
-  DEBUGASSERT(env->root != 0);
-  csr_writeq(env->root, LOONGARCH_CSR_PGDL);
-  loongarch_tlb_invalidate();
+  loongarch_asid_select(env);
   return OK;
 }
 

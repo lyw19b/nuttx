@@ -72,7 +72,11 @@ CMN_ASRCS += loongarch_forkentry.S
 endif
 
 ifeq ($(CONFIG_ARCH_ADDRENV),y)
-CMN_CSRCS += loongarch_addrenv.c
+CMN_CSRCS += loongarch_addrenv.c loongarch_asid.c
+endif
+
+ifeq ($(CONFIG_LOONGARCH_ASID_TEST),y)
+CMN_CSRCS += loongarch_asidtest.c
 endif
 
 ifeq ($(CONFIG_BUILD_KERNEL),y)

@@ -60,6 +60,26 @@ config LOONGARCH_PAGE_POOL_SIZE
 		allocator. The size must be a multiple of 4096 and must leave
 		enough memory for the kernel, idle stacks, and normal heap.
 
+config LOONGARCH_ASID_BITS
+	int "Maximum ASID width"
+	default 10
+	range 2 10
+	depends on ARCH_ADDRENV
+	---help---
+		Limit the number of hardware address-space identifier bits used
+		on each CPU. The CPU's ASIDBITS value can reduce this further.
+		ASID zero is reserved for the boot mappings. Normally use all ten
+		bits; smaller values allow regression tests to force ASID reuse.
+
+config LOONGARCH_ASID_TEST
+	bool "Test ASID retention and rollover before user startup"
+	depends on LOONGARCH_USER_TEST && LOONGARCH_ASID_BITS <= 3
+	depends on DEBUG_ASSERTIONS
+	---help---
+		Create more address environments than available ASIDs and check
+		translations at identical virtual addresses on every CPU. Run
+		before any user process starts, while ASID zero is still active.
+
 config LOONGARCH_MMU_TEST
 	bool "Build the MMU and SMP bring-up test"
 	depends on ARCH_USE_MMU && DEBUG_ASSERTIONS

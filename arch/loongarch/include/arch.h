@@ -52,6 +52,7 @@ struct arch_addrenv_s
   uintptr_t datavbase;
   uintptr_t heapvbase;
   size_t heapsize;
+  uintptr_t *asid;      /* Owned per-CPU ASID contexts, shared with clones */
 };
 
 typedef struct arch_addrenv_s arch_addrenv_t;

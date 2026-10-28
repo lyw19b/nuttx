@@ -33,6 +33,7 @@
 #  include <stdint.h>
 #  include <stdbool.h>
 #  include <stddef.h>
+#  include <arch/arch.h>
 #endif
 
 /****************************************************************************
@@ -85,6 +86,15 @@ void loongarch_mmu_initialize(void);
 void loongarch_mmu_cpu_initialize(void);
 void loongarch_tlb_invalidate(void);
 void loongarch_tlb_sync(void);
+
+#ifdef CONFIG_ARCH_ADDRENV
+void loongarch_asid_initialize(void);
+void loongarch_asid_select(const arch_addrenv_t *env);
+#endif
+
+#ifdef CONFIG_LOONGARCH_ASID_TEST
+void loongarch_asid_test(void);
+#endif
 
 /* Internal root operations. Callers must hold the address environment's
  * lock when walking or editing leaves directly.

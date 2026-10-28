@@ -39,6 +39,7 @@
 #include <nuttx/sched.h>
 #include <arch/csr.h>
 #include "sched/sched.h"
+#include "loongarch_mmu.h"
 
 /****************************************************************************
  * Private Functions
@@ -156,6 +157,10 @@ void board_late_initialize(void)
   extern const unsigned char g_loongarch_user_elf_end[];
   size_t size = g_loongarch_user_elf_end - g_loongarch_user_elf;
   int fd;
+
+#ifdef CONFIG_LOONGARCH_ASID_TEST
+  loongarch_asid_test();
+#endif
 
   ASSERT(mount(NULL, "/test", "tmpfs", 0, NULL) == OK);
   fd = open("/test/user", O_WRONLY | O_CREAT | O_TRUNC, 0755);

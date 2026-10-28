@@ -103,6 +103,10 @@
 #define LOONGARCH_CSR_TLBELO0      0x12
 #define LOONGARCH_CSR_TLBELO1      0x13
 #define LOONGARCH_CSR_ASID         0x18
+#define CSR_ASID_BITS_SHIFT        16
+#define CSR_ASID_BITS_MASK         (0xfful << CSR_ASID_BITS_SHIFT)
+#define CSR_ASID_MASK              0x3fful
+#define CSR_TLBIDX_NE              (1ul << 31)
 #define LOONGARCH_CSR_PGDL         0x19
 #define LOONGARCH_CSR_PGDH         0x1a
 #define LOONGARCH_CSR_PGD          0x1b

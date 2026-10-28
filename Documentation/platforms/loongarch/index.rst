@@ -53,9 +53,22 @@ zero.
 reports HPTW support. The same page tables work with both refill modes;
 unsupported CPUs fall back to software refill. On SMP, every mapping
 change waits for NuttX SMP callbacks to invalidate all online CPUs' TLBs
-before detached tables can be reused. All environments currently use ASID
-zero: switching PGDL invalidates the local TLB before resuming the task.
-Per-process ASID allocation is an optional future optimization.
+before detached tables can be reused.
+
+Address environments use per-CPU ASIDs. Each CPU allocates identifiers in
+a software generation, retaining translations when switching back to an
+environment in that generation. Exhausting the identifiers flushes the
+local TLB before advancing the generation and reusing any ASID. Migration
+uses the destination CPU's context; descriptor clones share the same ASID
+storage. ASID zero is reserved for the boot root. An implementation with
+no ASID bits falls back to flushing on every environment switch.
+
+``CONFIG_LOONGARCH_ASID_BITS`` limits the usable ASID width, further bounded
+by the CPU's ASIDBITS field. The normal default is ten. Page-table changes
+still invalidate every online CPU's TLB synchronously, including retained
+translations belonging to inactive environments. Final environment
+destruction releases its ASID context storage after all CPU references are
+dropped; retired identifiers remain unavailable until local rollover.
 
 User processes and system calls
 ===============================
@@ -232,6 +245,16 @@ Add ``--ptw`` to verify hardware walking. The ``kernel`` configuration
 uses the same test on one CPU; omit ``--cpus 4`` in that case. Make builds
 embed the same user ELF and can use the same runner.
 
+Both kernel regression configurations set ``CONFIG_LOONGARCH_ASID_BITS=2``
+and enable ``CONFIG_LOONGARCH_ASID_TEST``. Before starting user processes,
+the test creates four private roots for the three available nonzero ASIDs.
+On every CPU it checks TLB retention using ``TLBSRCH``, descriptor sharing,
+and multiple generations of ASID reuse at equal virtual addresses. All
+roots are populated before these checks, so mapping updates cannot mask a
+missing rollover flush. It prints
+``LoongArch ASID retention/rollover tests: PASS`` on success. For normal
+applications, disable the ASID test and restore the default width of ten.
+
 Use a QEMU containing upstream commit
 `db2325f79481 <https://github.com/qemu/qemu/commit/db2325f79481fab87211e5a287580d753f582cb8>`_
 for execution-permission tests. Older builds can recurse inside the emulator
@@ -282,6 +305,13 @@ refill and hardware PTW using the local QEMU 11.1.50 build. The Make
 startup object, libraries and linker script that independently linked the
 user regression executable. The architecture C files and headers, board
 C files and libc C implementations pass ``tools/nxstyle``.
+
+ASID retention and forced rollover passed on one and four CPUs with both
+software refill and hardware PTW using a two-bit ASID limit. The same
+images passed the complete user-process regression, including migration
+and repeated environment destruction. A Make four-CPU image passed with
+PTW. The default ten-bit limit also passed the four-CPU user regression in
+both modes. A flat four-CPU MMU image continued to pass with PTW.
 
 LS2K0300 migration
 ==================

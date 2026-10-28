@@ -341,6 +341,9 @@ void loongarch_mmu_cpu_initialize(void)
   csr_writeq(loongarch_physaddr((uintptr_t)loongarch_tlbrefill),
              LOONGARCH_CSR_TLBRENTRY);
   loongarch_tlb_invalidate();
+#ifdef CONFIG_ARCH_ADDRENV
+  loongarch_asid_initialize();
+#endif
   csr_xchgq(CSR_CRMD_PG, CSR_CRMD_PG | CSR_CRMD_DA,
             LOONGARCH_CSR_CRMD);
 }

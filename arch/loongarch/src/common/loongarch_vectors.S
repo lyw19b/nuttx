@@ -62,17 +62,23 @@ loongarch_vectors:
   .balign 128
   .endm
 
+  /* Synchronous exception vectors. */
+
   .set vector, 0
   .rept 64
   VECTOR %vector
   .set vector, vector + 1
   .endr
+
+  /* CPU interrupt vectors. */
+
   .set vector, EXCCODE_INT_START
   .rept 13
   VECTOR %vector
   .set vector, vector + 1
   .endr
   .noaltmacro
+
   .size loongarch_vectors, . - loongarch_vectors
 
 /****************************************************************************
