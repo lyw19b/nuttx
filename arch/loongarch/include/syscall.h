@@ -77,11 +77,11 @@ static inline uintptr_t sys_call0(unsigned int nbr)
   asm volatile
     (
      "syscall 0\n\t"
-     :: "r"(r0)
+     : "+r"(r0)
+     :
      : "memory"
      );
 
-  asm volatile("" : "=r"(r0));
 
   return r0;
 }
@@ -94,11 +94,11 @@ static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
   asm volatile
     (
      "syscall 0\n\t"
-     :: "r"(r0), "r"(r1)
+     : "+r"(r0)
+     : "r"(r1)
      : "memory"
      );
 
-  asm volatile("" : "=r"(r0));
 
   return r0;
 }
@@ -113,11 +113,11 @@ static inline uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1,
   asm volatile
     (
      "syscall 0\n\t"
-     :: "r"(r0), "r"(r1), "r"(r2)
+     : "+r"(r0)
+     : "r"(r1), "r"(r2)
      : "memory"
      );
 
-  asm volatile("" : "=r"(r0));
 
   return r0;
 }
@@ -133,11 +133,11 @@ static inline uintptr_t sys_call3(unsigned int nbr, uintptr_t parm1,
   asm volatile
     (
      "syscall 0\n\t"
-     :: "r"(r0), "r"(r1), "r"(r2), "r"(r3)
+     : "+r"(r0)
+     : "r"(r1), "r"(r2), "r"(r3)
      : "memory"
      );
 
-  asm volatile("" : "=r"(r0));
 
   return r0;
 }
@@ -155,11 +155,11 @@ static inline uintptr_t sys_call4(unsigned int nbr, uintptr_t parm1,
   asm volatile
     (
      "syscall 0\n\t"
-     :: "r"(r0), "r"(r1), "r"(r2), "r"(r3), "r"(r4)
+     : "+r"(r0)
+     : "r"(r1), "r"(r2), "r"(r3), "r"(r4)
      : "memory"
      );
 
-  asm volatile("" : "=r"(r0));
 
   return r0;
 }
@@ -178,11 +178,11 @@ static inline uintptr_t sys_call5(unsigned int nbr, uintptr_t parm1,
   asm volatile
     (
      "syscall 0\n\t"
-     :: "r"(r0), "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5)
+     : "+r"(r0)
+     : "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5)
      : "memory"
      );
 
-  asm volatile("" : "=r"(r0));
 
   return r0;
 }
@@ -203,11 +203,11 @@ static inline uintptr_t sys_call6(unsigned int nbr, uintptr_t parm1,
   asm volatile
     (
      "syscall 0\n\t"
-     :: "r"(r0), "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5), "r"(r6)
+     : "+r"(r0)
+     : "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5), "r"(r6)
      : "memory"
      );
 
-  asm volatile("" : "=r"(r0));
 
   return r0;
 }

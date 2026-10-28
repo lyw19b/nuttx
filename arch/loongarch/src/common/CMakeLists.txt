@@ -76,3 +76,7 @@ endif()
 if(CONFIG_ARCH_HAVE_FORK)
   target_sources(arch PRIVATE loongarch_fork.c loongarch_forkentry.S)
 endif()
+
+if(CONFIG_ARCH_ADDRENV)
+  target_sources(arch PRIVATE loongarch_addrenv.c loongarch_user.c)
+endif()

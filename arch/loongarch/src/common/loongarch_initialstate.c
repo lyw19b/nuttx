@@ -46,6 +46,9 @@ void up_initial_state(struct tcb_s *tcb)
   struct xcptcontext *xcp = &tcb->xcp;
   uintptr_t regval;
   uintptr_t topstack;
+#ifdef CONFIG_ARCH_KERNEL_STACK
+  void *kstack = xcp->kstack;
+#endif
 
   memset(xcp, 0, sizeof(struct xcptcontext));
 
@@ -65,6 +68,17 @@ void up_initial_state(struct tcb_s *tcb)
 
   topstack = (uintptr_t)tcb->stack_base_ptr + tcb->adj_stack_size;
 
+#ifdef CONFIG_ARCH_KERNEL_STACK
+  xcp->kstack = kstack;
+  if (kstack != NULL)
+    {
+      xcp->ustkptr = topstack;
+      topstack = (uintptr_t)kstack + CONFIG_ARCH_KERNEL_STACKSIZE;
+      topstack = STACKFRAME_ALIGN_DOWN(topstack);
+      xcp->kstkptr = topstack;
+    }
+#endif
+
   xcp->regs = (uintreg_t *)(topstack - XCPTCONTEXT_SIZE);
   memset(xcp->regs, 0, XCPTCONTEXT_SIZE);
 
@@ -80,7 +94,4 @@ void up_initial_state(struct tcb_s *tcb)
   regval = loongarch_get_newintctx();
   xcp->regs[REG_INT_CTX] = regval;
 
-#ifndef CONFIG_BUILD_FLAT
-  tcb->xcp.initregs = tcb->xcp.regs;
-#endif
 }

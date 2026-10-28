@@ -70,3 +70,7 @@ ifeq ($(CONFIG_ARCH_HAVE_FORK),y)
 CMN_CSRCS += loongarch_fork.c
 CMN_ASRCS += loongarch_forkentry.S
 endif
+
+ifeq ($(CONFIG_ARCH_ADDRENV),y)
+CMN_CSRCS += loongarch_addrenv.c loongarch_user.c
+endif

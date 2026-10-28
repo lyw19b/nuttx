@@ -35,12 +35,15 @@ def run(args):
         "-kernel", str(args.kernel.resolve()),
     ]
     expected_mode = "hardware PTW" if args.ptw else "software refill"
-    banner = f"LoongArch MMU: {expected_mode}, {args.cpus} CPU(s)"
+    name = "userspace" if args.userspace else "MMU"
+    banner = f"LoongArch {name}: {expected_mode}, {args.cpus} CPU(s)"
     markers = {
         "none": "LoongArch MMU/SMP tests: PASS",
         "write": "EXCEPTION: TLB modified fault. ExCode: 4",
         "read": "EXCEPTION: Page invalid on load. ExCode: 1",
     }
+    if args.userspace:
+        markers["none"] = "LoongArch userspace isolation/syscall tests: PASS"
     output = ""
     deadline = time.monotonic() + args.timeout
     process = subprocess.Popen(command, stdout=subprocess.PIPE,
@@ -61,7 +64,8 @@ def run(args):
                     if banner in output and markers[args.fault] in output:
                         return
                     if args.fault == "none" and (
-                        "EXCEPTION:" in output or "Assertion failed" in output
+                        ("EXCEPTION:" in output and not args.userspace) or
+                        "Assertion failed" in output
                     ):
                         raise RuntimeError("Unexpected guest exception or assertion")
             raise RuntimeError("Timed out waiting for the expected test result")
@@ -83,6 +87,7 @@ def main():
     parser.add_argument("--qemu", default="qemu-system-loongarch64")
     parser.add_argument("--cpus", type=int, choices=range(1, 33), default=1)
     parser.add_argument("--ptw", action="store_true")
+    parser.add_argument("--userspace", action="store_true")
     parser.add_argument("--fault", choices=("none", "write", "read"), default="none")
     parser.add_argument("--timeout", type=float, default=30)
     parser.add_argument("--log", type=Path)

@@ -29,6 +29,10 @@ config ARCH_LOONGARCH64
 	select ARCH_HAVE_STACKCHECK
 	select ARCH_HAVE_SETJMP
 	select ARCH_SETJMP_H
+	select ARCH_HAVE_ADDRENV
+	select ARCH_NEED_ADDRENV_MAPPING
+	select ARCH_KERNEL_STACK if BUILD_KERNEL
+	select LIBC_ARCH_ELF_64BIT if LIBC_ARCH_ELF
 	select ARCH_HAVE_MMU
 	select ARCH_HAVE_FPU
 	select ARCH_HAVE_DPFPU
@@ -73,6 +77,16 @@ config LOONGARCH_MMU_TEST_FAULT
 		After the normal tests, deliberately write to a read-only page
 		or read an unmapped page. These negative tests must terminate
 		in the exception handler. Do not enable for normal operation.
+
+config LOONGARCH_USER_TEST
+	bool "Run ELF process isolation and syscall tests"
+	depends on BUILD_KERNEL && ARCH_CHIP_QEMU_LOONGARCH
+	select BOARD_LATE_INITIALIZE
+	select FS_TMPFS
+	---help---
+		Embed a standalone ELF regression program and launch concurrent
+		processes through the NuttX loader. Test syscalls, signals, private
+		data, and user faults without terminating the kernel.
 
 source "arch/loongarch/src/ls2k0300/Kconfig"
 

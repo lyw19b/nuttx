@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/loongarch/src/common/loongarch_signal_handler.S
+ * boards/loongarch/qemu/qemu-loongarch/src/qemu_user_image.S
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,43 +20,10 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
-
-#include <nuttx/config.h>
-#include <nuttx/arch.h>
-#include <arch/syscall.h>
-
-#include "loongarch_internal.h"
-
-#if defined(CONFIG_BUILD_PROTECTED) && !defined(__KERNEL__)
-
-  .file   "loongarch_signal_handler.S"
-
-  .text
-  .globl up_signal_handler
-  .type  up_signal_handler, function
-
-up_signal_handler:
-
-  addi.d  $sp, $sp, -STACK_FRAME_SIZE
-  st.d    $ra, $sp, 8
-
-  move    $t0, $a0
-  move    $a0, $a1
-  move    $a1, $a2
-  move    $a2, $a3
-  jirl    $ra, $t0, 0
-
-  ld.d    $ra, $sp, 8
-  addi.d  $sp, $sp, STACK_FRAME_SIZE
-
-  li.d    $a0, SYS_signal_handler_return
-  syscall 0
-  nop
-
-  .size up_signal_handler, .-up_signal_handler
-  .end
-
-#endif
+  .section .rodata.loongarch_user_image, "a", @progbits
+  .balign 8
+  .global g_loongarch_user_elf
+  .global g_loongarch_user_elf_end
+g_loongarch_user_elf:
+  .incbin LOONGARCH_USER_IMAGE
+g_loongarch_user_elf_end:

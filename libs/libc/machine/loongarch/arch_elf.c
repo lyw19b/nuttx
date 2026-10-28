@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/loongarch/src/common/loongarch_signal_dispatch.c
+ * libs/libc/machine/loongarch/arch_elf.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,23 +25,69 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
-#include <nuttx/arch.h>
 
-#include <arch/syscall.h>
-
-#include "loongarch_internal.h"
-
-#if !defined(CONFIG_BUILD_FLAT) && defined(__KERNEL__)
+#include <errno.h>
+#include <string.h>
+#include <nuttx/elf.h>
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void up_signal_dispatch(_sa_sigaction_t sighand, int signo,
-                        siginfo_t *info, void *ucontext)
+bool up_checkarch(const Elf_Ehdr *ehdr)
 {
-  sys_call4(SYS_signal_handler, (uintptr_t)sighand, (uintptr_t)signo,
-            (uintptr_t)info, (uintptr_t)ucontext);
+  return ehdr->e_machine == EM_LOONGARCH &&
+         ehdr->e_ident[EI_CLASS] == ELFCLASS64 &&
+         ehdr->e_ident[EI_DATA] == ELFDATA2LSB &&
+         (ehdr->e_entry & 3) == 0 &&
+         (ehdr->e_flags & 0xff) ==
+         (EF_LARCH_OBJABI_V1 | EF_LARCH_ABI_DOUBLE_FLOAT);
 }
 
-#endif
+int up_relocate(const Elf_Rel *rel, const Elf_Sym *sym, uintptr_t addr,
+                void *arch_data)
+{
+  /* LoongArch uses explicit-addend relocations. */
+
+  return -ENOSYS;
+}
+
+int up_relocateadd(const Elf_Rela *rel, const Elf_Sym *sym, uintptr_t addr,
+                   void *arch_data)
+{
+  uint64_t value;
+
+  if (ELF_R_TYPE(rel->r_info) == R_LARCH_NONE)
+    {
+      return OK;
+    }
+
+  if (sym == NULL)
+    {
+      return -EINVAL;
+    }
+
+  value = sym->st_value + rel->r_addend;
+  switch (ELF_R_TYPE(rel->r_info))
+    {
+      case R_LARCH_32:
+        {
+          uint32_t value32 = value;
+
+          if (value > UINT32_MAX)
+            {
+              return -ERANGE;
+            }
+
+          memcpy((void *)addr, &value32, sizeof(value32));
+        }
+        return OK;
+
+      case R_LARCH_64:
+        memcpy((void *)addr, &value, sizeof(value));
+        return OK;
+
+      default:
+        return -ENOSYS;
+    }
+}

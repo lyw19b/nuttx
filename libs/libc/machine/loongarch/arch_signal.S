@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/loongarch/src/common/loongarch_pthread_start.c
+ * libs/libc/machine/loongarch/arch_signal.S
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,33 +25,24 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
-#include <pthread.h>
-#include <nuttx/arch.h>
-#include <assert.h>
-
 #include <arch/syscall.h>
 
-#include "loongarch_internal.h"
-
-#include "sched/sched.h"
-
-#if !defined(CONFIG_BUILD_FLAT) && defined(__KERNEL__) && \
-    !defined(CONFIG_DISABLE_PTHREAD)
-
 /****************************************************************************
- * Public Functions
+ * User signal trampoline
  ****************************************************************************/
 
-void up_pthread_start(pthread_trampoline_t startup,
-                      pthread_startroutine_t entrypt, pthread_addr_t arg)
-{
-  struct tcb_s *rtcb = this_task();
-  uintptr_t sp;
-
-  sp = (uintptr_t)rtcb->stack_base_ptr + rtcb->adj_stack_size;
-
-  loongarch_jump_to_user((uintptr_t)startup, (uintreg_t)entrypt,
-                         (uintreg_t)arg, 0, sp, rtcb->xcp.initregs);
-}
-
-#endif
+  .text
+  .balign 4
+  .global up_signal_handler
+  .type up_signal_handler, function
+up_signal_handler:
+  addi.d  $sp, $sp, -16
+  move    $t0, $a0
+  move    $a0, $a1
+  move    $a1, $a2
+  move    $a2, $a3
+  jirl    $ra, $t0, 0
+  li.w    $a0, SYS_signal_handler_return
+  syscall 0
+  break   0
+  .size up_signal_handler, . - up_signal_handler

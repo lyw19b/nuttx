@@ -43,7 +43,16 @@ void up_release_stack(struct tcb_s *dtcb, uint8_t ttype)
   if (dtcb->stack_alloc_ptr &&
       (dtcb->flags & TCB_FLAG_FREE_STACK))
     {
-      group_free(dtcb->group, dtcb->stack_alloc_ptr);
+#ifdef CONFIG_MM_KERNEL_HEAP
+      if (ttype == TCB_FLAG_TTYPE_KERNEL)
+        {
+          kmm_free(dtcb->stack_alloc_ptr);
+        }
+      else
+#endif
+        {
+          kumm_free(dtcb->stack_alloc_ptr);
+        }
     }
 
   dtcb->flags &= ~TCB_FLAG_FREE_STACK;

@@ -105,9 +105,9 @@ static uint64_t *table_allocate(uint64_t entry)
   return table;
 }
 
-static uint64_t *page_entry(uintptr_t vaddr, bool create)
+uint64_t *loongarch_mmu_pte(uintptr_t root, uintptr_t vaddr, bool create)
 {
-  uint64_t *table = g_kernel_pgt;
+  uint64_t *table = loongarch_virtaddr(root);
   uint64_t *next;
   uintptr_t empty;
   unsigned int shift;
@@ -161,7 +161,7 @@ static bool table_empty(const uint64_t *table, uint64_t empty)
  * MMU mutex is sleepable; remote invalidation never takes this mutex.
  */
 
-static void table_reclaim(uintptr_t vaddr)
+static void table_reclaim(uintptr_t root, uintptr_t vaddr)
 {
   uint64_t *tables[4];
   uint64_t empty[4];
@@ -173,7 +173,7 @@ static void table_reclaim(uintptr_t vaddr)
   empty[1] = table_paddr(g_empty_middle);
   empty[2] = table_paddr(g_empty_leaf);
   empty[3] = 0;
-  tables[0] = g_kernel_pgt;
+  tables[0] = loongarch_virtaddr(root);
 
   for (level = 0; level < 3; level++)
     {
@@ -258,8 +258,8 @@ void loongarch_mmu_initialize(void)
   loongarch_mmu_cpu_initialize();
 }
 
-int loongarch_mmu_map(uintptr_t vaddr, uintptr_t paddr, size_t size,
-                      uint64_t flags)
+int loongarch_mmu_maproot(uintptr_t root, uintptr_t vaddr,
+                          uintptr_t paddr, size_t size, uint64_t flags)
 {
   const uint64_t allowed = LOONGARCH_MMU_WRITE | LOONGARCH_PTE_USER |
                           LOONGARCH_PTE_NOREAD | LOONGARCH_PTE_NOEXEC;
@@ -287,7 +287,7 @@ int loongarch_mmu_map(uintptr_t vaddr, uintptr_t paddr, size_t size,
 
   for (addr = vaddr; addr < vaddr + size; addr += LOONGARCH_PAGE_SIZE)
     {
-      pte = page_entry(addr, false);
+      pte = loongarch_mmu_pte(root, addr, false);
       if (pte != NULL && *pte != 0)
         {
           ret = -EEXIST;
@@ -297,7 +297,7 @@ int loongarch_mmu_map(uintptr_t vaddr, uintptr_t paddr, size_t size,
 
   for (addr = vaddr; addr < vaddr + size; addr += LOONGARCH_PAGE_SIZE)
     {
-      pte = page_entry(addr, true);
+      pte = loongarch_mmu_pte(root, addr, true);
       if (pte == NULL)
         {
           ret = -ENOMEM;
@@ -315,14 +315,14 @@ rollback:
   while (addr > vaddr)
     {
       addr -= LOONGARCH_PAGE_SIZE;
-      pte = page_entry(addr, false);
+      pte = loongarch_mmu_pte(root, addr, false);
       __atomic_store_n(pte, 0, __ATOMIC_RELEASE);
     }
 
   loongarch_tlb_sync();
   for (addr = vaddr; addr < vaddr + size; addr += LOONGARCH_PAGE_SIZE)
     {
-      table_reclaim(addr);
+      table_reclaim(root, addr);
     }
 
 out:
@@ -330,7 +330,7 @@ out:
   return ret;
 }
 
-int loongarch_mmu_unmap(uintptr_t vaddr, size_t size)
+int loongarch_mmu_unmaproot(uintptr_t root, uintptr_t vaddr, size_t size)
 {
   uintptr_t addr;
   uint64_t *pte;
@@ -350,7 +350,7 @@ int loongarch_mmu_unmap(uintptr_t vaddr, size_t size)
 
   for (addr = vaddr; addr < vaddr + size; addr += LOONGARCH_PAGE_SIZE)
     {
-      pte = page_entry(addr, false);
+      pte = loongarch_mmu_pte(root, addr, false);
       if (pte != NULL)
         {
           __atomic_store_n(pte, 0, __ATOMIC_RELEASE);
@@ -360,7 +360,7 @@ int loongarch_mmu_unmap(uintptr_t vaddr, size_t size)
   loongarch_tlb_sync();
   for (addr = vaddr; addr < vaddr + size; addr += LOONGARCH_PAGE_SIZE)
     {
-      table_reclaim(addr);
+      table_reclaim(root, addr);
     }
 
   nxmutex_unlock(&g_mmu_lock);
@@ -383,7 +383,7 @@ int loongarch_mmu_translate(uintptr_t vaddr, uintptr_t *paddr)
       return ret;
     }
 
-  pte = page_entry(vaddr, false);
+  pte = loongarch_mmu_pte(table_paddr(g_kernel_pgt), vaddr, false);
   if (pte == NULL || !(*pte & LOONGARCH_PTE_VALID))
     {
       ret = -ENOENT;
@@ -396,4 +396,60 @@ int loongarch_mmu_translate(uintptr_t vaddr, uintptr_t *paddr)
 
   nxmutex_unlock(&g_mmu_lock);
   return ret;
+}
+
+/* The flat-build API uses the boot page directory. Address environments
+ * supply their own root to the same mapping and rollback implementation.
+ */
+
+int loongarch_mmu_map(uintptr_t vaddr, uintptr_t paddr, size_t size,
+                      uint64_t flags)
+{
+  return loongarch_mmu_maproot(table_paddr(g_kernel_pgt), vaddr, paddr,
+                               size, flags);
+}
+
+int loongarch_mmu_unmap(uintptr_t vaddr, size_t size)
+{
+  return loongarch_mmu_unmaproot(table_paddr(g_kernel_pgt), vaddr, size);
+}
+
+uintptr_t loongarch_mmu_newroot(void)
+{
+  uint64_t *table = table_allocate(table_paddr(g_empty_upper));
+
+  return table == NULL ? 0 : table_paddr(table);
+}
+
+/* All leaves in a process root are owned by that address environment.
+ * NuttX releases its last active-CPU reference before destroying the root.
+ * Shared mappings require separate ownership accounting and are not enabled.
+ */
+
+void loongarch_mmu_freetable(uintptr_t root, unsigned int level)
+{
+  uint64_t *table = loongarch_virtaddr(root);
+  uintptr_t empty = level == 0 ? table_paddr(g_empty_upper) :
+                    level == 1 ? table_paddr(g_empty_middle) :
+                    level == 2 ? table_paddr(g_empty_leaf) : 0;
+  unsigned int i;
+
+  for (i = 0; i < LOONGARCH_PT_ENTRIES; i++)
+    {
+      if (table[i] != empty)
+        {
+          uintptr_t paddr = table[i] & LOONGARCH_PTE_PADDR_MASK;
+
+          if (level == 3)
+            {
+              mm_pgfree(paddr, 1);
+            }
+          else
+            {
+              loongarch_mmu_freetable(paddr, level + 1);
+            }
+        }
+    }
+
+  mm_pgfree(root, 1);
 }

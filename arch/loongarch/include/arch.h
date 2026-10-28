@@ -41,6 +41,23 @@
  ****************************************************************************/
 
 /****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_ADDRENV) && !defined(__ASSEMBLY__)
+struct arch_addrenv_s
+{
+  uintptr_t root;       /* Physical address of the private page directory */
+  uintptr_t textvbase;
+  uintptr_t datavbase;
+  uintptr_t heapvbase;
+  size_t heapsize;
+};
+
+typedef struct arch_addrenv_s arch_addrenv_t;
+#endif
+
+/****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 

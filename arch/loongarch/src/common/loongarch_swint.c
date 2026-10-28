@@ -26,75 +26,50 @@
 
 #include <nuttx/config.h>
 
-#include <inttypes.h>
-#include <stdint.h>
-#include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <errno.h>
+#include <string.h>
 #include <syscall.h>
-
-#include <arch/irq.h>
+#include <unistd.h>
 #include <nuttx/addrenv.h>
+#include <nuttx/arch.h>
 #include <nuttx/sched.h>
-#include <nuttx/userspace.h>
-
-#ifdef CONFIG_LIB_SYSCALL
-#  include <syscall.h>
-#endif
 
 #include "sched/sched.h"
 #include "signal/signal.h"
 #include "loongarch_internal.h"
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-typedef uintptr_t (*syscall_t)(unsigned int, ...);
+#include "loongarch_mmu.h"
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-#ifdef CONFIG_LIB_SYSCALL
-
-uintptr_t dispatch_syscall(unsigned int nbr, uintptr_t parm1,
-                           uintptr_t parm2, uintptr_t parm3,
-                           uintptr_t parm4, uintptr_t parm5,
-                           uintptr_t parm6, void *context)
+#ifdef CONFIG_ARCH_KERNEL_STACK
+static bool writable_user_range(struct tcb_s *tcb, uintptr_t addr, size_t size)
 {
-  struct tcb_s *rtcb         = this_task();
+  const uint64_t required = LOONGARCH_PTE_USER | LOONGARCH_PTE_VALID |
+                            LOONGARCH_PTE_DIRTY;
+  uintptr_t end;
+  uint64_t *pte;
 
-  rtcb->flags |= TCB_FLAG_SYSCALL;
-
-  register long a0 asm("$a0") = (long)(nbr);
-  register long a1 asm("$a1") = (long)(parm1);
-  register long a2 asm("$a2") = (long)(parm2);
-  register long a3 asm("$a3") = (long)(parm3);
-  register long a4 asm("$a4") = (long)(parm4);
-  register long a5 asm("$a5") = (long)(parm5);
-  register long a6 asm("$a6") = (long)(parm6);
-  syscall_t do_syscall;
-  uintptr_t ret;
-
-  if (a0 > SYS_maxsyscall)
+  if (tcb->addrenv_own == NULL || addr >= LOONGARCH_MMU_VLIMIT ||
+      size > LOONGARCH_MMU_VLIMIT - addr)
     {
-      return -ENOSYS;
+      return false;
     }
 
-  rtcb->xcp.sregs = context;
+  end = addr + size;
+  addr &= ~(LOONGARCH_PAGE_SIZE - 1ul);
+  for (; addr < end; addr += LOONGARCH_PAGE_SIZE)
+    {
+      pte = loongarch_mmu_pte(tcb->addrenv_own->addrenv.root, addr, false);
+      if (pte == NULL || (*pte & required) != required)
+        {
+          return false;
+        }
+    }
 
-  a0 -= CONFIG_SYS_RESERVED;
-
-  do_syscall = (syscall_t)g_stublookup[a0];
-
-  ret = do_syscall(a0, a1, a2, a3, a4, a5, a6);
-
-  rtcb->flags &= ~TCB_FLAG_SYSCALL;
-
-  nxsig_unmask_pendingsignal();
-
-  return ret;
+  return true;
 }
 #endif
 
@@ -102,82 +77,127 @@ uintptr_t dispatch_syscall(unsigned int nbr, uintptr_t parm1,
  * Public Functions
  ****************************************************************************/
 
+#ifdef CONFIG_LIB_SYSCALL
+void loongarch_syscall_dispatch(uintreg_t *regs)
+{
+  typedef uintptr_t (*stub_t)(unsigned int, uintptr_t, uintptr_t,
+                             uintptr_t, uintptr_t, uintptr_t, uintptr_t);
+  struct tcb_s *tcb = this_task();
+  uintptr_t number = regs[REG_R4];
+  uintreg_t *previous = tcb->xcp.sregs;
+  uintptr_t result;
+  stub_t stub;
+
+  regs[REG_EPC] += 4;
+  if (number < CONFIG_SYS_RESERVED || number >= SYS_maxsyscall)
+    {
+      regs[REG_R4] = -ENOSYS;
+      csr_writeq(tcb->xcp.kstkptr, LOONGARCH_CSR_SAVE3);
+      return;
+    }
+
+  tcb->xcp.sregs = regs;
+  tcb->flags |= TCB_FLAG_SYSCALL;
+  up_irq_enable();
+  number -= CONFIG_SYS_RESERVED;
+  stub = (stub_t)g_stublookup[number];
+  result = stub(number, regs[REG_R5], regs[REG_R6], regs[REG_R7],
+                regs[REG_R8], regs[REG_R9], regs[REG_R10]);
+  tcb->flags &= ~TCB_FLAG_SYSCALL;
+  nxsig_unmask_pendingsignal();
+  up_irq_save();
+  tcb->xcp.sregs = previous;
+  regs[REG_R4] = result;
+  csr_writeq(tcb->xcp.kstkptr, LOONGARCH_CSR_SAVE3);
+}
+#endif
+
 int loongarch_swint(int irq, void *context, void *arg)
 {
-  uintreg_t *regs = (uintreg_t *)context;
+  uintreg_t *regs = context;
   struct tcb_s *tcb = this_task();
   int cpu = this_cpu();
+  bool user = (regs[REG_INT_CTX] & CSR_PRMD_PPLV) == PLV_USER;
 
   regs[REG_EPC] += 4;
 
-#ifdef CONFIG_DEBUG_SYSCALL_INFO
-  svcinfo("Entry: regs: %p cmd: %d\n", regs, regs[REG_R4]);
-  up_dump_register(regs);
+  /* Context switching, assertions and signal dispatch are kernel-only
+   * operations. A user may return from a signal only while a trusted
+   * kernel continuation exists. Never trust user-supplied register frames.
+   */
+
+  if (user)
+    {
+#ifdef CONFIG_ARCH_KERNEL_STACK
+      if (regs[REG_R4] == SYS_signal_handler_return &&
+          tcb->xcp.sigregs != NULL)
+        {
+          tcb->xcp.regs = tcb->xcp.sigregs;
+          tcb->xcp.sigregs = NULL;
+          tcb->xcp.kstkptr = STACKFRAME_ALIGN_DOWN(
+            (uintptr_t)tcb->xcp.kstack + CONFIG_ARCH_KERNEL_STACKSIZE);
+          return OK;
+        }
 #endif
+      regs[REG_R4] = -ENOSYS;
+      return OK;
+    }
 
   switch (regs[REG_R4])
     {
       case SYS_restore_context:
-        {
-          loongarch_restorecontext(tcb);
-          restore_critical_section(tcb, cpu);
-        }
+        loongarch_restorecontext(tcb);
+        restore_critical_section(tcb, cpu);
         break;
 
       case SYS_switch_context:
-        {
-          loongarch_savecontext(g_running_tasks[cpu]);
-          loongarch_restorecontext(tcb);
-          restore_critical_section(tcb, cpu);
-        }
+        loongarch_savecontext(g_running_tasks[cpu]);
+        loongarch_restorecontext(tcb);
+        restore_critical_section(tcb, cpu);
         break;
 
-#ifndef CONFIG_BUILD_FLAT
+#ifdef CONFIG_ARCH_KERNEL_STACK
       case SYS_signal_handler:
         {
-          struct tcb_s *rtcb   = this_task();
+          uintreg_t *source = tcb->xcp.sregs != NULL ?
+                              tcb->xcp.sregs : tcb->xcp.saved_regs;
+          uintreg_t *userregs = regs - XCPTCONTEXT_REGS;
+          uintptr_t usp;
 
-          DEBUGASSERT(rtcb->xcp.sigreturn == 0);
-          rtcb->xcp.sigreturn  = regs[REG_EPC];
+          DEBUGASSERT(source != NULL && tcb->xcp.sigregs == NULL);
+          usp = STACKFRAME_ALIGN_DOWN(source[REG_SP] - sizeof(siginfo_t));
+          if (!writable_user_range(tcb, usp, sizeof(siginfo_t)))
+            {
+              regs[REG_EPC] = (uintptr_t)_exit;
+              regs[REG_SP] = (uintptr_t)regs;
+              regs[REG_R4] = SIGSEGV;
+              regs[REG_INT_CTX] = CSR_PRMD_PIE;
+              break;
+            }
 
-#if defined(CONFIG_BUILD_PROTECTED)
-          regs[REG_EPC]        = (uintptr_t)USERSPACE->signal_handler;
-#else
-          regs[REG_EPC]        = (uintptr_t)ARCH_DATA_RESERVE->ar_sigtramp;
-#endif
-          regs[REG_INT_CTX]   &= ~(PLV_MASK << CSR_CRMD_PLV_SHIFT);
-
-          regs[REG_R4]         = regs[REG_R5];
-          regs[REG_R5]         = regs[REG_R6];
-          regs[REG_R6]         = regs[REG_R7];
-          regs[REG_R7]         = regs[REG_R8];
-        }
-        break;
-#endif
-
-#ifndef CONFIG_BUILD_FLAT
-      case SYS_signal_handler_return:
-        {
-          struct tcb_s *rtcb   = this_task();
-
-          DEBUGASSERT(rtcb->xcp.sigreturn != 0);
-          regs[REG_EPC]        = rtcb->xcp.sigreturn;
-          regs[REG_INT_CTX]   |= (PLV_KERN << CSR_CRMD_PLV_SHIFT);
-
-          rtcb->xcp.sigreturn  = 0;
+          memcpy((void *)usp, (void *)regs[REG_R7], sizeof(siginfo_t));
+          memcpy(userregs, source, XCPTCONTEXT_SIZE);
+          userregs[REG_EPC] = (uintptr_t)ARCH_DATA_RESERVE->ar_sigtramp;
+          userregs[REG_INT_CTX] = CSR_PRMD_PIE | PLV_USER;
+          userregs[REG_SP] = usp;
+          userregs[REG_R4] = regs[REG_R5];
+          userregs[REG_R5] = regs[REG_R6];
+          userregs[REG_R6] = usp;
+          userregs[REG_R7] = 0;
+          tcb->xcp.sigregs = regs;
+          tcb->xcp.kstkptr = (uintptr_t)userregs;
+          tcb->xcp.regs = userregs;
         }
         break;
 #endif
 
       case SYS_assert_handler:
-        {
-          _assert((const char *)regs[REG_R5], (int)regs[REG_R6],
-                  (const char *)regs[REG_R7], (void *)running_regs());
-        }
+        _assert((const char *)regs[REG_R5], (int)regs[REG_R6],
+                (const char *)regs[REG_R7], running_regs());
         break;
 
       default:
-        DEBUGPANIC();
+        regs[REG_R4] = -ENOSYS;
         break;
     }
 

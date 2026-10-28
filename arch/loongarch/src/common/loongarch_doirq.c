@@ -32,6 +32,7 @@
 
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
+#include <nuttx/addrenv.h>
 #include <nuttx/board.h>
 #include <arch/barriers.h>
 #include <arch/board/board.h>
@@ -56,7 +57,8 @@ static uintreg_t *loongarch_doirq_top(int irq, uintreg_t *regs)
 
   if (irq == LOONGARCH_IRQ_SYS)
     {
-      if (regs[REG_R4] != SYS_restore_context)
+      if (regs[REG_R4] != SYS_restore_context ||
+          (regs[REG_INT_CTX] & CSR_PRMD_PPLV) != PLV_KERN)
         {
           (*running_task)->xcp.regs = regs;
         }
@@ -78,6 +80,9 @@ static uintreg_t *loongarch_doirq_top(int irq, uintreg_t *regs)
 
   if (*running_task != tcb || restore_context)
     {
+#ifdef CONFIG_ARCH_ADDRENV
+      addrenv_switch(tcb);
+#endif
       nxsched_suspend_scheduler(*running_task);
       nxsched_resume_scheduler(tcb);
       *running_task = tcb;
@@ -88,6 +93,9 @@ static uintreg_t *loongarch_doirq_top(int irq, uintreg_t *regs)
 #endif
   board_autoled_off(LED_INIRQ);
 
+#ifdef CONFIG_ARCH_KERNEL_STACK
+  csr_writeq(tcb->xcp.kstkptr, LOONGARCH_CSR_SAVE3);
+#endif
   regs = tcb->xcp.regs;
   (*running_task)->xcp.regs = NULL;
   return regs;

@@ -31,6 +31,7 @@
 
 #ifndef __ASSEMBLY__
 #  include <stdint.h>
+#  include <stdbool.h>
 #  include <stddef.h>
 #endif
 
@@ -84,6 +85,17 @@ void loongarch_mmu_initialize(void);
 void loongarch_mmu_cpu_initialize(void);
 void loongarch_tlb_invalidate(void);
 void loongarch_tlb_sync(void);
+
+/* Internal root operations. Callers must hold the address environment's
+ * lock when walking or editing leaves directly.
+ */
+
+uintptr_t loongarch_mmu_newroot(void);
+void loongarch_mmu_freetable(uintptr_t root, unsigned int level);
+uint64_t *loongarch_mmu_pte(uintptr_t root, uintptr_t vaddr, bool create);
+int loongarch_mmu_maproot(uintptr_t root, uintptr_t vaddr,
+                          uintptr_t paddr, size_t size, uint64_t flags);
+int loongarch_mmu_unmaproot(uintptr_t root, uintptr_t vaddr, size_t size);
 
 static inline uintptr_t loongarch_physaddr(uintptr_t vaddr)
 {

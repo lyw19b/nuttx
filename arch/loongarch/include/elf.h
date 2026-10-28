@@ -42,25 +42,16 @@
 
 #define R_LARCH_32_PCREL          57
 
-#define ARCH_ELFDATA              1
-#define ARCH_ELF_RELCNT           8
-
 #define EM_ARCH                   EM_LOONGARCH
-#define EF_FLAG                   0
+#define EF_LARCH_ABI_MODIFIER_MASK 0x07
+#define EF_LARCH_ABI_DOUBLE_FLOAT  0x03
+#define EF_LARCH_OBJABI_V1         0x40
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
 
 #ifndef __ASSEMBLY__
-
-struct arch_elfdata_s
-{
-  uintptr_t hi20_rels[ARCH_ELF_RELCNT];
-  uintptr_t hi20_offsets[ARCH_ELF_RELCNT];
-};
-
-typedef struct arch_elfdata_s arch_elfdata_t;
 
 struct user_pt_regs
 {

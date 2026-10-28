@@ -24,5 +24,13 @@ ifeq ($(CONFIG_ARCH_SETJMP_H),y)
 ASRCS += arch_setjmp.S
 endif
 
+ifeq ($(CONFIG_LIBC_ARCH_ELF),y)
+CSRCS += arch_elf.c
+endif
+
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+ASRCS += arch_signal.S
+endif
+
 DEPPATH += --dep-path machine/loongarch
 VPATH += :machine/loongarch

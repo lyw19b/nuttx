@@ -25,6 +25,8 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <unistd.h>
+#include <signal.h>
 
 #include <stdint.h>
 #include <assert.h>
@@ -94,6 +96,23 @@ int loongarch_exception(int excode, void *regs, void *args)
              ", BADV: %" PRIxREG "\n",
              excode, era, badv);
     }
+
+#ifdef CONFIG_BUILD_KERNEL
+  if ((((uintreg_t *)regs)[REG_INT_CTX] & CSR_PRMD_PPLV) == PLV_USER)
+    {
+      uintreg_t *frame = regs;
+
+      /* Terminate the faulting process on its trusted kernel stack. The
+       * scheduler and other address environments remain usable.
+       */
+
+      frame[REG_EPC] = (uintptr_t)_exit;
+      frame[REG_SP] = (uintptr_t)frame;
+      frame[REG_R4] = SIGSEGV;
+      frame[REG_INT_CTX] = CSR_PRMD_PIE;
+      return OK;
+    }
+#endif
 
   _alert("Unhandled synchronous exception %x\n", excode);
   up_irq_save();

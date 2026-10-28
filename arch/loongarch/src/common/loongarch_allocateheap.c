@@ -41,7 +41,11 @@
  * Public Functions
  ****************************************************************************/
 
+#ifdef CONFIG_BUILD_KERNEL
+void up_allocate_kheap(void **heap_start, size_t *heap_size)
+#else
 void weak_function up_allocate_heap(void **heap_start, size_t *heap_size)
+#endif
 {
   uintptr_t end = CONFIG_RAM_END;
 

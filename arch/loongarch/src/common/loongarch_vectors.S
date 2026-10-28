@@ -27,6 +27,7 @@
 #include <nuttx/config.h>
 #include <arch/irq.h>
 #include <arch/csr.h>
+#include <arch/syscall.h>
 
 /****************************************************************************
  * Exception and interrupt vectors
@@ -74,6 +75,20 @@ loongarch_vectors:
   .text
   .balign 16
 loongarch_exception_entry:
+#ifdef CONFIG_ARCH_KERNEL_STACK
+  /* SAVE3 holds the trusted kernel stack when returning to PLV3. Never
+   * use an untrusted user SP to save the exception frame.
+   */
+
+  csrwr   $sp, LOONGARCH_CSR_SAVE3
+  csrwr   $t0, LOONGARCH_CSR_SAVE4
+  csrrd   $t0, LOONGARCH_CSR_PRMD
+  andi    $t0, $t0, CSR_PRMD_PPLV
+  bnez    $t0, .Lkernel_stack
+  csrrd   $sp, LOONGARCH_CSR_SAVE3
+.Lkernel_stack:
+  csrrd   $t0, LOONGARCH_CSR_SAVE4
+#endif
   addi.d  $sp, $sp, -XCPTCONTEXT_SIZE
   st.d    $r1, $sp, (REGSIZE * REG_R1_NDX)
   st.d    $r2, $sp, (REGSIZE * REG_R2_NDX)
@@ -107,7 +122,11 @@ loongarch_exception_entry:
   move    $a0, $t0
   csrrd   $t0, LOONGARCH_CSR_SAVE0
   st.d    $t0, $sp, (REGSIZE * REG_R12_NDX)
+#ifdef CONFIG_ARCH_KERNEL_STACK
+  csrrd   $t0, LOONGARCH_CSR_SAVE3
+#else
   addi.d  $t0, $sp, XCPTCONTEXT_SIZE
+#endif
   st.d    $t0, $sp, (REGSIZE * REG_R3_NDX)
   csrrd   $t0, LOONGARCH_CSR_ERA
   st.d    $t0, $sp, (REGSIZE * REG_EPC_NDX)
@@ -163,6 +182,25 @@ loongarch_exception_entry:
   st.b    $t0, $sp, (REGSIZE * REG_FCC_NDX + 6)
   movcf2gr $t0, $fcc7
   st.b    $t0, $sp, (REGSIZE * REG_FCC_NDX + 7)
+#ifdef CONFIG_LIB_SYSCALL
+  /* Blocking system calls run on this thread's kernel stack, outside
+   * interrupt context. Reserved operations go through the IRQ dispatcher.
+   */
+
+  li.w    $t0, LOONGARCH_IRQ_SYS
+  bne     $a0, $t0, .Lirq
+  ld.d    $t0, $sp, REG_INT_CTX
+  andi    $t0, $t0, CSR_PRMD_PPLV
+  beqz    $t0, .Lirq
+  ld.d    $t0, $sp, REG_R4
+  li.w    $t1, CONFIG_SYS_RESERVED
+  bltu    $t0, $t1, .Lirq
+  move    $a0, $sp
+  bl      loongarch_syscall_dispatch
+  move    $a0, $sp
+  b       loongarch_exception_return
+.Lirq:
+#endif
   move    $a1, $sp
 #if CONFIG_ARCH_INTERRUPTSTACK > 15
   csrrd   $t0, LOONGARCH_CSR_CPUID
@@ -173,6 +211,7 @@ loongarch_exception_entry:
   sub.d   $sp, $sp, $t0
 #endif
   bl      loongarch_doirq
+loongarch_exception_return:
   move    $sp, $a0
 
   ld.d    $t0, $sp, (REGSIZE * REG_EPC_NDX)

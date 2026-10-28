@@ -123,6 +123,9 @@
 #define LOONGARCH_CSR_STLBPS       0x1e
 #define LOONGARCH_CSR_CPUID        0x20
 #define LOONGARCH_CSR_SAVE0        0x30
+#define LOONGARCH_CSR_SAVE3        0x33
+#define LOONGARCH_CSR_SAVE4        0x34
+
 #define LOONGARCH_CSR_SAVE1        0x31
 #define LOONGARCH_CSR_SAVE2        0x32
 #define LOONGARCH_CSR_TLBRSAVE     0x8b

@@ -61,12 +61,21 @@ int up_create_stack(struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 
   if (!tcb->stack_alloc_ptr)
     {
-      tcb->stack_alloc_ptr =
+      size_t alignment = STACKFRAME_ALIGN;
+
 #ifdef CONFIG_TLS_ALIGNED
-        group_memalign(tcb->group, TLS_STACK_ALIGN, stack_size);
-#else
-        group_malloc(tcb->group, stack_size);
+      alignment = TLS_STACK_ALIGN;
 #endif
+#ifdef CONFIG_MM_KERNEL_HEAP
+      if (ttype == TCB_FLAG_TTYPE_KERNEL)
+        {
+          tcb->stack_alloc_ptr = kmm_memalign(alignment, stack_size);
+        }
+      else
+#endif
+        {
+          tcb->stack_alloc_ptr = kumm_memalign(alignment, stack_size);
+        }
 
 #ifdef CONFIG_DEBUG_FEATURES
       if (!tcb->stack_alloc_ptr)

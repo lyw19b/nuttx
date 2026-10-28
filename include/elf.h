@@ -86,6 +86,7 @@
 #define EM_XTENSA          94     /* Tensilica Xtensa */
 #define EM_AARCH64         183    /* ARM-64 Architecture */
 #define EM_RISCV           243    /* RISC-V */
+#define EM_LOONGARCH       258    /* LoongArch */
 #define EM_ALPHA           0x9026
 #define EM_CYGNUS_V850     0x9080
 #define EM_CYGNUS_M32R     0x9041

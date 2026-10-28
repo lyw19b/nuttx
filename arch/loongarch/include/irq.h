@@ -241,6 +241,13 @@ struct xcptcontext
 {
   uintreg_t *regs;
   uintreg_t *saved_regs;
+#ifdef CONFIG_ARCH_KERNEL_STACK
+  void *kstack;
+  uintptr_t kstkptr;
+  uintptr_t ustkptr;
+  uintreg_t *sregs;
+  uintreg_t *sigregs;
+#endif
 };
 
 static inline_function void up_set_interrupt_context(bool flag)
